@@ -878,7 +878,7 @@ class Game {
     const desiredPos = target.clone().addScaledVector(camDir, this.currentCameraDistance);
 
     // Vloerdetectie: voorkom dat de camera door of onder de vloer zakt
-    const groundY = this.world.getGroundHeightAt(desiredPos.x, desiredPos.z);
+    const groundY = this.world.getGroundHeightAt(desiredPos.x, desiredPos.z, target.y);
     if (desiredPos.y < groundY + 0.35) {
       desiredPos.y = groundY + 0.35;
     }

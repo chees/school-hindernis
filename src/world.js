@@ -1781,16 +1781,26 @@ export class GameWorld {
     return this.cameraOccluders;
   }
 
-  getGroundHeightAt(x, z) {
+  getGroundHeightAt(x, z, currentY = null) {
     const s = this.stairsConfig;
 
+    // Bevindt de positie zich binnen het trapgat/traject?
     if (x >= s.xMin && x <= s.xMax && z >= s.zTop && z <= s.zBottom) {
       const progress = (z - s.zTop) / (s.zBottom - s.zTop);
-      return s.yTop - progress * (s.yTop - s.yBottom);
+      const stairY = s.yTop - progress * (s.yTop - s.yBottom);
+      return stairY;
     }
 
-    const isUpper = (x < s.xMin || z < s.zTop) && (x >= -8.2 && x <= 6.2 && z >= -8.2 && z <= 1.8);
-    if (isUpper) {
+    // Bovenverdieping vloerbereik (slaapkamer, badkamer, overloop)
+    const isUpperBounds = (x >= -8.2 && x <= 6.2 && z >= -8.2 && z <= 1.8);
+
+    // Bepaal of de entiteit zich op de bovenverdieping bevindt:
+    // Als currentY niet is opgegeven, val terug op bounds;
+    // als currentY wel is opgegeven, controleer of speler zich op de bovenste verdiepingshelft bevindt
+    const midY = (this.UPPER_Y + this.LOWER_Y) / 2;
+    const isUpperLevel = currentY === null ? (x < s.xMin || z < s.zTop) : (currentY >= midY);
+
+    if (isUpperBounds && isUpperLevel) {
       return this.UPPER_Y;
     }
 

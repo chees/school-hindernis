@@ -727,7 +727,7 @@ export class Player {
       }
     }
 
-    const groundY = this.world.getGroundHeightAt(this.position.x, this.position.z);
+    const groundY = this.world.getGroundHeightAt(this.position.x, this.position.z, this.position.y);
     this.velocity.y += this.gravity * dt;
     this.position.y += this.velocity.y * dt;
 
