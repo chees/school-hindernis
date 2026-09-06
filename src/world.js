@@ -285,7 +285,12 @@ export class GameWorld {
     // Zuidelijk deel
     this.addWall(0, y + 1.5, 0.25, 0.2, 3.1, 2.3, this.materials.wallUpper);
 
-    // Noordwand overloop
+    // Noordwand overloop en gang (doorlopend gesloten van x: -8.0 tot 6.0 bij z = -8.0)
+    // Gang noordwand (x: 0 tot 2.2) met een mooi raam
+    this.addWall(1.1, y + 1.5, -8.0, 2.2, 3.1, 0.2, this.materials.wallUpper);
+    this.createWindow(1.1, y + 1.6, -7.89, 1.6, 1.4);
+
+    // Noordwand badkamer / overloopdeel (x: 2.2 tot 6.0)
     this.addWall(4.1, y + 1.5, -8.0, 3.8, 3.1, 0.2, this.materials.wallUpper);
     // Oostwand overloop
     this.addWall(6.0, y + 1.5, -4.25, 0.2, 3.1, 7.5, this.materials.wallUpper);
@@ -1658,6 +1663,27 @@ export class GameWorld {
   checkCollision(newX, newZ, radius = 0.35, playerY = 0) {
     const playerFeet = playerY + 0.15;
     const playerHead = playerY + 1.35;
+
+    // Harde perimeterbegrenzing bovenverdieping: speler kan nooit door ramen of buitenmuren heen lopen of vallen
+    if (playerFeet >= this.UPPER_Y - 0.2) {
+      // Noordelijke buitenmuur en ramen (z = -8.0)
+      if (newZ - radius < -7.9) {
+        return true;
+      }
+      // Westelijke buitenmuur slaapkamer (x = -8.0)
+      if (newX - radius < -7.9) {
+        return true;
+      }
+      // Oostelijke buitenmuur badkamer/overloop (x = 6.0)
+      if (newX + radius > 5.9) {
+        return true;
+      }
+      // Zuidelijke buitenmuur slaapkamer (x < 0, z = 1.5)
+      if (newX < 0 && newZ + radius > 1.4) {
+        return true;
+      }
+    }
+
     for (const box of this.colliders) {
       if (box.enabled === false) continue;
       if (playerFeet <= box.maxY && playerHead >= box.minY) {
