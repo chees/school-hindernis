@@ -84,11 +84,27 @@ export class Player {
     boyHairMesh.castShadow = true;
     this.hairShortGroup.add(boyHairMesh);
 
-    const kuifGeo = new THREE.BoxGeometry(0.26, 0.09, 0.09);
-    const kuifMesh = new THREE.Mesh(kuifGeo, this.hairMat);
-    kuifMesh.position.set(0, 1.38, 0.18);
-    kuifMesh.castShadow = true;
-    this.hairShortGroup.add(kuifMesh);
+    // Opvallende, volumineuze kuif (Kuif / Pompadour)
+    const kuifBaseGeo = new THREE.BoxGeometry(0.30, 0.18, 0.16);
+    const kuifBaseMesh = new THREE.Mesh(kuifBaseGeo, this.hairMat);
+    kuifBaseMesh.position.set(0, 1.40, 0.18);
+    kuifBaseMesh.rotation.x = -0.22;
+    kuifBaseMesh.castShadow = true;
+    this.hairShortGroup.add(kuifBaseMesh);
+
+    const kuifTopGeo = new THREE.BoxGeometry(0.24, 0.12, 0.20);
+    const kuifTopMesh = new THREE.Mesh(kuifTopGeo, this.hairMat);
+    kuifTopMesh.position.set(0, 1.46, 0.09);
+    kuifTopMesh.rotation.x = -0.12;
+    kuifTopMesh.castShadow = true;
+    this.hairShortGroup.add(kuifTopMesh);
+
+    const kuifFlickGeo = new THREE.BoxGeometry(0.20, 0.10, 0.09);
+    const kuifFlickMesh = new THREE.Mesh(kuifFlickGeo, this.hairMat);
+    kuifFlickMesh.position.set(0, 1.43, 0.25);
+    kuifFlickMesh.rotation.x = -0.32;
+    kuifFlickMesh.castShadow = true;
+    this.hairShortGroup.add(kuifFlickMesh);
 
     const boyBackGeo = new THREE.BoxGeometry(0.38, 0.14, 0.06);
     const boyBackMesh = new THREE.Mesh(boyBackGeo, this.hairMat);
@@ -97,7 +113,7 @@ export class Player {
     this.hairShortGroup.add(boyBackMesh);
     this.bodyGroup.add(this.hairShortGroup);
 
-    // B. Stoere stekels (SPIKY)
+    // B. Stoere stekels (SPIKY) - 14 dynamische spikes rondom het hoofd
     this.hairSpikyGroup = new THREE.Group();
     const spikyBaseGeo = new THREE.BoxGeometry(0.40, 0.16, 0.40);
     const spikyBaseMesh = new THREE.Mesh(spikyBaseGeo, this.hairMat);
@@ -110,30 +126,35 @@ export class Player {
     spikyBack.castShadow = true;
     this.hairSpikyGroup.add(spikyBack);
 
-    const spikeGeo = new THREE.ConeGeometry(0.045, 0.12, 4);
-    const spikeM = new THREE.Mesh(spikeGeo, this.hairMat);
-    spikeM.position.set(0, 1.45, 0.04);
-    this.hairSpikyGroup.add(spikeM);
-
-    const spikeL = new THREE.Mesh(spikeGeo, this.hairMat);
-    spikeL.position.set(-0.11, 1.43, 0.02);
-    spikeL.rotation.z = 0.28;
-    this.hairSpikyGroup.add(spikeL);
-
-    const spikeR = new THREE.Mesh(spikeGeo, this.hairMat);
-    spikeR.position.set(0.11, 1.43, 0.02);
-    spikeR.rotation.z = -0.28;
-    this.hairSpikyGroup.add(spikeR);
-
-    const spikeF = new THREE.Mesh(spikeGeo, this.hairMat);
-    spikeF.position.set(0, 1.42, 0.12);
-    spikeF.rotation.x = 0.3;
-    this.hairSpikyGroup.add(spikeF);
-
-    const spikeB = new THREE.Mesh(spikeGeo, this.hairMat);
-    spikeB.position.set(0, 1.42, -0.06);
-    spikeB.rotation.x = -0.3;
-    this.hairSpikyGroup.add(spikeB);
+    const spikeGeo = new THREE.ConeGeometry(0.045, 0.13, 5);
+    const spikeSpecs = [
+      // Voorste rij (naar voren gericht)
+      { pos: [0, 1.44, 0.16], rot: [0.38, 0, 0], scale: 1.05 },
+      { pos: [-0.11, 1.42, 0.14], rot: [0.32, 0, -0.28], scale: 0.95 },
+      { pos: [0.11, 1.42, 0.14], rot: [0.32, 0, 0.28], scale: 0.95 },
+      // Middelste rij (kroon & zijkanten)
+      { pos: [0, 1.50, 0.04], rot: [0.06, 0, 0], scale: 1.2 },
+      { pos: [-0.09, 1.48, 0.04], rot: [0.06, 0, -0.24], scale: 1.1 },
+      { pos: [0.09, 1.48, 0.04], rot: [0.06, 0, 0.24], scale: 1.1 },
+      { pos: [-0.17, 1.43, 0.03], rot: [0.0, 0, -0.52], scale: 0.95 },
+      { pos: [0.17, 1.43, 0.03], rot: [0.0, 0, 0.52], scale: 0.95 },
+      // Achterste rij (naar achter gericht)
+      { pos: [0, 1.47, -0.08], rot: [-0.26, 0, 0], scale: 1.1 },
+      { pos: [-0.11, 1.44, -0.08], rot: [-0.24, 0, -0.26], scale: 1.0 },
+      { pos: [0.11, 1.44, -0.08], rot: [-0.24, 0, 0.26], scale: 1.0 },
+      // Nek/kruin achterzijde
+      { pos: [0, 1.42, -0.16], rot: [-0.48, 0, 0], scale: 0.95 },
+      { pos: [-0.10, 1.39, -0.15], rot: [-0.42, 0, -0.32], scale: 0.88 },
+      { pos: [0.10, 1.39, -0.15], rot: [-0.42, 0, 0.32], scale: 0.88 }
+    ];
+    spikeSpecs.forEach(s => {
+      const spike = new THREE.Mesh(spikeGeo, this.hairMat);
+      spike.position.set(s.pos[0], s.pos[1], s.pos[2]);
+      spike.rotation.set(s.rot[0], s.rot[1], s.rot[2]);
+      spike.scale.set(s.scale, s.scale, s.scale);
+      spike.castShadow = true;
+      this.hairSpikyGroup.add(spike);
+    });
     this.bodyGroup.add(this.hairSpikyGroup);
     this.hairSpikyGroup.visible = false;
 
@@ -180,7 +201,7 @@ export class Player {
     this.bodyGroup.add(this.hairPonytailGroup);
     this.hairPonytailGroup.visible = false;
 
-    // D. Twee staartjes (TWINTAILS)
+    // D. Twee staartjes (TWINTAILS) - netjes naar buiten gebogen
     this.hairTwintailsGroup = new THREE.Group();
     const twinBase = new THREE.Mesh(ponytailBaseGeo, this.hairMat);
     twinBase.position.set(0, 1.33, 0.005);
@@ -200,49 +221,80 @@ export class Player {
     twinLockR.position.set(0.21, 1.20, 0.08);
     this.hairTwintailsGroup.add(twinLockR);
 
-    // Linker staartje
     const scrunchieMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.5 });
+    // Linker staartje (buigt naar links-buiten)
     const twinTieL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 8), scrunchieMat);
-    twinTieL.position.set(-0.22, 1.27, -0.05);
-    twinTieL.rotation.z = 0.35;
+    twinTieL.position.set(-0.22, 1.28, -0.05);
+    twinTieL.rotation.z = -0.42;
+    twinTieL.rotation.x = 0.20;
     this.hairTwintailsGroup.add(twinTieL);
 
-    const twinTailL = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.025, 0.28, 8), this.hairMat);
-    twinTailL.position.set(-0.28, 1.14, -0.06);
-    twinTailL.rotation.z = 0.35;
-    twinTailL.rotation.x = 0.2;
+    const twinTailL = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.022, 0.30, 8), this.hairMat);
+    twinTailL.position.set(-0.29, 1.14, -0.08);
+    twinTailL.rotation.z = -0.42;
+    twinTailL.rotation.x = 0.20;
     twinTailL.castShadow = true;
     this.hairTwintailsGroup.add(twinTailL);
 
-    // Rechter staartje
+    const twinTipL = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), this.hairMat);
+    twinTipL.position.set(-0.35, 1.00, -0.11);
+    this.hairTwintailsGroup.add(twinTipL);
+
+    // Rechter staartje (buigt naar rechts-buiten)
     const twinTieR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 8), scrunchieMat);
-    twinTieR.position.set(0.22, 1.27, -0.05);
-    twinTieR.rotation.z = -0.35;
+    twinTieR.position.set(0.22, 1.28, -0.05);
+    twinTieR.rotation.z = 0.42;
+    twinTieR.rotation.x = 0.20;
     this.hairTwintailsGroup.add(twinTieR);
 
-    const twinTailR = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.025, 0.28, 8), this.hairMat);
-    twinTailR.position.set(0.28, 1.14, -0.06);
-    twinTailR.rotation.z = -0.35;
-    twinTailR.rotation.x = 0.2;
+    const twinTailR = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.022, 0.30, 8), this.hairMat);
+    twinTailR.position.set(0.29, 1.14, -0.08);
+    twinTailR.rotation.z = 0.42;
+    twinTailR.rotation.x = 0.20;
     twinTailR.castShadow = true;
     this.hairTwintailsGroup.add(twinTailR);
+
+    const twinTipR = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), this.hairMat);
+    twinTipR.position.set(0.35, 1.00, -0.11);
+    this.hairTwintailsGroup.add(twinTipR);
+
     this.bodyGroup.add(this.hairTwintailsGroup);
     this.hairTwintailsGroup.visible = false;
 
-    // E. Baseball Pet / Cap (CAP)
+    // E. Baseball Pet / Cap (CAP) - ruim dekkend zodat geen haar/hoofd hoekjes uitsteken
     this.hairCapGroup = new THREE.Group();
-    const capHair = new THREE.Mesh(new THREE.BoxGeometry(0.39, 0.15, 0.39), this.hairMat);
-    capHair.position.set(0, 1.30, 0.005);
-    this.hairCapGroup.add(capHair);
+    // Haar dat subtiel onder de pet vandaan piept bij nek en bakkebaarden
+    const capHairBack = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.14, 0.08), this.hairMat);
+    capHairBack.position.set(0, 1.18, -0.16);
+    capHairBack.castShadow = true;
+    this.hairCapGroup.add(capHairBack);
 
-    const capCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.12, 16), this.backpackMat);
-    capCrown.position.set(0, 1.38, 0.005);
-    capCrown.castShadow = true;
-    this.hairCapGroup.add(capCrown);
+    const capHairSideL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.14), this.hairMat);
+    capHairSideL.position.set(-0.17, 1.20, 0.02);
+    this.hairCapGroup.add(capHairSideL);
 
-    const capVisor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.025, 0.14), this.backpackMat);
-    capVisor.position.set(0, 1.33, 0.24);
-    capVisor.rotation.x = -0.12;
+    const capHairSideR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.14), this.hairMat);
+    capHairSideR.position.set(0.17, 1.20, 0.02);
+    this.hairCapGroup.add(capHairSideR);
+
+    // De pet kroon (bedekt de hele bovenkant van het hoofd)
+    const capCrownBox = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.17, 0.42), this.backpackMat);
+    capCrownBox.position.set(0, 1.34, 0.01);
+    capCrownBox.castShadow = true;
+    this.hairCapGroup.add(capCrownBox);
+
+    const capCrownTop = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.25, 0.08, 16), this.backpackMat);
+    capCrownTop.position.set(0, 1.43, 0.01);
+    capCrownTop.castShadow = true;
+    this.hairCapGroup.add(capCrownTop);
+
+    const capButton = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.03, 8), this.backpackMat);
+    capButton.position.set(0, 1.48, 0.01);
+    this.hairCapGroup.add(capButton);
+
+    const capVisor = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.035, 0.20), this.backpackMat);
+    capVisor.position.set(0, 1.31, 0.27);
+    capVisor.rotation.x = -0.15;
     capVisor.castShadow = true;
     this.hairCapGroup.add(capVisor);
     this.bodyGroup.add(this.hairCapGroup);
