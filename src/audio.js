@@ -86,6 +86,46 @@ class SoundEffects {
     }
   }
 
+  // Mechanische klik bij uitzetten wekker
+  playAlarmClick() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(620, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.05);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.06);
+
+    // Korte lichte naklik
+    setTimeout(() => {
+      if (this.muted || !this.ctx) return;
+      const t = this.ctx.currentTime;
+      const o2 = this.ctx.createOscillator();
+      const g2 = this.ctx.createGain();
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(840, t);
+      o2.frequency.exponentialRampToValueAtTime(320, t + 0.04);
+      g2.gain.setValueAtTime(0.12, t);
+      g2.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      o2.connect(g2);
+      g2.connect(this.ctx.destination);
+      o2.start(t);
+      o2.stop(t + 0.04);
+    }, 45);
+  }
+
   // Voetstap geluid
   playStep(isStairs = false) {
     if (this.muted || !this.ctx) return;

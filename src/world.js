@@ -358,6 +358,7 @@ export class GameWorld {
     this.createBed(-5.8, y, -5.5);
     this.createNightstandWithAlarm(-3.8, y, -6.8);
     this.createDesk(-6.6, y, -1.0);
+    this.createBookcase(-0.25, y, -4.5);
   }
 
   // --- DE BADKAMER (WC, DOUCHE, WASTAFEL MET KRAAN) ---
@@ -1279,10 +1280,148 @@ export class GameWorld {
 
     this.scene.add(stand);
 
+    // Vloermarker bij het nachtkastje
+    const markerGeo = new THREE.RingGeometry(0.35, 0.55, 32);
+    markerGeo.rotateX(-Math.PI / 2);
+    this.alarmMarker = new THREE.Mesh(markerGeo, this.materials.glowMarker);
+    this.alarmMarker.position.set(x, y + 0.005, z + 0.65);
+    this.alarmMarker.visible = false;
+    this.scene.add(this.alarmMarker);
+
+    // Richtingspijl boven de wekker
+    const arrowGeo = new THREE.ConeGeometry(0.16, 0.32, 16);
+    arrowGeo.rotateX(Math.PI);
+    this.alarmArrow = new THREE.Mesh(arrowGeo, new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.85
+    }));
+    this.alarmArrow.position.set(x, y + 1.45, z);
+    this.alarmArrow.visible = false;
+    this.scene.add(this.alarmArrow);
+
+    this.interactiveObjects.alarmClock = {
+      position: new THREE.Vector3(x, y, z + 0.65),
+      radius: 1.8,
+      ringing: false
+    };
+
     this.colliders.push({
       minX: x - 0.4, maxX: x + 0.4,
       minY: y, maxY: y + 0.8,
       minZ: z - 0.4, maxZ: z + 0.4
+    });
+  }
+
+  startAlarmClock() {
+    this.interactiveObjects.alarmRinging = true;
+    if (this.interactiveObjects.alarmClock) {
+      this.interactiveObjects.alarmClock.ringing = true;
+    }
+    if (this.alarmMarker) this.alarmMarker.visible = true;
+    if (this.alarmArrow) this.alarmArrow.visible = true;
+  }
+
+  stopAlarmClock() {
+    this.interactiveObjects.alarmRinging = false;
+    if (this.interactiveObjects.alarmClock) {
+      this.interactiveObjects.alarmClock.ringing = false;
+    }
+    if (this.alarmMarker) this.alarmMarker.visible = false;
+    if (this.alarmArrow) this.alarmArrow.visible = false;
+    if (this.alarmClockMesh) {
+      this.alarmClockMesh.position.x = 0;
+      this.alarmClockMesh.rotation.z = 0;
+    }
+  }
+
+  resetAlarmClock() {
+    this.stopAlarmClock();
+  }
+
+  createBookcase(x, y, z) {
+    const bookcase = new THREE.Group();
+    bookcase.position.set(x, y, z);
+
+    // Afmetingen kast: w: 0.45m (steekt uit van x = 0 muur), d: 1.4m (langs z-as), h: 2.1m
+    const caseMat = this.materials.woodFurniture;
+    const shelfGeo = new THREE.BoxGeometry(0.42, 0.04, 1.34);
+    const sideGeo = new THREE.BoxGeometry(0.44, 2.1, 0.04);
+    const backGeo = new THREE.BoxGeometry(0.03, 2.1, 1.34);
+
+    // Achterwand (tegen de muur op x = 0)
+    const backMesh = new THREE.Mesh(backGeo, caseMat);
+    backMesh.position.set(0.20, 1.05, 0);
+    backMesh.castShadow = true;
+    bookcase.add(backMesh);
+
+    // Zijpanelen
+    const sideL = new THREE.Mesh(sideGeo, caseMat);
+    sideL.position.set(0, 1.05, -0.67);
+    sideL.castShadow = true;
+    bookcase.add(sideL);
+
+    const sideR = new THREE.Mesh(sideGeo, caseMat);
+    sideR.position.set(0, 1.05, 0.67);
+    sideR.castShadow = true;
+    bookcase.add(sideR);
+
+    // Boven- en onderkant
+    const topMesh = new THREE.Mesh(shelfGeo, caseMat);
+    topMesh.position.set(0, 2.08, 0);
+    topMesh.castShadow = true;
+    bookcase.add(topMesh);
+
+    const bottomMesh = new THREE.Mesh(shelfGeo, caseMat);
+    bottomMesh.position.set(0, 0.08, 0);
+    bottomMesh.castShadow = true;
+    bookcase.add(bottomMesh);
+
+    // Tussenplanken (y = 0.55, 1.05, 1.55)
+    const shelfYs = [0.55, 1.05, 1.55];
+    shelfYs.forEach(sy => {
+      const shelf = new THREE.Mesh(shelfGeo, caseMat);
+      shelf.position.set(0, sy, 0);
+      shelf.castShadow = true;
+      bookcase.add(shelf);
+    });
+
+    // Boekenrijen op de planken
+    const bookMats = [
+      new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 }), // rood
+      new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5 }), // blauw
+      new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 }), // groen
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.5 }), // geel/oranje
+      new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.5 })  // paars
+    ];
+
+    // Plank 1 (y = 1.05): Boekenreeks
+    for (let i = 0; i < 9; i++) {
+      const bH = 0.28 + (i % 3) * 0.04;
+      const bD = 0.05 + (i % 2) * 0.02;
+      const bGeo = new THREE.BoxGeometry(0.24, bH, bD);
+      const bMesh = new THREE.Mesh(bGeo, bookMats[i % bookMats.length]);
+      bMesh.position.set(-0.04, 1.07 + bH / 2, -0.55 + i * 0.075);
+      bMesh.castShadow = true;
+      bookcase.add(bMesh);
+    }
+
+    // Plank 2 (y = 1.55): Enkele encyclopedieën en boekensteun
+    for (let i = 0; i < 6; i++) {
+      const bH = 0.32;
+      const bGeo = new THREE.BoxGeometry(0.26, bH, 0.06);
+      const bMesh = new THREE.Mesh(bGeo, bookMats[(i + 2) % bookMats.length]);
+      bMesh.position.set(-0.04, 1.57 + bH / 2, 0.15 + i * 0.07);
+      bMesh.castShadow = true;
+      bookcase.add(bMesh);
+    }
+
+    this.scene.add(bookcase);
+
+    this.colliders.push({
+      minX: x - 0.25, maxX: x + 0.25,
+      minY: y, maxY: y + 2.1,
+      minZ: z - 0.72, maxZ: z + 0.72
     });
   }
 
@@ -1568,9 +1707,9 @@ export class GameWorld {
 
   // --- DE SPEURTOCHT: 5 SCHOOLSPULLEN VERSPREID IN HUIS ---
   createSpeurtochtItems() {
-    // 1. Schoolagenda / Huiswerkschrift (Slaapkamer boven, op nachtkastje)
+    // 1. Schoolagenda / Huiswerkschrift (Slaapkamer boven, in de boekenkast)
     const agendaGroup = new THREE.Group();
-    agendaGroup.position.set(-3.85, this.UPPER_Y + 0.56, -6.55);
+    agendaGroup.position.set(-0.22, this.UPPER_Y + 0.59, -4.5);
     const coverMesh = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.03, 0.34), this.materials.itemBookCover);
     coverMesh.castShadow = true;
     agendaGroup.add(coverMesh);
@@ -1584,22 +1723,22 @@ export class GameWorld {
 
     const agendaMarker = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.52, 24), this.materials.glowMarker);
     agendaMarker.rotation.x = -Math.PI / 2;
-    agendaMarker.position.set(-3.85, this.UPPER_Y + 0.005, -6.0);
+    agendaMarker.position.set(-0.95, this.UPPER_Y + 0.005, -4.5);
     this.scene.add(agendaMarker);
 
     this.speurtochtItems.agenda = {
       id: 'agenda',
       name: 'Schoolagenda',
       icon: '📓',
-      hint: 'In de slaapkamer op het nachtkastje',
+      hint: 'In de boekenkast in de slaapkamer',
       mesh: agendaGroup,
       marker: agendaMarker,
-      baseY: this.UPPER_Y + 0.56,
+      baseY: this.UPPER_Y + 0.59,
       animOffset: 0,
       picked: false
     };
     this.interactiveObjects.item_agenda = {
-      position: new THREE.Vector3(-3.85, this.UPPER_Y, -6.1),
+      position: new THREE.Vector3(-0.8, this.UPPER_Y, -4.5),
       radius: 1.6,
       picked: false,
       onInteract: () => this.pickUpSpeurtochtItem('agenda')
@@ -1840,6 +1979,7 @@ export class GameWorld {
     if (this.lockerMarker) this.lockerMarker.visible = false;
     if (this.lockerItemsGroup) this.lockerItemsGroup.visible = false;
     if (this.interactiveObjects.locker) this.interactiveObjects.locker.opened = false;
+    this.resetAlarmClock();
   }
 
   createCoatRack(x, y, z) {
@@ -2052,6 +2192,11 @@ export class GameWorld {
         this.alarmClockMesh.position.x = Math.sin(elapsed * 40) * 0.02;
         this.alarmClockMesh.rotation.z = Math.sin(elapsed * 35) * 0.08;
       }
+    }
+
+    if (this.alarmArrow && this.alarmArrow.visible) {
+      this.alarmArrow.position.y = this.UPPER_Y + 1.45 + Math.sin(elapsed * 4.5) * 0.12;
+      this.alarmArrow.rotation.y += dt * 2.0;
     }
 
     if (this.schoolBagArrow && this.schoolBagArrow.visible) {

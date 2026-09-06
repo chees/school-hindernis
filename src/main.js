@@ -41,12 +41,6 @@ class Game {
     this.lastTime = performance.now();
     this.animate = this.animate.bind(this);
     requestAnimationFrame(this.animate);
-
-    // Start wekker alarmgeluid na een kleine pauze
-    setTimeout(() => {
-      sounds.startAlarm();
-      this.world.interactiveObjects.alarmRinging = true;
-    }, 400);
   }
 
   initThree() {
@@ -655,8 +649,6 @@ class Game {
   handleWakeup() {
     if (this.gameState !== 'WAKING') return;
 
-    sounds.stopAlarm();
-    this.world.interactiveObjects.alarmRinging = false;
     sounds.playBlip();
 
     this.wakeupModal.classList.add('fade-out');
@@ -665,10 +657,16 @@ class Game {
     this.timeLeft = this.totalTime;
     this.updateTimerUI();
 
+    // Start wekker alarmgeluid pas nadat speler op Word Wakker klikt
+    sounds.startAlarm();
+    this.world.startAlarmClock();
+
     this.world.uncoverBed();
     this.player.wakeUp(() => {
       this.updateToiletUI();
-      if (this.player.toiletNeed > 0) {
+      if (this.world.interactiveObjects.alarmClock && this.world.interactiveObjects.alarmClock.ringing) {
+        this.setObjective('⏰ De wekker rinkelt! Loop naar je nachtkastje en zet hem uit!');
+      } else if (this.player.toiletNeed > 0) {
         this.setObjective('🚽 Je hebt hoge nood! Ga naar de badkamer boven om naar de wc te gaan!');
       } else {
         this.setObjective('🏃 Daal de houten trap af naar de kleerkast beneden!');
@@ -704,6 +702,9 @@ class Game {
     this.elapsedTime = 0;
     if (this.timerPill) this.timerPill.classList.remove('warning', 'critical');
     this.updateTimerUI();
+
+    // Doelbalk resetten
+    this.setObjective('☀️ Word snel wakker om op tijd op school te zijn!');
 
     // Nieuw willekeurig weerbericht
     weather.currentWeather = weather.pickRandomWeather();
@@ -772,10 +773,8 @@ class Game {
     this.camera.position.set(-5.8, 4.8, -4.0);
     this.camera.lookAt(-5.8, 4.0, -5.5);
 
-    this.setObjective('⏰ De wekker gaat! Word snel wakker...');
-
-    sounds.startAlarm();
-    this.world.interactiveObjects.alarmRinging = true;
+    sounds.stopAlarm();
+    this.world.stopAlarmClock();
   }
 
   updateCamera(dt) {
@@ -982,6 +981,9 @@ class Game {
     }
 
     // Afstanden tot interactieve objecten
+    const alarmClock = this.world.interactiveObjects.alarmClock;
+    const isAlarmRinging = alarmClock && alarmClock.ringing;
+    const distToAlarm = (isAlarmRinging && alarmClock) ? playerPos.distanceTo(alarmClock.position) : 999;
     const distToToilet = toilet ? playerPos.distanceTo(toilet.position) : 999;
     const distToSink = sink ? playerPos.distanceTo(sink.position) : 999;
     const distToShower = shower ? playerPos.distanceTo(shower.position) : 999;
@@ -995,7 +997,11 @@ class Game {
 
     let activeInteraction = null;
 
-    if (distToToilet <= toilet.radius) {
+    if (distToAlarm <= alarmClock.radius) {
+      activeInteraction = 'ALARM';
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '⏰';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Stop';
+    } else if (distToToilet <= toilet.radius) {
       activeInteraction = 'TOILET';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚽';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'WC';
@@ -1084,7 +1090,19 @@ class Game {
         }
         return;
       }
-      if (activeInteraction === 'TOILET') {
+      if (activeInteraction === 'ALARM') {
+        this.world.stopAlarmClock();
+        sounds.stopAlarm();
+        sounds.playAlarmClick();
+        this.showPickupToast('⏰', 'Wekker uitgezet!');
+        if (this.player.toiletNeed > 0) {
+          this.setObjective('🚽 Je hebt hoge nood! Ga naar de badkamer boven om naar de wc te gaan!');
+        } else if (!this.hasBag) {
+          this.setObjective('🎒 Pak je schooltas bij je bureau!');
+        } else {
+          this.setObjective('🏃 Daal de houten trap af naar de kleerkast beneden!');
+        }
+      } else if (activeInteraction === 'TOILET') {
         this.world.flushToilet();
         this.player.useToilet();
         this.updateToiletUI(true);
