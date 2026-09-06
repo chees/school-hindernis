@@ -74,7 +74,7 @@ export class InputControls {
         const dx = e.clientX - this.lastMousePos.x;
         const dy = e.clientY - this.lastMousePos.y;
         this.deltaYaw -= dx * 0.006;
-        this.deltaPitch -= dy * 0.005;
+        this.deltaPitch += dy * 0.005;
         this.lastMousePos = { x: e.clientX, y: e.clientY };
       }
     });
@@ -124,7 +124,7 @@ export class InputControls {
           const dx = touch.clientX - this.lastTouchPos.x;
           const dy = touch.clientY - this.lastTouchPos.y;
           this.deltaYaw -= dx * 0.008;
-          this.deltaPitch -= dy * 0.006;
+          this.deltaPitch += dy * 0.006;
           this.lastTouchPos = { x: touch.clientX, y: touch.clientY };
         }
       }
