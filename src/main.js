@@ -1213,6 +1213,10 @@ class Game {
     if (this.player.thoughtBubbleGroup) this.player.thoughtBubbleGroup.visible = false;
     this.carSpeed = 0;
 
+    if (this.world.carCollider) {
+      this.world.carCollider.enabled = false;
+    }
+
     this.setObjective('🚗 Rijd veilig naar school! [W/Pijl omhoog] = Gas, [A/D] = Sturen, [Spatie] = Toeteren');
     if (this.actionBtn) {
       this.actionBtn.disabled = false;
@@ -1306,6 +1310,16 @@ class Game {
     this.world.carGroup.position.set(0.5, this.world.LOWER_Y, 76.5);
     this.world.carGroup.rotation.y = 0;
     this.carSpeed = 0;
+
+    if (this.world.carCollider) {
+      this.world.carCollider.minX = 0.5 - 1.15;
+      this.world.carCollider.maxX = 0.5 + 1.15;
+      this.world.carCollider.minY = this.world.LOWER_Y;
+      this.world.carCollider.maxY = this.world.LOWER_Y + 1.8;
+      this.world.carCollider.minZ = 76.5 - 2.1;
+      this.world.carCollider.maxZ = 76.5 + 2.1;
+      this.world.carCollider.enabled = true;
+    }
 
     this.player.group.position.set(2.2, this.world.LOWER_Y, 77.0);
     this.player.position.copy(this.player.group.position);

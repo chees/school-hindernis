@@ -1345,20 +1345,32 @@ export class GameWorld {
       onInteract: () => this.openFrontDoor()
     };
 
-    // Collider voor gesloten voordeur
+    // Collider voor gesloten voordeur (extra breed en diep zodat er nooit doorheen geglitched of gelopen kan worden)
     this.frontDoorCollider = {
-      minX: x - 0.8, maxX: x + 0.8,
+      minX: x - 0.85, maxX: x + 0.85,
       minY: y, maxY: y + 2.6,
-      minZ: z - 0.15, maxZ: z + 0.15,
+      minZ: 13.0, maxZ: 13.8,
       enabled: true
     };
     this.colliders.push(this.frontDoorCollider);
+
+    // Collider voor het geopende deurblad (draait 90 graden naar binnen langs de linkerhalmuur)
+    this.openDoorLeafCollider = {
+      minX: 0.65, maxX: 1.0,
+      minY: y, maxY: y + 2.6,
+      minZ: 11.75, maxZ: 13.45,
+      enabled: false
+    };
+    this.colliders.push(this.openDoorLeafCollider);
   }
 
   openFrontDoor() {
     this.interactiveObjects.frontDoor.opened = true;
     if (this.frontDoorCollider) {
       this.frontDoorCollider.enabled = false;
+    }
+    if (this.openDoorLeafCollider) {
+      this.openDoorLeafCollider.enabled = true;
     }
     if (this.frontDoorGroup) {
       this.frontDoorGroup.rotation.y = -Math.PI / 2.2;
@@ -1686,11 +1698,21 @@ export class GameWorld {
     if (this.frontDoorArrow) this.frontDoorArrow.visible = false;
     if (this.frontDoorMarker) this.frontDoorMarker.visible = false;
     if (this.frontDoorCollider) this.frontDoorCollider.enabled = true;
+    if (this.openDoorLeafCollider) this.openDoorLeafCollider.enabled = false;
     if (this.interactiveObjects.frontDoor) this.interactiveObjects.frontDoor.opened = false;
 
     if (this.carGroup) {
       this.carGroup.position.set(1.5, this.LOWER_Y, 20.0);
       this.carGroup.rotation.set(0, 0, 0);
+    }
+    if (this.carCollider) {
+      this.carCollider.minX = 1.5 - 1.15;
+      this.carCollider.maxX = 1.5 + 1.15;
+      this.carCollider.minY = this.LOWER_Y;
+      this.carCollider.maxY = this.LOWER_Y + 1.8;
+      this.carCollider.minZ = 20.0 - 2.1;
+      this.carCollider.maxZ = 20.0 + 2.1;
+      this.carCollider.enabled = true;
     }
     if (this.carArrow) this.carArrow.visible = false;
     if (this.carMarker) this.carMarker.visible = false;
@@ -2290,6 +2312,15 @@ export class GameWorld {
       radius: 3.2,
       onInteract: () => {}
     };
+
+    // Stevige collider voor de geparkeerde auto op de oprit
+    this.carCollider = {
+      minX: x - 1.15, maxX: x + 1.15,
+      minY: y, maxY: y + 1.8,
+      minZ: z - 2.1, maxZ: z + 2.1,
+      enabled: true
+    };
+    this.colliders.push(this.carCollider);
   }
 
   // --- HET SCHOOLGEBOUW & KLUISJES ---
