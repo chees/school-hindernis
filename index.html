@@ -44,6 +44,48 @@
       </div>
     </header>
 
+    <!-- Speurtocht Schoolspullen HUD Strip (verschijnt na oppakken schooltas) -->
+    <div id="speurtocht-hud" class="speurtocht-hud">
+      <div class="speurtocht-badge-main">
+        <span class="speurtocht-icon">🎒</span>
+        <span class="speurtocht-title">Schoolspullen:</span>
+        <span id="speurtocht-count" class="speurtocht-count">0/5</span>
+      </div>
+      <div class="speurtocht-items-row">
+        <div class="speurtocht-item" id="item-badge-agenda" title="Schoolagenda (Slaapkamer)">
+          <span class="item-emoji">📓</span>
+          <span class="item-label">Agenda</span>
+          <span class="item-status">⭕</span>
+        </div>
+        <div class="speurtocht-item" id="item-badge-bottle" title="Drinkfles (Badkamer)">
+          <span class="item-emoji">💧</span>
+          <span class="item-label">Drinkfles</span>
+          <span class="item-status">⭕</span>
+        </div>
+        <div class="speurtocht-item" id="item-badge-lunchbox" title="Broodtrommel (Hal beneden)">
+          <span class="item-emoji">🥪</span>
+          <span class="item-label">Lunchbox</span>
+          <span class="item-status">⭕</span>
+        </div>
+        <div class="speurtocht-item" id="item-badge-pencilcase" title="Etui (Dressoir beneden)">
+          <span class="item-emoji">✏️</span>
+          <span class="item-label">Etui</span>
+          <span class="item-status">⭕</span>
+        </div>
+        <div class="speurtocht-item" id="item-badge-key" title="Fietssleutel (Kapstok)">
+          <span class="item-emoji">🔑</span>
+          <span class="item-label">Sleutel</span>
+          <span class="item-status">⭕</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pickup Pop Toast -->
+    <div id="pickup-toast" class="pickup-toast">
+      <span id="pickup-toast-icon">✨</span>
+      <span id="pickup-toast-text">Gepakt!</span>
+    </div>
+
     <!-- Desktop Keyboard Controls Hint -->
     <footer class="keyboard-hints">
       <div><span class="key-badge">W A S D</span> Lopen</div>
@@ -227,12 +269,12 @@
 
       <!-- Bevestigingsknop -->
       <button id="btn-wear-outfit" class="btn-wear">
-        ✨ Outfit Aantrekken & Naar School!
+        ✨ Outfit Aantrekken!
       </button>
     </div>
   </div>
 
-  <!-- Overwinning / Kleerkast Bereikt Modal -->
+  <!-- Overwinning / Naar School Vertrokken Modal -->
   <div id="victory-modal">
     <div class="victory-card">
       <div style="font-size: 52px;">🎉🎒✨</div>
@@ -240,6 +282,10 @@
       <p id="victory-outfit-desc">
         Je bent perfect aangekleed in je gekozen outfit met je schoolboekentas om!
       </p>
+
+      <div id="speurtocht-result-box" class="speurtocht-feedback-box">
+        <!-- Dynamische speurtocht feedback -->
+      </div>
 
       <div id="weather-result-box" class="weather-feedback-box">
         <!-- Dynamische weer feedback -->

@@ -7,6 +7,7 @@ export class GameWorld {
     this.cameraOccluders = [];
     this.interactiveObjects = {};
     this.animatedObjects = [];
+    this.speurtochtItems = {};
 
     // Verdiepingshoogtes
     this.UPPER_Y = 3.6;
@@ -148,7 +149,19 @@ export class GameWorld {
       glass: new THREE.MeshStandardMaterial({ color: 0xccf2ff, transparent: true, opacity: 0.5, roughness: 0.1 }),
       leafGreen: new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.6 }),
       potColor: new THREE.MeshStandardMaterial({ color: 0xd27d53, roughness: 0.7 }),
-      alarmClock: new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.4 })
+      alarmClock: new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.4 }),
+
+      // Speurtocht & Schoolspullen materialen
+      itemGold: new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.2 }),
+      itemBookCover: new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 }),
+      itemPages: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 }),
+      itemBottle: new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.7, roughness: 0.15 }),
+      itemLunchbox: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 }),
+      itemPencilCase: new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.5 }),
+      itemPencilLead: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.6 }),
+      itemAccentRed: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 }),
+      backpackDeskMat: new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 }),
+      backpackPocketMat: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.7 })
     };
   }
 
@@ -160,6 +173,8 @@ export class GameWorld {
     this.createBathroom();
     this.createWardrobe();
     this.createDecorations();
+    this.createSchoolBag(-6.6, this.UPPER_Y, -1.0);
+    this.createSpeurtochtItems();
   }
 
   createLights() {
@@ -1060,12 +1075,26 @@ export class GameWorld {
   }
 
   createFrontDoor(x, y, z) {
+    // Scharnierende voordeur (draait open om x - 0.8)
+    this.frontDoorGroup = new THREE.Group();
+    this.frontDoorGroup.position.set(x - 0.8, y, z);
+
     const doorGeo = new THREE.BoxGeometry(1.6, 2.6, 0.08);
     const doorMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.6 });
     const door = new THREE.Mesh(doorGeo, doorMat);
-    door.position.set(x, y + 1.3, z);
+    door.position.set(0.8, 1.3, 0);
     door.castShadow = true;
-    this.scene.add(door);
+    this.frontDoorGroup.add(door);
+
+    // Messing deurklink
+    const handleGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.16, 8);
+    const handle = new THREE.Mesh(handleGeo, this.materials.brass);
+    handle.rotation.z = Math.PI / 2;
+    handle.position.set(1.48, 1.25, -0.06);
+    this.frontDoorGroup.add(handle);
+
+    this.scene.add(this.frontDoorGroup);
+    this.cameraOccluders.push(door);
 
     // Deurmat (plane met polygonOffset)
     const matGeo = new THREE.PlaneGeometry(1.4, 0.8);
@@ -1074,6 +1103,366 @@ export class GameWorld {
     mat.position.set(x, y + 0.002, z - 0.6);
     mat.receiveShadow = true;
     this.scene.add(mat);
+
+    // Gouden vloermarker voor de voordeur (wordt actief als alle spullen verzameld zijn)
+    const doorMarkerGeo = new THREE.RingGeometry(0.60, 0.90, 32);
+    doorMarkerGeo.rotateX(-Math.PI / 2);
+    this.frontDoorMarker = new THREE.Mesh(doorMarkerGeo, new THREE.MeshBasicMaterial({
+      color: 0xf59e0b,
+      side: THREE.DoubleSide
+    }));
+    this.frontDoorMarker.position.set(x, y + 0.005, z - 0.8);
+    this.frontDoorMarker.visible = false;
+    this.scene.add(this.frontDoorMarker);
+
+    // Zwevende gouden richtingspijl boven de voordeur
+    const doorArrowGeo = new THREE.ConeGeometry(0.24, 0.48, 16);
+    doorArrowGeo.rotateX(Math.PI);
+    this.frontDoorArrow = new THREE.Mesh(doorArrowGeo, new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.9
+    }));
+    this.frontDoorArrow.position.set(x, y + 2.0, z - 0.8);
+    this.frontDoorArrow.visible = false;
+    this.scene.add(this.frontDoorArrow);
+
+    this.interactiveObjects.frontDoor = {
+      position: new THREE.Vector3(x, y, z - 0.8),
+      radius: 2.2,
+      opened: false,
+      onInteract: () => this.openFrontDoor()
+    };
+  }
+
+  openFrontDoor() {
+    this.interactiveObjects.frontDoor.opened = true;
+    if (this.frontDoorGroup) {
+      this.frontDoorGroup.rotation.y = -Math.PI / 2.2;
+    }
+    if (this.frontDoorArrow) this.frontDoorArrow.visible = false;
+    if (this.frontDoorMarker) this.frontDoorMarker.visible = false;
+  }
+
+  // --- SCHOOLTAS OP HET BUREAU IN DE SLAAPKAMER ---
+  createSchoolBag(x, y, z) {
+    const bagGroup = new THREE.Group();
+    bagGroup.position.set(x + 0.35, y + 0.81, z);
+
+    // Hoofdvak schoolrugzak
+    const bodyGeo = new THREE.BoxGeometry(0.28, 0.36, 0.18);
+    const bodyMesh = new THREE.Mesh(bodyGeo, this.materials.backpackDeskMat);
+    bodyMesh.position.set(0, 0.18, 0);
+    bodyMesh.castShadow = true;
+    bagGroup.add(bodyMesh);
+
+    // Voorvak
+    const pocketGeo = new THREE.BoxGeometry(0.22, 0.18, 0.08);
+    const pocketMesh = new THREE.Mesh(pocketGeo, this.materials.backpackPocketMat);
+    pocketMesh.position.set(0, 0.12, 0.12);
+    pocketMesh.castShadow = true;
+    bagGroup.add(pocketMesh);
+
+    // Handvat bovenop
+    const handleGeo = new THREE.BoxGeometry(0.10, 0.04, 0.02);
+    const handleMesh = new THREE.Mesh(handleGeo, this.materials.metal);
+    handleMesh.position.set(0, 0.38, 0);
+    bagGroup.add(handleMesh);
+
+    // Schouderbanden
+    const strapGeo = new THREE.BoxGeometry(0.04, 0.30, 0.02);
+    const strapL = new THREE.Mesh(strapGeo, this.materials.backpackPocketMat);
+    strapL.position.set(-0.08, 0.18, -0.10);
+    bagGroup.add(strapL);
+    const strapR = new THREE.Mesh(strapGeo, this.materials.backpackPocketMat);
+    strapR.position.set(0.08, 0.18, -0.10);
+    bagGroup.add(strapR);
+
+    this.scene.add(bagGroup);
+    this.schoolBagGroup = bagGroup;
+
+    // Vloermarker naast het bureau
+    const markerGeo = new THREE.RingGeometry(0.40, 0.65, 32);
+    markerGeo.rotateX(-Math.PI / 2);
+    this.schoolBagMarker = new THREE.Mesh(markerGeo, this.materials.glowMarker);
+    this.schoolBagMarker.position.set(x + 0.35, y + 0.005, z + 0.7);
+    this.scene.add(this.schoolBagMarker);
+
+    // Richtingspijl boven de schooltas
+    const arrowGeo = new THREE.ConeGeometry(0.18, 0.36, 16);
+    arrowGeo.rotateX(Math.PI);
+    this.schoolBagArrow = new THREE.Mesh(arrowGeo, new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.85
+    }));
+    this.schoolBagArrow.position.set(x + 0.35, y + 1.5, z);
+    this.scene.add(this.schoolBagArrow);
+
+    this.interactiveObjects.schoolBag = {
+      position: new THREE.Vector3(x + 0.35, y, z + 0.5),
+      radius: 1.8,
+      picked: false,
+      onInteract: () => this.pickUpSchoolBag()
+    };
+  }
+
+  pickUpSchoolBag() {
+    this.interactiveObjects.schoolBag.picked = true;
+    if (this.schoolBagGroup) this.schoolBagGroup.visible = false;
+    if (this.schoolBagMarker) this.schoolBagMarker.visible = false;
+    if (this.schoolBagArrow) this.schoolBagArrow.visible = false;
+  }
+
+  // --- DE SPEURTOCHT: 5 SCHOOLSPULLEN VERSPREID IN HUIS ---
+  createSpeurtochtItems() {
+    // 1. Schoolagenda / Huiswerkschrift (Slaapkamer boven, op nachtkastje)
+    const agendaGroup = new THREE.Group();
+    agendaGroup.position.set(-3.85, this.UPPER_Y + 0.56, -6.55);
+    const coverMesh = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.03, 0.34), this.materials.itemBookCover);
+    coverMesh.castShadow = true;
+    agendaGroup.add(coverMesh);
+    const pagesMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.024, 0.32), this.materials.itemPages);
+    pagesMesh.position.set(0.005, 0, 0);
+    agendaGroup.add(pagesMesh);
+    const ribbonMesh = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.005, 0.12), this.materials.itemAccentRed);
+    ribbonMesh.position.set(0, 0.018, 0.16);
+    agendaGroup.add(ribbonMesh);
+    this.scene.add(agendaGroup);
+
+    const agendaMarker = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.52, 24), this.materials.glowMarker);
+    agendaMarker.rotation.x = -Math.PI / 2;
+    agendaMarker.position.set(-3.85, this.UPPER_Y + 0.005, -6.0);
+    this.scene.add(agendaMarker);
+
+    this.speurtochtItems.agenda = {
+      id: 'agenda',
+      name: 'Schoolagenda',
+      icon: '📓',
+      hint: 'In de slaapkamer op het nachtkastje',
+      mesh: agendaGroup,
+      marker: agendaMarker,
+      baseY: this.UPPER_Y + 0.56,
+      animOffset: 0,
+      picked: false
+    };
+    this.interactiveObjects.item_agenda = {
+      position: new THREE.Vector3(-3.85, this.UPPER_Y, -6.1),
+      radius: 1.6,
+      picked: false,
+      onInteract: () => this.pickUpSpeurtochtItem('agenda')
+    };
+
+    // 2. Drinkfles / Dopper (Badkamer boven, op wastafel)
+    const bottleGroup = new THREE.Group();
+    bottleGroup.position.set(5.58, this.UPPER_Y + 0.95, -3.45);
+    const bottleBody = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.24, 16), this.materials.itemBottle);
+    bottleBody.castShadow = true;
+    bottleGroup.add(bottleBody);
+    const bottleNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.06, 16), this.materials.chrome);
+    bottleNeck.position.set(0, 0.15, 0);
+    bottleGroup.add(bottleNeck);
+    const bottleCap = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.034, 0.03, 16), this.materials.itemGold);
+    bottleCap.position.set(0, 0.19, 0);
+    bottleGroup.add(bottleCap);
+    this.scene.add(bottleGroup);
+
+    const bottleMarker = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.52, 24), this.materials.glowMarker);
+    bottleMarker.rotation.x = -Math.PI / 2;
+    bottleMarker.position.set(4.95, this.UPPER_Y + 0.005, -3.45);
+    this.scene.add(bottleMarker);
+
+    this.speurtochtItems.bottle = {
+      id: 'bottle',
+      name: 'Drinkfles',
+      icon: '💧',
+      hint: 'In de badkamer op de wastafel',
+      mesh: bottleGroup,
+      marker: bottleMarker,
+      baseY: this.UPPER_Y + 0.95,
+      animOffset: 1.2,
+      picked: false
+    };
+    this.interactiveObjects.item_bottle = {
+      position: new THREE.Vector3(4.95, this.UPPER_Y, -3.45),
+      radius: 1.6,
+      picked: false,
+      onInteract: () => this.pickUpSpeurtochtItem('bottle')
+    };
+
+    // 3. Broodtrommel / Lunchbox (Beneden in de hal op een bijzettafeltje)
+    const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.72, 0.55), this.materials.woodFurniture);
+    tableMesh.position.set(-1.8, this.LOWER_Y + 0.36, 4.2);
+    tableMesh.castShadow = true;
+    this.scene.add(tableMesh);
+    this.colliders.push({
+      minX: -2.25, maxX: -1.35,
+      minY: this.LOWER_Y, maxY: this.LOWER_Y + 0.8,
+      minZ: 3.85, maxZ: 4.55
+    });
+
+    const lunchGroup = new THREE.Group();
+    lunchGroup.position.set(-1.8, this.LOWER_Y + 0.82, 4.2);
+    const lunchBody = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.22), this.materials.itemLunchbox);
+    lunchBody.castShadow = true;
+    lunchGroup.add(lunchBody);
+    const lunchLid = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.24), this.materials.backpackDeskMat);
+    lunchLid.position.set(0, 0.075, 0);
+    lunchGroup.add(lunchLid);
+    this.scene.add(lunchGroup);
+
+    const lunchMarker = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.55, 24), this.materials.glowMarker);
+    lunchMarker.rotation.x = -Math.PI / 2;
+    lunchMarker.position.set(-1.8, this.LOWER_Y + 0.005, 4.85);
+    this.scene.add(lunchMarker);
+
+    this.speurtochtItems.lunchbox = {
+      id: 'lunchbox',
+      name: 'Broodtrommel',
+      icon: '🥪',
+      hint: 'Beneden in de hal op het tafeltje',
+      mesh: lunchGroup,
+      marker: lunchMarker,
+      baseY: this.LOWER_Y + 0.82,
+      animOffset: 2.4,
+      picked: false
+    };
+    this.interactiveObjects.item_lunchbox = {
+      position: new THREE.Vector3(-1.8, this.LOWER_Y, 4.8),
+      radius: 1.6,
+      picked: false,
+      onInteract: () => this.pickUpSpeurtochtItem('lunchbox')
+    };
+
+    // 4. Gevulde Etui (Beneden op het dressoir aan de oostwand)
+    const sideboardMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.85, 1.3), this.materials.woodFurniture);
+    sideboardMesh.position.set(5.5, this.LOWER_Y + 0.425, 7.5);
+    sideboardMesh.castShadow = true;
+    this.scene.add(sideboardMesh);
+    this.colliders.push({
+      minX: 5.15, maxX: 5.85,
+      minY: this.LOWER_Y, maxY: this.LOWER_Y + 0.9,
+      minZ: 6.8, maxZ: 8.2
+    });
+
+    const pencilGroup = new THREE.Group();
+    pencilGroup.position.set(5.35, this.LOWER_Y + 0.94, 7.5);
+    const pouchGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.30, 16);
+    pouchGeo.rotateX(Math.PI / 2);
+    const pouch = new THREE.Mesh(pouchGeo, this.materials.itemPencilCase);
+    pouch.castShadow = true;
+    pencilGroup.add(pouch);
+    const zipper = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.025, 0.28), this.materials.itemGold);
+    zipper.position.set(0, 0.065, 0);
+    pencilGroup.add(zipper);
+
+    // 2 Potloodjes die uitsteken
+    const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.12, 8), this.materials.itemPencilLead);
+    p1.rotation.x = Math.PI / 2;
+    p1.position.set(-0.02, 0.03, 0.18);
+    pencilGroup.add(p1);
+    const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.12, 8), this.materials.itemAccentRed);
+    p2.rotation.x = Math.PI / 2;
+    p2.position.set(0.02, 0.03, 0.17);
+    pencilGroup.add(p2);
+    this.scene.add(pencilGroup);
+
+    const pencilMarker = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.55, 24), this.materials.glowMarker);
+    pencilMarker.rotation.x = -Math.PI / 2;
+    pencilMarker.position.set(4.65, this.LOWER_Y + 0.005, 7.5);
+    this.scene.add(pencilMarker);
+
+    this.speurtochtItems.pencilcase = {
+      id: 'pencilcase',
+      name: 'Etui',
+      icon: '✏️',
+      hint: 'Beneden op het dressoir',
+      mesh: pencilGroup,
+      marker: pencilMarker,
+      baseY: this.LOWER_Y + 0.94,
+      animOffset: 3.6,
+      picked: false
+    };
+    this.interactiveObjects.item_pencilcase = {
+      position: new THREE.Vector3(4.65, this.LOWER_Y, 7.5),
+      radius: 1.6,
+      picked: false,
+      onInteract: () => this.pickUpSpeurtochtItem('pencilcase')
+    };
+
+    // 5. Fietssleutel (Beneden bij de kapstok / sleutelplankje)
+    const shelfMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.28), this.materials.woodFurniture);
+    shelfMesh.position.set(-3.42, this.LOWER_Y + 1.10, 12.5);
+    this.scene.add(shelfMesh);
+
+    const keyGroup = new THREE.Group();
+    keyGroup.position.set(-3.25, this.LOWER_Y + 1.18, 12.5);
+    const ringMesh = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.007, 8, 16), this.materials.itemGold);
+    keyGroup.add(ringMesh);
+    const stemMesh = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.11, 0.008), this.materials.itemGold);
+    stemMesh.position.set(0, -0.06, 0);
+    keyGroup.add(stemMesh);
+    const fobMesh = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.065, 0.01), this.materials.potColor);
+    fobMesh.position.set(0.05, 0.02, 0);
+    keyGroup.add(fobMesh);
+    this.scene.add(keyGroup);
+
+    const keyMarker = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.55, 24), this.materials.glowMarker);
+    keyMarker.rotation.x = -Math.PI / 2;
+    keyMarker.position.set(-2.85, this.LOWER_Y + 0.005, 12.5);
+    this.scene.add(keyMarker);
+
+    this.speurtochtItems.key = {
+      id: 'key',
+      name: 'Fietssleutel',
+      icon: '🔑',
+      hint: 'Bij de kapstok naast de voordeur',
+      mesh: keyGroup,
+      marker: keyMarker,
+      baseY: this.LOWER_Y + 1.18,
+      animOffset: 4.8,
+      picked: false
+    };
+    this.interactiveObjects.item_key = {
+      position: new THREE.Vector3(-2.85, this.LOWER_Y, 12.5),
+      radius: 1.6,
+      picked: false,
+      onInteract: () => this.pickUpSpeurtochtItem('key')
+    };
+  }
+
+  pickUpSpeurtochtItem(id) {
+    const item = this.speurtochtItems[id];
+    if (item) {
+      item.picked = true;
+      if (item.mesh) item.mesh.visible = false;
+      if (item.marker) item.marker.visible = false;
+    }
+    if (this.interactiveObjects['item_' + id]) {
+      this.interactiveObjects['item_' + id].picked = true;
+    }
+  }
+
+  resetSpeurtocht() {
+    if (this.schoolBagGroup) this.schoolBagGroup.visible = true;
+    if (this.schoolBagMarker) this.schoolBagMarker.visible = true;
+    if (this.schoolBagArrow) this.schoolBagArrow.visible = true;
+    if (this.interactiveObjects.schoolBag) this.interactiveObjects.schoolBag.picked = false;
+
+    for (const key in this.speurtochtItems) {
+      const it = this.speurtochtItems[key];
+      it.picked = false;
+      if (it.mesh) it.mesh.visible = true;
+      if (it.marker) it.marker.visible = true;
+      if (this.interactiveObjects['item_' + key]) {
+        this.interactiveObjects['item_' + key].picked = false;
+      }
+    }
+
+    if (this.frontDoorGroup) this.frontDoorGroup.rotation.y = 0;
+    if (this.frontDoorArrow) this.frontDoorArrow.visible = false;
+    if (this.frontDoorMarker) this.frontDoorMarker.visible = false;
+    if (this.interactiveObjects.frontDoor) this.interactiveObjects.frontDoor.opened = false;
   }
 
   createCoatRack(x, y, z) {
@@ -1248,6 +1637,24 @@ export class GameWorld {
         this.alarmClockMesh.position.x = Math.sin(elapsed * 40) * 0.02;
         this.alarmClockMesh.rotation.z = Math.sin(elapsed * 35) * 0.08;
       }
+    }
+
+    if (this.schoolBagArrow && this.schoolBagArrow.visible) {
+      this.schoolBagArrow.position.y = this.UPPER_Y + 1.5 + Math.sin(elapsed * 4.2) * 0.12;
+      this.schoolBagArrow.rotation.y += dt * 2.0;
+    }
+
+    for (const key in this.speurtochtItems) {
+      const it = this.speurtochtItems[key];
+      if (!it.picked && it.mesh && it.mesh.visible) {
+        it.mesh.rotation.y += dt * 1.6;
+        it.mesh.position.y = it.baseY + Math.sin(elapsed * 3.5 + it.animOffset) * 0.05;
+      }
+    }
+
+    if (this.frontDoorArrow && this.frontDoorArrow.visible) {
+      this.frontDoorArrow.position.y = this.LOWER_Y + 2.0 + Math.sin(elapsed * 4.5) * 0.14;
+      this.frontDoorArrow.rotation.y += dt * 2.0;
     }
   }
 }

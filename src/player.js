@@ -18,6 +18,7 @@ export class Player {
     // Speler toestand & aanpassingen
     this.state = 'SLEEPING'; // SLEEPING, WAKING, ACTIVE
     this.isDressed = false;
+    this.hasBackpack = false;
     this.toiletNeed = 100; // 100% hoge nood bij het wakker worden!
     this.toiletWiggleTimer = 0;
     this.walkCycle = 0;
@@ -507,7 +508,17 @@ export class Player {
     this.rightFootMesh.material = this.schoolShoesMat;
     if (this.backpackClassicMesh) this.backpackClassicMesh.visible = (this.customization.backpackType === 'CLASSIC');
     if (this.backpackSportMesh) this.backpackSportMesh.visible = (this.customization.backpackType === 'SPORT');
-    if (this.backpackGroup) this.backpackGroup.visible = (this.customization.backpackType !== 'NONE');
+    if (this.backpackGroup) this.backpackGroup.visible = this.hasBackpack && (this.customization.backpackType !== 'NONE');
+  }
+
+  equipBackpack() {
+    this.hasBackpack = true;
+    if (this.customization.backpackType === 'NONE') {
+      this.customization.backpackType = 'CLASSIC';
+    }
+    if (this.backpackClassicMesh) this.backpackClassicMesh.visible = (this.customization.backpackType === 'CLASSIC');
+    if (this.backpackSportMesh) this.backpackSportMesh.visible = (this.customization.backpackType === 'SPORT');
+    if (this.backpackGroup) this.backpackGroup.visible = true;
   }
 
   createThoughtBubble() {
@@ -580,6 +591,7 @@ export class Player {
     this.leftLegPivot.rotation.z = 0;
     this.rightLegPivot.rotation.z = 0;
 
+    this.hasBackpack = false;
     if (this.backpackGroup) {
       this.backpackGroup.visible = false;
     }

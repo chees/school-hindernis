@@ -352,6 +352,100 @@ class SoundEffects {
       }, idx * 110);
     });
   }
+
+  // Opraap-geluidje voor schooltas en schoolspullen
+  playPickup() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const notes = [659.25, 880, 1046.5]; // E5, A5, C6 (sprankelend opgaand arpeggio)
+    notes.forEach((freq, idx) => {
+      setTimeout(() => {
+        if (this.muted || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+
+        gain.gain.setValueAtTime(0.12, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.28);
+      }, idx * 75);
+    });
+  }
+
+  // Triomfantelijk geluidje als alle 5 schoolspullen gevonden zijn
+  playItemComplete() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5, E5, G5, C6, E6
+    notes.forEach((freq, idx) => {
+      setTimeout(() => {
+        if (this.muted || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.45);
+      }, idx * 95);
+    });
+  }
+
+  // Voordeur openzwaaien en vertrek naar school
+  playFrontDoor() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    // Deurklink klik
+    const clickOsc = this.ctx.createOscillator();
+    const clickGain = this.ctx.createGain();
+    clickOsc.type = 'triangle';
+    clickOsc.frequency.setValueAtTime(450, now);
+    clickOsc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+    clickGain.gain.setValueAtTime(0.15, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    clickOsc.connect(clickGain);
+    clickGain.connect(this.ctx.destination);
+    clickOsc.start(now);
+    clickOsc.stop(now + 0.08);
+
+    // Deur zwaai geluid
+    setTimeout(() => {
+      if (this.muted || !this.ctx) return;
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(90, t);
+      osc.frequency.linearRampToValueAtTime(150, t + 0.35);
+      gain.gain.setValueAtTime(0.1, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.4);
+    }, 90);
+  }
 }
 
 export const sounds = new SoundEffects();

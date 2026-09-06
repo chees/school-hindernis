@@ -14,6 +14,13 @@ class Game {
     this.elapsedTime = 0;
     this.timerInterval = null;
 
+    // Speurtocht toestand
+    this.hasBag = false;
+    this.speurtochtFound = { agenda: false, bottle: false, lunchbox: false, pencilcase: false, key: false };
+    this.speurtochtCountFound = 0;
+    this.speurtochtTotal = 5;
+    this.toastTimeout = null;
+
     this.initThree();
     this.initGameObjects();
     this.initUI();
@@ -139,8 +146,15 @@ class Game {
     this.toiletText = document.getElementById('hud-toilet-text');
     this.toiletFill = document.getElementById('hud-toilet-fill');
 
+    this.speurtochtHud = document.getElementById('speurtocht-hud');
+    this.speurtochtCount = document.getElementById('speurtocht-count');
+    this.pickupToast = document.getElementById('pickup-toast');
+    this.pickupToastIcon = document.getElementById('pickup-toast-icon');
+    this.pickupToastText = document.getElementById('pickup-toast-text');
+
     this.updateWeatherUI();
     this.updateToiletUI();
+    this.updateSpeurtochtUI();
 
     // Word wakker knop
     const wakeupBtn = document.getElementById('btn-wakeup');
@@ -185,6 +199,57 @@ class Game {
       this.wakeupModal.style.display = 'none';
       this.handleWakeup();
     }
+    if (new URLSearchParams(window.location.search).get('bag') === '1') {
+      this.wakeupModal.style.display = 'none';
+      this.player.position.set(-6.6 + 0.6, this.world.UPPER_Y, -1.0 + 0.6);
+      this.player.group.position.copy(this.player.position);
+      this.gameState = 'PLAYING';
+      this.player.state = 'ACTIVE';
+      this.player.bodyGroup.rotation.x = 0;
+      this.player.bodyGroup.rotation.z = 0;
+      sounds.stopAlarm();
+      this.world.interactiveObjects.alarmRinging = false;
+    }
+    if (new URLSearchParams(window.location.search).get('speurtocht') === '1') {
+      this.wakeupModal.style.display = 'none';
+      this.player.position.set(-6.6 + 0.6, this.world.UPPER_Y, -1.0 + 0.6);
+      this.player.group.position.copy(this.player.position);
+      this.gameState = 'PLAYING';
+      this.player.state = 'ACTIVE';
+      this.player.bodyGroup.rotation.x = 0;
+      this.player.bodyGroup.rotation.z = 0;
+      sounds.stopAlarm();
+      this.world.interactiveObjects.alarmRinging = false;
+      this.hasBag = true;
+      this.world.pickUpSchoolBag();
+      this.player.equipBackpack();
+      if (this.speurtochtHud) this.speurtochtHud.classList.add('visible');
+    }
+    if (new URLSearchParams(window.location.search).get('door') === '1') {
+      this.wakeupModal.style.display = 'none';
+      this.player.position.set(1.5, this.world.LOWER_Y, 11.5);
+      this.player.group.position.copy(this.player.position);
+      this.gameState = 'PLAYING';
+      this.player.state = 'ACTIVE';
+      this.player.bodyGroup.rotation.x = 0;
+      this.player.bodyGroup.rotation.z = 0;
+      sounds.stopAlarm();
+      this.world.interactiveObjects.alarmRinging = false;
+      this.player.isDressed = true;
+      this.player.wearSchoolClothes();
+      this.hasBag = true;
+      this.world.pickUpSchoolBag();
+      this.player.equipBackpack();
+      for (const k in this.world.speurtochtItems) {
+        this.world.pickUpSpeurtochtItem(k);
+        this.speurtochtFound[k] = true;
+      }
+      this.speurtochtCountFound = 5;
+      this.updateSpeurtochtUI();
+      if (this.speurtochtHud) this.speurtochtHud.classList.add('visible');
+      if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
+      if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;
+    }
     if (new URLSearchParams(window.location.search).get('wardrobe') === '1') {
       this.wakeupModal.style.display = 'none';
       this.player.position.set(-7.35 + 1.6, this.world.LOWER_Y, 7.5);
@@ -194,11 +259,44 @@ class Game {
     }
     if (new URLSearchParams(window.location.search).get('victory') === '1') {
       this.wakeupModal.style.display = 'none';
-      this.player.position.set(-7.35 + 1.6, this.world.LOWER_Y, 7.5);
+      this.player.position.set(1.5, this.world.LOWER_Y, 12.0);
       this.player.group.position.copy(this.player.position);
-      this.handleWardrobeReached();
-      this.finalizeOutfit();
-      this.victoryModal.classList.add('active');
+      this.player.isDressed = true;
+      this.player.wearSchoolClothes();
+      this.hasBag = true;
+      this.player.equipBackpack();
+      this.handleFrontDoorReached();
+    }
+  }
+
+  showPickupToast(icon, text) {
+    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    if (this.pickupToastIcon) this.pickupToastIcon.textContent = icon;
+    if (this.pickupToastText) this.pickupToastText.textContent = text;
+    if (this.pickupToast) {
+      this.pickupToast.classList.add('show');
+      this.toastTimeout = setTimeout(() => {
+        this.pickupToast.classList.remove('show');
+      }, 2200);
+    }
+  }
+
+  updateSpeurtochtUI() {
+    if (this.speurtochtCount) {
+      this.speurtochtCount.textContent = `${this.speurtochtCountFound}/${this.speurtochtTotal}`;
+    }
+    for (const key in this.speurtochtFound) {
+      const badge = document.getElementById('item-badge-' + key);
+      if (badge) {
+        const statusEl = badge.querySelector('.item-status');
+        if (this.speurtochtFound[key]) {
+          badge.classList.add('found');
+          if (statusEl) statusEl.textContent = '✅';
+        } else {
+          badge.classList.remove('found');
+          if (statusEl) statusEl.textContent = '⭕';
+        }
+      }
     }
   }
 
@@ -441,6 +539,14 @@ class Game {
     weather.currentWeather = weather.pickRandomWeather();
     this.updateWeatherUI();
 
+    // Speurtocht resetten
+    this.hasBag = false;
+    this.speurtochtFound = { agenda: false, bottle: false, lunchbox: false, pencilcase: false, key: false };
+    this.speurtochtCountFound = 0;
+    this.updateSpeurtochtUI();
+    if (this.speurtochtHud) this.speurtochtHud.classList.remove('visible');
+    this.world.resetSpeurtocht();
+
     this.player.setSleepingPose();
     this.player.isDressed = false;
     this.player.torsoMesh.material = this.player.pjTopMat;
@@ -639,6 +745,8 @@ class Game {
     const toilet = this.world.interactiveObjects.toilet;
     const sink = this.world.interactiveObjects.sink;
     const shower = this.world.interactiveObjects.shower;
+    const schoolBag = this.world.interactiveObjects.schoolBag;
+    const frontDoor = this.world.interactiveObjects.frontDoor;
 
     const onStairs = this.world.isOnStairs(playerPos.x, playerPos.z);
     const isDownstairs = playerPos.y < 1.0;
@@ -653,24 +761,36 @@ class Game {
         }
       } else if (onStairs) {
         this.setObjective('🪜 Oei, met een volle blaas op de trap! Wees voorzichtig...');
-      } else if (isDownstairs && !this.player.isDressed) {
-        this.setObjective('🚽 Hoge nood! Ga boven naar de badkamer, of kleed je eerst snel aan!');
+      } else if (isDownstairs) {
+        this.setObjective('🚽 Hoge nood! Ga boven naar de badkamer!');
       }
-    } else {
+    } else if (!this.hasBag) {
       if (!isDownstairs && !onStairs) {
-        this.setObjective('🏃 Heerlijk opgelucht! Neem de houten trap naar beneden.');
-      } else if (onStairs) {
-        this.setObjective('🪜 Daal voorzichtig de trap af...');
-      } else if (isDownstairs && !this.player.isDressed) {
-        this.setObjective('✨ Loop naar de kleerkast en open hem om je aan te kleden!');
+        this.setObjective('🎒 Pak je schooltas op je bureau in de slaapkamer!');
+      } else {
+        this.setObjective('🎒 Loop naar boven: pak je schooltas op je bureau in de slaapkamer!');
       }
+    } else if (this.speurtochtCountFound < this.speurtochtTotal) {
+      if (!this.player.isDressed) {
+        this.setObjective(`🎒 Speurtocht: ${this.speurtochtCountFound}/${this.speurtochtTotal} spullen gevonden! Vergeet je kleren niet bij de kast.`);
+      } else {
+        this.setObjective(`🎒 Speurtocht: zoek je schoolspullen door het huis (${this.speurtochtCountFound}/${this.speurtochtTotal})!`);
+      }
+    } else if (!this.player.isDressed) {
+      this.setObjective('✨ Alle schoolspullen in je tas! Ga nu naar de kleerkast beneden om je aan te kleden!');
+    } else {
+      this.setObjective('🚪 Alles compleet en aangekleed! Ren naar de voordeur en ga naar school!');
+      if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
+      if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;
     }
 
     // Afstanden tot interactieve objecten
     const distToToilet = toilet ? playerPos.distanceTo(toilet.position) : 999;
     const distToSink = sink ? playerPos.distanceTo(sink.position) : 999;
     const distToShower = shower ? playerPos.distanceTo(shower.position) : 999;
-    const distToWardrobe = playerPos.distanceTo(wardrobe.position);
+    const distToBag = (!this.hasBag && schoolBag) ? playerPos.distanceTo(schoolBag.position) : 999;
+    const distToWardrobe = wardrobe ? playerPos.distanceTo(wardrobe.position) : 999;
+    const distToDoor = frontDoor ? playerPos.distanceTo(frontDoor.position) : 999;
 
     let activeInteraction = null;
 
@@ -679,32 +799,68 @@ class Game {
       this.promptEl.textContent = this.player.toiletNeed > 0
         ? '🚽 Druk op [E] of tik op [WC] om naar de wc te gaan!'
         : '🚽 Druk op [E] of tik op [WC] om nog eens door te spoelen!';
-      this.promptEl.classList.add('visible');
-      this.actionBtn.classList.add('active-glow');
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚽';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'WC';
     } else if (distToSink <= sink.radius) {
       activeInteraction = 'SINK';
       this.promptEl.textContent = '🚰 Druk op [E] of tik op [Kraan] om je handen te wassen!';
-      this.promptEl.classList.add('visible');
-      this.actionBtn.classList.add('active-glow');
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚰';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kraan';
     } else if (distToShower <= shower.radius) {
       activeInteraction = 'SHOWER';
       this.promptEl.textContent = '🚿 Druk op [E] of tik op [Douche] om de douche te starten!';
-      this.promptEl.classList.add('visible');
-      this.actionBtn.classList.add('active-glow');
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚿';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Douche';
+    } else if (!this.hasBag && schoolBag && distToBag <= schoolBag.radius) {
+      activeInteraction = 'BAG';
+      this.promptEl.textContent = '🎒 Druk op [E] of tik op [Tas] om je schooltas te pakken!';
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🎒';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Tas';
     } else if (distToWardrobe <= wardrobe.radius && !this.player.isDressed) {
       activeInteraction = 'WARDROBE';
       this.promptEl.textContent = '✨ Druk op [E] of tik op [Kast] om je aan te kleden!';
-      this.promptEl.classList.add('visible');
-      this.actionBtn.classList.add('active-glow');
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚪';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kast';
-    } else {
+    } else if (frontDoor && distToDoor <= frontDoor.radius) {
+      const isReady = this.player.isDressed && this.hasBag && (this.speurtochtCountFound === this.speurtochtTotal);
+      if (isReady) {
+        activeInteraction = 'FRONTDOOR';
+        this.promptEl.textContent = '🚪 Druk op [E] of tik op [School] om te vertrekken!';
+        if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚪';
+        if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'School';
+      } else {
+        if (!this.player.isDressed) {
+          this.promptEl.textContent = '⚠️ Je loopt nog in pyjama! Kleed je eerst aan bij de kast.';
+        } else if (!this.hasBag) {
+          this.promptEl.textContent = '⚠️ Je hebt je schooltas nog niet! Pak hem boven op je bureau.';
+        } else {
+          this.promptEl.textContent = `⚠️ Je bent nog spullen vergeten! (${this.speurtochtCountFound}/5 in tas)`;
+        }
+      }
+    }
+
+    // Speurtocht items controleren als speler de tas heeft
+    if (!activeInteraction && this.hasBag) {
+      for (const key in this.world.speurtochtItems) {
+        const it = this.world.speurtochtItems[key];
+        const interactObj = this.world.interactiveObjects['item_' + key];
+        if (!it.picked && interactObj) {
+          const d = playerPos.distanceTo(interactObj.position);
+          if (d <= interactObj.radius) {
+            activeInteraction = 'ITEM_' + key;
+            this.promptEl.textContent = `${it.icon} Druk op [E] of tik op [Pak] om ${it.name} te pakken!`;
+            if (this.actionBtnIcon) this.actionBtnIcon.textContent = it.icon;
+            if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Pak';
+            break;
+          }
+        }
+      }
+    }
+
+    if (activeInteraction) {
+      this.promptEl.classList.add('visible');
+      this.actionBtn.classList.add('active-glow');
+    } else if (!frontDoor || distToDoor > frontDoor.radius) {
       this.promptEl.classList.remove('visible');
       this.actionBtn.classList.remove('active-glow');
     }
@@ -717,16 +873,43 @@ class Game {
         this.world.flushToilet();
         this.player.useToilet();
         this.updateToiletUI();
-        this.setObjective('🚰 Lekker opgelucht! Was even je handen of loop naar de trap!');
+        sounds.playRelief();
+        this.setObjective('🚰 Lekker opgelucht! Was even je handen of pak je tas!');
       } else if (activeInteraction === 'SINK') {
         this.world.toggleSink();
         sounds.playWaterTap();
-        this.setObjective('🧼 Handen lekker gewassen! Ga nu naar de kleerkast beneden!');
+        this.setObjective('🧼 Handen lekker fris gewassen!');
       } else if (activeInteraction === 'SHOWER') {
         this.world.toggleShower();
         sounds.playShower();
+      } else if (activeInteraction === 'BAG') {
+        this.hasBag = true;
+        this.world.pickUpSchoolBag();
+        this.player.equipBackpack();
+        sounds.playPickup();
+        if (this.speurtochtHud) this.speurtochtHud.classList.add('visible');
+        this.showPickupToast('🎒', 'Schooltas gepakt! Speurtocht gestart!');
+        this.updateSpeurtochtUI();
+      } else if (activeInteraction.startsWith('ITEM_')) {
+        const key = activeInteraction.replace('ITEM_', '');
+        const it = this.world.speurtochtItems[key];
+        this.world.pickUpSpeurtochtItem(key);
+        this.speurtochtFound[key] = true;
+        this.speurtochtCountFound++;
+        this.updateSpeurtochtUI();
+        sounds.playPickup();
+        this.showPickupToast(it.icon, `${it.name} gepakt! (${this.speurtochtCountFound}/${this.speurtochtTotal})`);
+        if (this.speurtochtCountFound === this.speurtochtTotal) {
+          sounds.playItemComplete();
+          if (this.player.isDressed) {
+            if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
+            if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;
+          }
+        }
       } else if (activeInteraction === 'WARDROBE') {
         this.handleWardrobeReached();
+      } else if (activeInteraction === 'FRONTDOOR') {
+        this.handleFrontDoorReached();
       }
     }
   }
@@ -762,12 +945,44 @@ class Game {
     sounds.playWardrobeOpen();
     this.triggerConfetti(this.player.position);
 
+    this.gameState = 'PLAYING';
+
+    if (this.world.wardrobeArrow) this.world.wardrobeArrow.visible = false;
+    if (this.world.wardrobeMarker) this.world.wardrobeMarker.visible = false;
+
+    if (this.hasBag && this.speurtochtCountFound === this.speurtochtTotal) {
+      if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
+      if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;
+      this.setObjective('🚪 Alles compleet en aangekleed! Ren naar de voordeur om naar school te gaan!');
+    } else if (!this.hasBag) {
+      this.setObjective('🎒 Mooie outfit! Pak nu je schooltas op je bureau in de slaapkamer!');
+    } else {
+      this.setObjective(`🎒 Mooie outfit! Zoek nu de rest van je schoolspullen (${this.speurtochtCountFound}/${this.speurtochtTotal})!`);
+    }
+  }
+
+  handleFrontDoorReached() {
+    if (this.gameState === 'WON') return;
+
+    this.world.openFrontDoor();
+    sounds.playFrontDoor();
+    this.triggerConfetti(this.player.position);
+
     this.gameState = 'WON';
     this.elapsedTime = (performance.now() - this.startTime) / 1000;
-    this.setObjective('🎉 Je bent helemaal aangekleed en klaar voor school!');
+    this.setObjective('🎉 Je bent helemaal klaar en vertrekt naar school!');
 
     const seconds = this.elapsedTime.toFixed(1);
     this.finalTimeEl.textContent = `${seconds}s`;
+
+    // Speurtocht score
+    const speurtochtBox = document.getElementById('speurtocht-result-box');
+    if (speurtochtBox) {
+      speurtochtBox.innerHTML = `
+        <div style="font-size: 18px; margin-bottom: 3px;">🌟 Speurtocht: 5/5 Schoolspullen Verzameld!</div>
+        <div>Agenda, drinkfles, broodtrommel, etui en fietssleutel allemaal op tijd in je tas!</div>
+      `;
+    }
 
     // Controleer weer-geschiktheid
     const weatherCheck = weather.checkOutfit(this.player.customization.topType);
@@ -804,13 +1019,13 @@ class Game {
       const topName = this.player.customization.topType === 'SWEATER' ? 'warme trui' : 'T-shirt met korte mouwen';
       const bottomName = this.player.customization.bottomType === 'PANTS' ? 'lange broek' : 'korte broek';
       const genderName = this.player.customization.gender === 'BOY' ? 'stoere jongen' : 'hippe meid';
-      const bagName = this.player.customization.backpackType === 'CLASSIC' ? 'rugzak' : (this.player.customization.backpackType === 'SPORT' ? 'schoudertas' : 'geen tas');
-      outfitDesc.textContent = `Je hebt gekozen voor een ${genderName} met een ${topName}, ${bottomName} en ${bagName}!`;
+      const bagName = this.player.customization.backpackType === 'CLASSIC' ? 'rugzak' : (this.player.customization.backpackType === 'SPORT' ? 'schoudertas' : 'tas');
+      outfitDesc.textContent = `Je bent vertrokken als een ${genderName} met een ${topName}, ${bottomName} en je gevulde ${bagName} om!`;
     }
 
     setTimeout(() => {
       this.victoryModal.classList.add('active');
-    }, 1200);
+    }, 1000);
   }
 
   animate(time) {
