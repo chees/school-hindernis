@@ -161,7 +161,34 @@ export class GameWorld {
       itemPencilLead: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.6 }),
       itemAccentRed: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 }),
       backpackDeskMat: new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 }),
-      backpackPocketMat: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.7 })
+      backpackPocketMat: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.7 }),
+
+      // Buiten, Auto en School materialen
+      grass: new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.85 }),
+      gardenPavement: new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.75 }),
+      drivewayAsphalt: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6 }),
+      roadAsphalt: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 }),
+      roadMarking: new THREE.MeshBasicMaterial({ color: 0xf8fafc }),
+      sidewalkMat: new THREE.MeshStandardMaterial({ color: 0xcfd8dc, roughness: 0.7 }),
+      fenceWood: new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.6 }),
+      treeTrunk: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 }),
+      treeLeaves: new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.7 }),
+      treeLeaves2: new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7 }),
+      carPaint: new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.45, roughness: 0.25 }),
+      carGlass: new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.6, roughness: 0.1 }),
+      carTire: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 }),
+      carRim: new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.85, roughness: 0.2 }),
+      carHeadlight: new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.7 }),
+      carTaillight: new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 0.6 }),
+      schoolBrick: new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.8 }),
+      schoolWallInterior: new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.5 }),
+      schoolFloorCheck: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 }),
+      schoolDoorMat: new THREE.MeshStandardMaterial({ color: 0x0d9488, roughness: 0.4 }),
+      lockerYellow: new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.3, roughness: 0.4 }),
+      lockerBlue: new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.3, roughness: 0.4 }),
+      lockerGreen: new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.3, roughness: 0.4 }),
+      lockerPink: new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.3, roughness: 0.4 }),
+      lockerInside: new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.5, roughness: 0.5 })
     };
   }
 
@@ -175,10 +202,13 @@ export class GameWorld {
     this.createDecorations();
     this.createSchoolBag(-6.6, this.UPPER_Y, -1.0);
     this.createSpeurtochtItems();
+    this.createOutdoorEnvironment();
+    this.createCar();
+    this.createSchoolAndLockers();
   }
 
   createLights() {
-    const ambientLight = new THREE.AmbientLight(0xfff7ed, 0.75);
+    const ambientLight = new THREE.AmbientLight(0xfff7ed, 0.8);
     this.scene.add(ambientLight);
 
     const sunLight = new THREE.DirectionalLight(0xfffae6, 1.15);
@@ -194,6 +224,11 @@ export class GameWorld {
     sunLight.shadow.bias = -0.0008;
     sunLight.shadow.normalBias = 0.03;
     this.scene.add(sunLight);
+
+    // Buitenverlichting en schoolverlichting
+    const outdoorLight = new THREE.DirectionalLight(0xfffbeb, 0.95);
+    outdoorLight.position.set(12, 22, 55);
+    this.scene.add(outdoorLight);
 
     const hallLight = new THREE.PointLight(0xffdfba, 0.85, 14);
     hallLight.position.set(0, 2.6, 6);
@@ -763,7 +798,10 @@ export class GameWorld {
 
     // Muren beneden (hoogte 3.35m, stoppen netjes 5cm onder de slaapkamervloerplaat)
     this.addWall(-0.5, y + 1.675, -4.0, 15.0, 3.35, 0.2, this.materials.wallLower);
-    this.addWall(-0.5, y + 1.675, 13.5, 15.0, 3.35, 0.2, this.materials.wallLower);
+    // Zuidwand beneden met deuropening voor de voordeur (deurbreedte 1.6m van x = 0.7 tot 2.3)
+    this.addWall(-3.65, y + 1.675, 13.5, 8.7, 3.35, 0.2, this.materials.wallLower);
+    this.addWall(4.65, y + 1.675, 13.5, 4.7, 3.35, 0.2, this.materials.wallLower);
+    this.addWall(1.5, y + 2.975, 13.5, 1.6, 0.75, 0.2, this.materials.wallLower);
     this.addWall(-8.0, y + 1.675, 4.75, 0.2, 3.35, 17.5, this.materials.wallLower);
     this.addWall(7.0, y + 1.675, 4.75, 0.2, 3.35, 17.5, this.materials.wallLower);
 
@@ -1133,10 +1171,22 @@ export class GameWorld {
       opened: false,
       onInteract: () => this.openFrontDoor()
     };
+
+    // Collider voor gesloten voordeur
+    this.frontDoorCollider = {
+      minX: x - 0.8, maxX: x + 0.8,
+      minY: y, maxY: y + 2.6,
+      minZ: z - 0.15, maxZ: z + 0.15,
+      enabled: true
+    };
+    this.colliders.push(this.frontDoorCollider);
   }
 
   openFrontDoor() {
     this.interactiveObjects.frontDoor.opened = true;
+    if (this.frontDoorCollider) {
+      this.frontDoorCollider.enabled = false;
+    }
     if (this.frontDoorGroup) {
       this.frontDoorGroup.rotation.y = -Math.PI / 2.2;
     }
@@ -1462,7 +1512,22 @@ export class GameWorld {
     if (this.frontDoorGroup) this.frontDoorGroup.rotation.y = 0;
     if (this.frontDoorArrow) this.frontDoorArrow.visible = false;
     if (this.frontDoorMarker) this.frontDoorMarker.visible = false;
+    if (this.frontDoorCollider) this.frontDoorCollider.enabled = true;
     if (this.interactiveObjects.frontDoor) this.interactiveObjects.frontDoor.opened = false;
+
+    if (this.carGroup) {
+      this.carGroup.position.set(1.5, this.LOWER_Y, 20.0);
+      this.carGroup.rotation.set(0, 0, 0);
+    }
+    if (this.carArrow) this.carArrow.visible = false;
+    if (this.carMarker) this.carMarker.visible = false;
+    if (this.interactiveObjects.car) this.interactiveObjects.car.boarded = false;
+
+    if (this.lockerDoorGroup) this.lockerDoorGroup.rotation.y = 0;
+    if (this.lockerArrow) this.lockerArrow.visible = false;
+    if (this.lockerMarker) this.lockerMarker.visible = false;
+    if (this.lockerItemsGroup) this.lockerItemsGroup.visible = false;
+    if (this.interactiveObjects.locker) this.interactiveObjects.locker.opened = false;
   }
 
   createCoatRack(x, y, z) {
@@ -1594,6 +1659,7 @@ export class GameWorld {
     const playerFeet = playerY + 0.15;
     const playerHead = playerY + 1.35;
     for (const box of this.colliders) {
+      if (box.enabled === false) continue;
       if (playerFeet <= box.maxY && playerHead >= box.minY) {
         if (
           newX + radius > box.minX &&
@@ -1656,5 +1722,611 @@ export class GameWorld {
       this.frontDoorArrow.position.y = this.LOWER_Y + 2.0 + Math.sin(elapsed * 4.5) * 0.14;
       this.frontDoorArrow.rotation.y += dt * 2.0;
     }
+
+    if (this.carArrow && this.carArrow.visible) {
+      this.carArrow.position.y = this.LOWER_Y + 2.5 + Math.sin(elapsed * 4.5) * 0.14;
+      this.carArrow.rotation.y += dt * 2.0;
+    }
+
+    if (this.lockerArrow && this.lockerArrow.visible) {
+      this.lockerArrow.position.y = this.LOWER_Y + 2.0 + Math.sin(elapsed * 4.5) * 0.14;
+      this.lockerArrow.rotation.y += dt * 2.0;
+    }
+  }
+
+  // --- BUITENOMGEVING, STRAAT & VOORTUIN ---
+  createOutdoorEnvironment() {
+    const y = this.LOWER_Y;
+
+    // 1. Voortuin & Paden
+    // Betegeld tuinpad van voordeur (z: 13.5) naar oprit (z: 23.0)
+    const pathGeo = new THREE.PlaneGeometry(1.8, 9.5);
+    pathGeo.rotateX(-Math.PI / 2);
+    const path = new THREE.Mesh(pathGeo, this.materials.gardenPavement);
+    path.position.set(1.5, y + 0.003, 18.25);
+    path.receiveShadow = true;
+    this.scene.add(path);
+
+    // Verhoogde stenen bordes bij de voordeur
+    const porchGeo = new THREE.BoxGeometry(2.2, 0.08, 1.2);
+    const porch = new THREE.Mesh(porchGeo, this.materials.gardenPavement);
+    porch.position.set(1.5, y + 0.04, 14.1);
+    porch.receiveShadow = true;
+    this.scene.add(porch);
+
+    // Oprit voor de auto
+    const drivewayGeo = new THREE.PlaneGeometry(4.2, 9.5);
+    drivewayGeo.rotateX(-Math.PI / 2);
+    const driveway = new THREE.Mesh(drivewayGeo, this.materials.drivewayAsphalt);
+    driveway.position.set(1.5, y + 0.002, 18.25);
+    driveway.receiveShadow = true;
+    this.scene.add(driveway);
+
+    // Grasveld links en rechts van de voortuin
+    const lawnLeftGeo = new THREE.PlaneGeometry(10.0, 9.5);
+    lawnLeftGeo.rotateX(-Math.PI / 2);
+    const lawnLeft = new THREE.Mesh(lawnLeftGeo, this.materials.grass);
+    lawnLeft.position.set(-5.5, y + 0.001, 18.25);
+    lawnLeft.receiveShadow = true;
+    this.scene.add(lawnLeft);
+
+    const lawnRightGeo = new THREE.PlaneGeometry(10.0, 9.5);
+    lawnRightGeo.rotateX(-Math.PI / 2);
+    const lawnRight = new THREE.Mesh(lawnRightGeo, this.materials.grass);
+    lawnRight.position.set(8.5, y + 0.001, 18.25);
+    lawnRight.receiveShadow = true;
+    this.scene.add(lawnRight);
+
+    // Houten tuinhekje langs perceelsgrenzen
+    this.addWall(-8.2, y + 0.45, 18.25, 0.15, 0.9, 9.5, this.materials.fenceWood);
+    this.addWall(8.2, y + 0.45, 18.25, 0.15, 0.9, 9.5, this.materials.fenceWood);
+
+    // 2. De Straat naar School (z: 23.0 tot 78.0)
+    const roadLength = 56.0;
+    const roadZCenter = 23.0 + roadLength / 2; // 51.0
+    const roadGeo = new THREE.PlaneGeometry(8.5, roadLength);
+    roadGeo.rotateX(-Math.PI / 2);
+    const road = new THREE.Mesh(roadGeo, this.materials.roadAsphalt);
+    road.position.set(0, y + 0.002, roadZCenter);
+    road.receiveShadow = true;
+    this.scene.add(road);
+
+    // Witte middenstrepen op de weg
+    const stripeCount = 14;
+    for (let i = 0; i < stripeCount; i++) {
+      const stripeGeo = new THREE.PlaneGeometry(0.2, 2.2);
+      stripeGeo.rotateX(-Math.PI / 2);
+      const stripe = new THREE.Mesh(stripeGeo, this.materials.roadMarking);
+      stripe.position.set(0, y + 0.004, 25.0 + i * 3.8);
+      this.scene.add(stripe);
+    }
+
+    // Trottoir / Stoep links en rechts
+    const sidewalkGeo = new THREE.BoxGeometry(2.5, 0.14, roadLength);
+    const sidewalkLeft = new THREE.Mesh(sidewalkGeo, this.materials.sidewalkMat);
+    sidewalkLeft.position.set(-5.5, y + 0.07, roadZCenter);
+    sidewalkLeft.receiveShadow = true;
+    this.scene.add(sidewalkLeft);
+
+    const sidewalkRight = new THREE.Mesh(sidewalkGeo, this.materials.sidewalkMat);
+    sidewalkRight.position.set(5.5, y + 0.07, roadZCenter);
+    sidewalkRight.receiveShadow = true;
+    this.scene.add(sidewalkRight);
+
+    // Grasstroken naast de stoepen
+    const grassStripLeft = new THREE.Mesh(new THREE.PlaneGeometry(16.0, roadLength), this.materials.grass);
+    grassStripLeft.rotateX(-Math.PI / 2);
+    grassStripLeft.position.set(-14.5, y + 0.001, roadZCenter);
+    this.scene.add(grassStripLeft);
+
+    const grassStripRight = new THREE.Mesh(new THREE.PlaneGeometry(16.0, roadLength), this.materials.grass);
+    grassStripRight.rotateX(-Math.PI / 2);
+    grassStripRight.position.set(14.5, y + 0.001, roadZCenter);
+    this.scene.add(grassStripRight);
+
+    // Zebrapad bij z = 72 vlak voor de school
+    for (let k = -3.2; k <= 3.2; k += 0.9) {
+      const zStripe = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 3.2), this.materials.roadMarking);
+      zStripe.rotateX(-Math.PI / 2);
+      zStripe.position.set(k, y + 0.005, 72.0);
+      this.scene.add(zStripe);
+    }
+
+    // Bomen en straatlantaarns langs de weg
+    const treePositions = [
+      { x: -5.5, z: 28.0 }, { x: 5.5, z: 32.0 },
+      { x: -5.5, z: 42.0 }, { x: 5.5, z: 46.0 },
+      { x: -5.5, z: 56.0 }, { x: 5.5, z: 60.0 },
+      { x: -5.5, z: 69.0 }, { x: 5.5, z: 70.0 }
+    ];
+    for (const pos of treePositions) {
+      this.createTree(pos.x, y + 0.14, pos.z);
+    }
+
+    // Straatlantaarns
+    const lampPositions = [
+      { x: -4.4, z: 35.0 }, { x: 4.4, z: 49.0 }, { x: -4.4, z: 63.0 }
+    ];
+    for (const lp of lampPositions) {
+      this.createStreetLamp(lp.x, y + 0.14, lp.z);
+    }
+
+    // Verkeersbord "School 🚸 Zone 30"
+    this.createSchoolRoadSign(4.5, y + 0.14, 65.0);
+  }
+
+  createTree(x, y, z) {
+    const treeGroup = new THREE.Group();
+    treeGroup.position.set(x, y, z);
+
+    // Stam
+    const trunkGeo = new THREE.CylinderGeometry(0.2, 0.28, 2.2, 8);
+    const trunk = new THREE.Mesh(trunkGeo, this.materials.treeTrunk);
+    trunk.position.set(0, 1.1, 0);
+    trunk.castShadow = true;
+    treeGroup.add(trunk);
+
+    // Bladeren (twee bollen)
+    const leavesGeo1 = new THREE.DodecahedronGeometry(1.3, 1);
+    const leaves1 = new THREE.Mesh(leavesGeo1, this.materials.treeLeaves);
+    leaves1.position.set(0, 2.8, 0);
+    leaves1.castShadow = true;
+    treeGroup.add(leaves1);
+
+    const leavesGeo2 = new THREE.DodecahedronGeometry(1.0, 1);
+    const leaves2 = new THREE.Mesh(leavesGeo2, this.materials.treeLeaves2);
+    leaves2.position.set(0, 3.8, 0);
+    leaves2.castShadow = true;
+    treeGroup.add(leaves2);
+
+    this.scene.add(treeGroup);
+  }
+
+  createStreetLamp(x, y, z) {
+    const lampGroup = new THREE.Group();
+    lampGroup.position.set(x, y, z);
+
+    const poleGeo = new THREE.CylinderGeometry(0.06, 0.08, 4.2, 8);
+    const pole = new THREE.Mesh(poleGeo, this.materials.metal);
+    pole.position.set(0, 2.1, 0);
+    lampGroup.add(pole);
+
+    const armGeo = new THREE.BoxGeometry(0.8, 0.06, 0.06);
+    const arm = new THREE.Mesh(armGeo, this.materials.metal);
+    arm.position.set(x > 0 ? -0.35 : 0.35, 4.15, 0);
+    lampGroup.add(arm);
+
+    const bulbGeo = new THREE.SphereGeometry(0.18, 8, 8);
+    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+    const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+    bulb.position.set(x > 0 ? -0.7 : 0.7, 4.05, 0);
+    lampGroup.add(bulb);
+
+    this.scene.add(lampGroup);
+  }
+
+  createSchoolRoadSign(x, y, z) {
+    const signGroup = new THREE.Group();
+    signGroup.position.set(x, y, z);
+
+    const poleGeo = new THREE.CylinderGeometry(0.04, 0.04, 2.2, 8);
+    const pole = new THREE.Mesh(poleGeo, this.materials.metal);
+    pole.position.set(0, 1.1, 0);
+    signGroup.add(pole);
+
+    // Bord
+    const signPlateGeo = new THREE.BoxGeometry(0.65, 0.65, 0.04);
+    const signPlateMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.4 });
+    const signPlate = new THREE.Mesh(signPlateGeo, signPlateMat);
+    signPlate.position.set(0, 2.0, 0);
+    signGroup.add(signPlate);
+
+    const borderGeo = new THREE.BoxGeometry(0.72, 0.72, 0.03);
+    const borderMat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
+    const border = new THREE.Mesh(borderGeo, borderMat);
+    border.position.set(0, 2.0, -0.01);
+    signGroup.add(border);
+
+    this.scene.add(signGroup);
+  }
+
+  // --- DE AUTO ---
+  createCar() {
+    const x = 1.5;
+    const y = this.LOWER_Y;
+    const z = 20.0;
+
+    this.carGroup = new THREE.Group();
+    this.carGroup.position.set(x, y, z);
+
+    // 1. Onderstel / Chassis
+    const chassisGeo = new THREE.BoxGeometry(2.0, 0.62, 3.8);
+    const chassis = new THREE.Mesh(chassisGeo, this.materials.carPaint);
+    chassis.position.set(0, 0.52, 0);
+    chassis.castShadow = true;
+    chassis.receiveShadow = true;
+    this.carGroup.add(chassis);
+
+    // Bumpers
+    const bumperFrontGeo = new THREE.BoxGeometry(2.04, 0.22, 0.16);
+    const bumperFront = new THREE.Mesh(bumperFrontGeo, this.materials.metal);
+    bumperFront.position.set(0, 0.38, 1.95);
+    this.carGroup.add(bumperFront);
+
+    const bumperRear = new THREE.Mesh(bumperFrontGeo, this.materials.metal);
+    bumperRear.position.set(0, 0.38, -1.95);
+    this.carGroup.add(bumperRear);
+
+    // 2. Cabine & Dak
+    const cabinGeo = new THREE.BoxGeometry(1.8, 0.65, 2.1);
+    const cabin = new THREE.Mesh(cabinGeo, this.materials.carPaint);
+    cabin.position.set(0, 1.15, -0.2);
+    cabin.castShadow = true;
+    this.carGroup.add(cabin);
+
+    // Voorruit
+    const windshieldGeo = new THREE.PlaneGeometry(1.68, 0.62);
+    const windshield = new THREE.Mesh(windshieldGeo, this.materials.carGlass);
+    windshield.position.set(0, 1.14, 0.88);
+    windshield.rotation.x = -Math.PI / 7;
+    this.carGroup.add(windshield);
+
+    // Achterruit
+    const rearWindowGeo = new THREE.PlaneGeometry(1.68, 0.58);
+    const rearWindow = new THREE.Mesh(rearWindowGeo, this.materials.carGlass);
+    rearWindow.position.set(0, 1.14, -1.28);
+    rearWindow.rotation.x = Math.PI / 8;
+    this.carGroup.add(rearWindow);
+
+    // Zijramen
+    const sideWindowGeo = new THREE.PlaneGeometry(1.9, 0.48);
+    const leftWindow = new THREE.Mesh(sideWindowGeo, this.materials.carGlass);
+    leftWindow.position.set(-0.91, 1.14, -0.2);
+    leftWindow.rotation.y = -Math.PI / 2;
+    this.carGroup.add(leftWindow);
+
+    const rightWindow = new THREE.Mesh(sideWindowGeo, this.materials.carGlass);
+    rightWindow.position.set(0.91, 1.14, -0.2);
+    rightWindow.rotation.y = Math.PI / 2;
+    this.carGroup.add(rightWindow);
+
+    // 3. Wielen
+    this.carWheels = [];
+    const wheelPositions = [
+      { x: -1.02, y: 0.34, z: 1.15 },
+      { x: 1.02, y: 0.34, z: 1.15 },
+      { x: -1.02, y: 0.34, z: -1.15 },
+      { x: 1.02, y: 0.34, z: -1.15 }
+    ];
+
+    for (const wp of wheelPositions) {
+      const wheelGroup = new THREE.Group();
+      wheelGroup.position.set(wp.x, wp.y, wp.z);
+
+      const tireGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.24, 16);
+      tireGeo.rotateZ(Math.PI / 2);
+      const tire = new THREE.Mesh(tireGeo, this.materials.carTire);
+      tire.castShadow = true;
+      wheelGroup.add(tire);
+
+      const rimGeo = new THREE.CylinderGeometry(0.20, 0.20, 0.25, 16);
+      rimGeo.rotateZ(Math.PI / 2);
+      const rim = new THREE.Mesh(rimGeo, this.materials.carRim);
+      wheelGroup.add(rim);
+
+      this.carGroup.add(wheelGroup);
+      this.carWheels.push(wheelGroup);
+    }
+
+    // 4. Koplampen en Achterlichten
+    const hlGeo = new THREE.BoxGeometry(0.32, 0.16, 0.08);
+    const hlLeft = new THREE.Mesh(hlGeo, this.materials.carHeadlight);
+    hlLeft.position.set(-0.68, 0.58, 1.91);
+    this.carGroup.add(hlLeft);
+
+    const hlRight = new THREE.Mesh(hlGeo, this.materials.carHeadlight);
+    hlRight.position.set(0.68, 0.58, 1.91);
+    this.carGroup.add(hlRight);
+
+    // Achterlichten
+    const tlLeft = new THREE.Mesh(hlGeo, this.materials.carTaillight);
+    tlLeft.position.set(-0.68, 0.58, -1.91);
+    this.carGroup.add(tlLeft);
+
+    const tlRight = new THREE.Mesh(hlGeo, this.materials.carTaillight);
+    tlRight.position.set(0.68, 0.58, -1.91);
+    this.carGroup.add(tlRight);
+
+    this.scene.add(this.carGroup);
+
+    // Gouden vloermarker en zwevende richtingspijl
+    const carMarkerGeo = new THREE.RingGeometry(0.8, 1.2, 32);
+    carMarkerGeo.rotateX(-Math.PI / 2);
+    this.carMarker = new THREE.Mesh(carMarkerGeo, new THREE.MeshBasicMaterial({
+      color: 0x0284c7,
+      side: THREE.DoubleSide
+    }));
+    this.carMarker.position.set(x, y + 0.01, z);
+    this.carMarker.visible = false;
+    this.scene.add(this.carMarker);
+
+    const carArrowGeo = new THREE.ConeGeometry(0.32, 0.65, 16);
+    carArrowGeo.rotateX(Math.PI);
+    this.carArrow = new THREE.Mesh(carArrowGeo, new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.9
+    }));
+    this.carArrow.position.set(x, y + 2.5, z);
+    this.carArrow.visible = false;
+    this.scene.add(this.carArrow);
+
+    this.interactiveObjects.car = {
+      position: new THREE.Vector3(x, y, z),
+      radius: 3.2,
+      onInteract: () => {}
+    };
+  }
+
+  // --- HET SCHOOLGEBOUW & KLUISJES ---
+  createSchoolAndLockers() {
+    const y = this.LOWER_Y;
+    const schoolZ = 86.0;
+
+    // 1. Schoolplein & Kiss & Ride parkeerhaven (z: 76.0 tot 86.0)
+    const yardGeo = new THREE.PlaneGeometry(24.0, 10.0);
+    yardGeo.rotateX(-Math.PI / 2);
+    const yard = new THREE.Mesh(yardGeo, this.materials.gardenPavement);
+    yard.position.set(0, y + 0.003, 81.0);
+    yard.receiveShadow = true;
+    this.scene.add(yard);
+
+    // Gele markering Kiss & Ride parkeervak voor de school (x: -2 tot 3, z: 75.0 tot 79.0)
+    const krLineGeo = new THREE.PlaneGeometry(0.2, 5.0);
+    krLineGeo.rotateX(-Math.PI / 2);
+    const krLineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    const krLineLeft = new THREE.Mesh(krLineGeo, krLineMat);
+    krLineLeft.position.set(-1.2, y + 0.006, 76.5);
+    this.scene.add(krLineLeft);
+
+    const krLineRight = new THREE.Mesh(krLineGeo, krLineMat);
+    krLineRight.position.set(2.2, y + 0.006, 76.5);
+    this.scene.add(krLineRight);
+
+    // Fietsenrek op het schoolplein (x: -7.5, z: 81.0)
+    const bikeRackGeo = new THREE.BoxGeometry(3.5, 0.7, 0.4);
+    const bikeRack = new THREE.Mesh(bikeRackGeo, this.materials.metal);
+    bikeRack.position.set(-7.5, y + 0.35, 81.0);
+    this.scene.add(bikeRack);
+
+    // 2. School Voorgevel (z = 86.0)
+    // Linker voorgevel (x = -12.0 tot -1.6, breedte 10.4)
+    this.addWall(-6.8, y + 3.0, schoolZ, 10.4, 6.0, 0.3, this.materials.schoolBrick);
+    // Rechter voorgevel (x = 1.6 tot 12.0, breedte 10.4)
+    this.addWall(6.8, y + 3.0, schoolZ, 10.4, 6.0, 0.3, this.materials.schoolBrick);
+    // Boven de ingang (x = -1.6 tot 1.6, y = 3.2 tot 6.0)
+    this.addWall(0, y + 4.6, schoolZ, 3.2, 2.8, 0.3, this.materials.schoolBrick);
+
+    // Grote ramen in de schoolgevel
+    const windowMat = new THREE.MeshStandardMaterial({ color: 0xbae6fd, roughness: 0.1, metalness: 0.2 });
+    const winLeft = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 2.2), windowMat);
+    winLeft.position.set(-6.5, y + 3.2, schoolZ - 0.16);
+    this.scene.add(winLeft);
+
+    const winRight = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 2.2), windowMat);
+    winRight.position.set(6.5, y + 3.2, schoolZ - 0.16);
+    this.scene.add(winRight);
+
+    // Entree overkapping & Naambord
+    const canopyGeo = new THREE.BoxGeometry(4.2, 0.2, 2.2);
+    const canopy = new THREE.Mesh(canopyGeo, this.materials.schoolDoorMat);
+    canopy.position.set(0, y + 3.3, schoolZ - 1.1);
+    this.scene.add(canopy);
+
+    // Schoolnaambord: "BASISSCHOOL DE WISSEL"
+    const signBoardGeo = new THREE.BoxGeometry(3.6, 0.65, 0.08);
+    const signBoardMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 });
+    const signBoard = new THREE.Mesh(signBoardGeo, signBoardMat);
+    signBoard.position.set(0, y + 4.0, schoolZ - 0.18);
+    this.scene.add(signBoard);
+
+    // Schoolklok boven ingang
+    const clockGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.08, 24);
+    clockGeo.rotateX(Math.PI / 2);
+    const clockFace = new THREE.Mesh(clockGeo, this.materials.porcelain);
+    clockFace.position.set(0, y + 5.0, schoolZ - 0.17);
+    this.scene.add(clockFace);
+
+    // 3. Schoolgang Binnen (z: 86.0 tot 105.0, x: -6.0 tot 6.0)
+    const hallwayLength = 19.0;
+    const hallwayZCenter = 86.0 + hallwayLength / 2; // 95.5
+
+    // Vloer schoolgang
+    const hallFloorGeo = new THREE.BoxGeometry(12.0, 0.2, hallwayLength);
+    const hallFloor = new THREE.Mesh(hallFloorGeo, this.materials.schoolFloorCheck);
+    hallFloor.position.set(0, y - 0.1, hallwayZCenter);
+    hallFloor.receiveShadow = true;
+    this.scene.add(hallFloor);
+
+    // Binnenwanden van de schoolgang
+    // Linkerwand (x = -6.0)
+    this.addWall(-6.0, y + 2.0, hallwayZCenter, 0.2, 4.0, hallwayLength, this.materials.schoolWallInterior);
+    // Rechterwand (x = 6.0)
+    this.addWall(6.0, y + 2.0, hallwayZCenter, 0.2, 4.0, hallwayLength, this.materials.schoolWallInterior);
+    // Achterwand (z = 105.0)
+    this.addWall(0, y + 2.0, 105.0, 12.0, 4.0, 0.2, this.materials.schoolWallInterior);
+
+    // Plafond schoolgang
+    const ceilingGeo = new THREE.BoxGeometry(12.0, 0.2, hallwayLength);
+    const ceiling = new THREE.Mesh(ceilingGeo, this.materials.wallUpper);
+    ceiling.position.set(0, y + 4.0, hallwayZCenter);
+    this.scene.add(ceiling);
+    this.cameraOccluders.push(ceiling);
+
+    // Verlichting in de schoolgang
+    const hallLight1 = new THREE.PointLight(0xfff7ed, 0.9, 12);
+    hallLight1.position.set(0, y + 3.4, 91.0);
+    this.scene.add(hallLight1);
+
+    const hallLight2 = new THREE.PointLight(0xfff7ed, 0.9, 12);
+    hallLight2.position.set(0, y + 3.4, 99.0);
+    this.scene.add(hallLight2);
+
+    // Klaslokaaldeuren op de rechterwand (x = 5.9)
+    const classDoors = [
+      { z: 90.0, label: 'Groep 3' },
+      { z: 95.0, label: 'Groep 4' },
+      { z: 100.0, label: 'Groep 5' }
+    ];
+    for (const cd of classDoors) {
+      const cDoorGeo = new THREE.BoxGeometry(0.08, 2.4, 1.3);
+      const cDoor = new THREE.Mesh(cDoorGeo, this.materials.schoolDoorMat);
+      cDoor.position.set(5.88, y + 1.2, cd.z);
+      this.scene.add(cDoor);
+    }
+
+    // 4. De Kluisjeswand (Kluisjes) op de linkerwand (x = -5.7, z: 92.0 tot 96.0)
+    this.createLockersBank(-5.7, y, 94.0);
+  }
+
+  createLockersBank(x, y, z) {
+    const colors = [
+      this.materials.lockerYellow,
+      this.materials.lockerBlue,
+      this.materials.lockerGreen,
+      this.materials.lockerPink
+    ];
+
+    const lockerWidth = 0.8;
+    const lockerDepth = 0.55;
+    const lockerHeight = 1.1;
+
+    for (let col = 0; col < 4; col++) {
+      const lz = z - 1.2 + col * lockerWidth;
+      for (let row = 0; row < 2; row++) {
+        const ly = y + 0.1 + row * lockerHeight;
+        const colorMat = colors[(col + row) % colors.length];
+
+        // Behuizing
+        const boxGeo = new THREE.BoxGeometry(lockerDepth, lockerHeight - 0.04, lockerWidth - 0.04);
+        const box = new THREE.Mesh(boxGeo, this.materials.lockerInside);
+        box.position.set(x + lockerDepth / 2, ly + lockerHeight / 2, lz);
+        this.scene.add(box);
+
+        // Deur (Kluisje #7 is bij col=2, row=1)
+        const isPlayerLocker = (col === 2 && row === 1);
+
+        if (isPlayerLocker) {
+          this.lockerDoorGroup = new THREE.Group();
+          this.lockerDoorGroup.position.set(x + lockerDepth, ly + lockerHeight / 2, lz - (lockerWidth - 0.04) / 2);
+
+          const pDoorGeo = new THREE.BoxGeometry(0.04, lockerHeight - 0.06, lockerWidth - 0.06);
+          const pDoorMat = new THREE.MeshStandardMaterial({
+            color: 0xf59e0b,
+            emissive: 0xd97706,
+            emissiveIntensity: 0.35,
+            metalness: 0.4,
+            roughness: 0.3
+          });
+          const pDoor = new THREE.Mesh(pDoorGeo, pDoorMat);
+          pDoor.position.set(0, 0, (lockerWidth - 0.06) / 2);
+          this.lockerDoorGroup.add(pDoor);
+
+          // Gouden nummerbordje "7"
+          const badgeGeo = new THREE.BoxGeometry(0.05, 0.18, 0.24);
+          const badge = new THREE.Mesh(badgeGeo, this.materials.itemGold);
+          badge.position.set(0.02, 0.18, (lockerWidth - 0.06) / 2);
+          this.lockerDoorGroup.add(badge);
+
+          // Handvat
+          const hGeo = new THREE.BoxGeometry(0.06, 0.12, 0.03);
+          const handle = new THREE.Mesh(hGeo, this.materials.chrome);
+          handle.position.set(0.03, -0.05, (lockerWidth - 0.06) / 2 + 0.22);
+          this.lockerDoorGroup.add(handle);
+
+          this.scene.add(this.lockerDoorGroup);
+
+          // Spullen die in het kluisje verschijnen
+          this.lockerItemsGroup = new THREE.Group();
+          this.lockerItemsGroup.position.set(x + lockerDepth / 2, ly + 0.25, lz);
+          this.lockerItemsGroup.visible = false;
+
+          // Mini rugzakje
+          const miniBag = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.22), this.materials.backpackDeskMat);
+          miniBag.position.set(0, 0.15, -0.1);
+          this.lockerItemsGroup.add(miniBag);
+
+          // Mini broodtrommel + drinkfles
+          const miniLunch = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.09, 0.14), this.materials.itemLunchbox);
+          miniLunch.position.set(0.05, 0.05, 0.12);
+          this.lockerItemsGroup.add(miniLunch);
+
+          const miniBottle = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 10), this.materials.itemBottle);
+          miniBottle.position.set(-0.1, 0.11, 0.12);
+          this.lockerItemsGroup.add(miniBottle);
+
+          this.scene.add(this.lockerItemsGroup);
+        } else {
+          const doorGeo = new THREE.BoxGeometry(0.04, lockerHeight - 0.06, lockerWidth - 0.06);
+          const door = new THREE.Mesh(doorGeo, colorMat);
+          door.position.set(x + lockerDepth, ly + lockerHeight / 2, lz);
+          this.scene.add(door);
+
+          const numGeo = new THREE.BoxGeometry(0.05, 0.14, 0.18);
+          const num = new THREE.Mesh(numGeo, this.materials.chrome);
+          num.position.set(x + lockerDepth + 0.01, ly + lockerHeight / 2 + 0.18, lz);
+          this.scene.add(num);
+        }
+      }
+    }
+
+    // Collider voor de kluisjesbank
+    this.colliders.push({
+      minX: x, maxX: x + lockerDepth + 0.1,
+      minY: y, maxY: y + 2.4,
+      minZ: z - 1.6, maxZ: z + 1.8
+    });
+
+    // Gouden vloermarker voor kluisje #7
+    const markerGeo = new THREE.RingGeometry(0.45, 0.70, 32);
+    markerGeo.rotateX(-Math.PI / 2);
+    this.lockerMarker = new THREE.Mesh(markerGeo, new THREE.MeshBasicMaterial({
+      color: 0xf59e0b,
+      side: THREE.DoubleSide
+    }));
+    this.lockerMarker.position.set(x + lockerDepth + 0.6, y + 0.01, z + 0.4);
+    this.lockerMarker.visible = false;
+    this.scene.add(this.lockerMarker);
+
+    // Zwevende pijl boven kluisje #7
+    const arrowGeo = new THREE.ConeGeometry(0.24, 0.48, 16);
+    arrowGeo.rotateX(Math.PI);
+    this.lockerArrow = new THREE.Mesh(arrowGeo, new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.9
+    }));
+    this.lockerArrow.position.set(x + lockerDepth + 0.6, y + 2.0, z + 0.4);
+    this.lockerArrow.visible = false;
+    this.scene.add(this.lockerArrow);
+
+    this.interactiveObjects.locker = {
+      position: new THREE.Vector3(x + lockerDepth + 0.6, y, z + 0.4),
+      radius: 2.2,
+      opened: false,
+      onInteract: () => this.openLocker()
+    };
+  }
+
+  openLocker() {
+    this.interactiveObjects.locker.opened = true;
+    if (this.lockerDoorGroup) {
+      this.lockerDoorGroup.rotation.y = Math.PI / 1.9;
+    }
+    if (this.lockerItemsGroup) {
+      this.lockerItemsGroup.visible = true;
+    }
+    if (this.lockerArrow) this.lockerArrow.visible = false;
+    if (this.lockerMarker) this.lockerMarker.visible = false;
   }
 }

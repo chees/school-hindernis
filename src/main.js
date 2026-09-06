@@ -24,6 +24,13 @@ class Game {
     this.speurtochtTotal = 5;
     this.toastTimeout = null;
 
+    // Auto en school toestand
+    this.frontDoorOpen = false;
+    this.carBoarded = false;
+    this.carSpeed = 0;
+    this.carMaxSpeed = 16.0;
+    this.lockerCompleted = false;
+
     this.initThree();
     this.initGameObjects();
     this.initUI();
@@ -282,10 +289,48 @@ class Game {
       this.player.wearSchoolClothes();
       this.hasBag = true;
       this.player.equipBackpack();
+      this.handleLockerReached();
+    }
+    const sceneParam = new URLSearchParams(window.location.search).get('scene');
+    if (sceneParam === 'car') {
+      this.wakeupModal.style.display = 'none';
+      this.player.isDressed = true;
+      this.player.wearSchoolClothes();
+      this.hasBag = true;
+      this.world.pickUpSchoolBag();
+      this.player.equipBackpack();
+      this.speurtochtCountFound = 5;
       this.handleFrontDoorReached();
+      this.player.position.set(1.5, this.world.LOWER_Y, 17.5);
+      this.player.group.position.copy(this.player.position);
+      this.gameState = 'PLAYING';
+    } else if (sceneParam === 'drive') {
+      this.wakeupModal.style.display = 'none';
+      this.player.isDressed = true;
+      this.player.wearSchoolClothes();
+      this.hasBag = true;
+      this.world.pickUpSchoolBag();
+      this.player.equipBackpack();
+      this.speurtochtCountFound = 5;
+      this.handleFrontDoorReached();
+      this.boardCar();
+      this.world.carGroup.position.set(0, this.world.LOWER_Y, 26.0);
+    } else if (sceneParam === 'school') {
+      this.wakeupModal.style.display = 'none';
+      this.player.isDressed = true;
+      this.player.wearSchoolClothes();
+      this.hasBag = true;
+      this.world.pickUpSchoolBag();
+      this.player.equipBackpack();
+      this.speurtochtCountFound = 5;
+      this.handleFrontDoorReached();
+      this.carBoarded = true;
+      this.arriveAtSchool();
+      this.player.position.set(0, this.world.LOWER_Y, 88.0);
+      this.player.group.position.copy(this.player.position);
     }
 
-    if (this.gameState === 'PLAYING' && this.startTime === 0) {
+    if ((this.gameState === 'PLAYING' || this.gameState === 'DRIVING') && this.startTime === 0) {
       this.startTime = performance.now();
       this.timeLeft = this.totalTime;
       this.updateTimerUI();
@@ -635,6 +680,15 @@ class Game {
     this.speurtochtCountFound = 0;
     this.updateSpeurtochtUI();
     if (this.speurtochtHud) this.speurtochtHud.classList.remove('visible');
+
+    // Auto en school toestand resetten
+    this.frontDoorOpen = false;
+    this.carBoarded = false;
+    this.carSpeed = 0;
+    this.lockerCompleted = false;
+    sounds.stopCarEngine();
+    this.player.group.visible = true;
+
     this.world.resetSpeurtocht();
 
     this.player.setSleepingPose();
@@ -868,10 +922,18 @@ class Game {
       }
     } else if (!this.player.isDressed) {
       this.setObjective('✨ Alle schoolspullen in je tas! Ga nu naar de kleerkast beneden om je aan te kleden!');
-    } else {
+    } else if (!this.frontDoorOpen) {
       this.setObjective('🚪 Alles compleet en aangekleed! Ren naar de voordeur en ga naar school!');
       if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
       if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;
+    } else if (!this.carBoarded) {
+      this.setObjective('🚗 Loop naar buiten en stap in de auto op de oprit!');
+      if (this.world.carMarker) this.world.carMarker.visible = true;
+      if (this.world.carArrow) this.world.carArrow.visible = true;
+    } else if (!this.lockerCompleted) {
+      this.setObjective('🏫 Loop de schoolgang in naar kluisje #7!');
+      if (this.world.lockerMarker) this.world.lockerMarker.visible = true;
+      if (this.world.lockerArrow) this.world.lockerArrow.visible = true;
     }
 
     // Afstanden tot interactieve objecten
@@ -880,7 +942,11 @@ class Game {
     const distToShower = shower ? playerPos.distanceTo(shower.position) : 999;
     const distToBag = (!this.hasBag && schoolBag) ? playerPos.distanceTo(schoolBag.position) : 999;
     const distToWardrobe = wardrobe ? playerPos.distanceTo(wardrobe.position) : 999;
-    const distToDoor = frontDoor ? playerPos.distanceTo(frontDoor.position) : 999;
+    const distToDoor = (!this.frontDoorOpen && frontDoor) ? playerPos.distanceTo(frontDoor.position) : 999;
+    const car = this.world.interactiveObjects.car;
+    const locker = this.world.interactiveObjects.locker;
+    const distToCar = (this.frontDoorOpen && !this.carBoarded && car) ? playerPos.distanceTo(car.position) : 999;
+    const distToLocker = (this.carBoarded && !this.lockerCompleted && locker) ? playerPos.distanceTo(locker.position) : 999;
 
     let activeInteraction = null;
 
@@ -911,13 +977,13 @@ class Game {
       this.promptEl.textContent = '✨ Druk op [E] of tik op [Kast] om je aan te kleden!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚪';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kast';
-    } else if (frontDoor && distToDoor <= frontDoor.radius) {
+    } else if (!this.frontDoorOpen && frontDoor && distToDoor <= frontDoor.radius) {
       const isReady = this.player.isDressed && this.hasBag && (this.speurtochtCountFound === this.speurtochtTotal);
       if (isReady) {
         activeInteraction = 'FRONTDOOR';
-        this.promptEl.textContent = '🚪 Druk op [E] of tik op [School] om te vertrekken!';
+        this.promptEl.textContent = '🚪 Druk op [E] of tik op [Open] om de voordeur te openen!';
         if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚪';
-        if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'School';
+        if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Open';
       } else {
         if (!this.player.isDressed) {
           this.promptEl.textContent = '⚠️ Je loopt nog in pyjama! Kleed je eerst aan bij de kast.';
@@ -927,6 +993,16 @@ class Game {
           this.promptEl.textContent = `⚠️ Je bent nog spullen vergeten! (${this.speurtochtCountFound}/5 in tas)`;
         }
       }
+    } else if (distToCar <= (car ? car.radius : 0) && !this.carBoarded) {
+      activeInteraction = 'CAR';
+      this.promptEl.textContent = '🚗 Druk op [E] of tik op [Instappen] om in de auto te stappen!';
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚗';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Instappen';
+    } else if (distToLocker <= (locker ? locker.radius : 0) && !this.lockerCompleted) {
+      activeInteraction = 'LOCKER';
+      this.promptEl.textContent = '🎒 Druk op [E] of tik op [Kluisje] om je spullen in kluisje #7 te leggen!';
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🔐';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kluisje';
     }
 
     // Speurtocht items controleren als speler de tas heeft
@@ -1000,6 +1076,10 @@ class Game {
         this.handleWardrobeReached();
       } else if (activeInteraction === 'FRONTDOOR') {
         this.handleFrontDoorReached();
+      } else if (activeInteraction === 'CAR') {
+        this.boardCar();
+      } else if (activeInteraction === 'LOCKER') {
+        this.handleLockerReached();
       }
     }
   }
@@ -1052,16 +1132,169 @@ class Game {
   }
 
   handleFrontDoorReached() {
-    if (this.gameState === 'WON') return;
+    if (this.frontDoorOpen) return;
+    this.frontDoorOpen = true;
 
     this.world.openFrontDoor();
     sounds.playFrontDoor();
     this.triggerConfetti(this.player.position);
 
+    if (this.world.carMarker) this.world.carMarker.visible = true;
+    if (this.world.carArrow) this.world.carArrow.visible = true;
+
+    this.setObjective('🚗 Voordeur geopend! Loop naar buiten en stap in de auto op de oprit!');
+  }
+
+  boardCar() {
+    if (this.carBoarded) return;
+    this.carBoarded = true;
+    this.gameState = 'DRIVING';
+    sounds.playCarDoor();
+    sounds.startCarEngine();
+
+    if (this.world.carMarker) this.world.carMarker.visible = false;
+    if (this.world.carArrow) this.world.carArrow.visible = false;
+
+    this.player.group.visible = false;
+    this.carSpeed = 0;
+
+    this.setObjective('🚗 Rijd veilig naar school! [W/Pijl omhoog] = Gas, [A/D] = Sturen, [Spatie] = Toeteren');
+    if (this.actionBtnIcon) this.actionBtnIcon.textContent = '📢';
+    if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Toet!';
+  }
+
+  updateDriving(dt) {
+    if (this.gameState !== 'DRIVING') return;
+
+    const moveVector = this.controls.getMoveVector();
+    const gas = moveVector.y > 0.1 ? moveVector.y : ((this.controls.keys['KeyW'] || this.controls.keys['ArrowUp']) ? 1 : 0);
+    const brake = moveVector.y < -0.1 ? -moveVector.y : ((this.controls.keys['KeyS'] || this.controls.keys['ArrowDown']) ? 1 : 0);
+    const steer = (this.controls.keys['KeyA'] || this.controls.keys['ArrowLeft']) ? -1 : ((this.controls.keys['KeyD'] || this.controls.keys['ArrowRight']) ? 1 : (Math.abs(moveVector.x) > 0.15 ? moveVector.x : 0));
+
+    // Toeteren via spatiebalk of actieknop
+    if (this.controls.keys['Space'] || this.controls.consumeInteract()) {
+      this.controls.keys['Space'] = false;
+      sounds.playCarHorn();
+      this.promptEl.textContent = '📢 TOET TOET!';
+      this.promptEl.classList.add('visible');
+      setTimeout(() => this.promptEl.classList.remove('visible'), 900);
+    }
+
+    // Acceleratie & frictie
+    if (gas > 0) {
+      this.carSpeed += gas * 13.0 * dt;
+    } else if (brake > 0) {
+      this.carSpeed -= brake * 18.0 * dt;
+    } else {
+      this.carSpeed *= Math.max(0, 1 - 1.8 * dt);
+    }
+    this.carSpeed = Math.max(-4.0, Math.min(this.carMaxSpeed, this.carSpeed));
+
+    sounds.updateCarEngine(Math.abs(this.carSpeed) / this.carMaxSpeed);
+
+    // Sturen (alleen als de auto beweegt)
+    if (Math.abs(this.carSpeed) > 0.2) {
+      const dir = this.carSpeed >= 0 ? 1 : -1;
+      this.world.carGroup.rotation.y += -steer * 1.7 * dt * dir;
+      // Limiteer stuurhoek
+      this.world.carGroup.rotation.y = Math.max(-0.65, Math.min(0.65, this.world.carGroup.rotation.y));
+    }
+
+    // Positie updaten
+    const rotY = this.world.carGroup.rotation.y;
+    this.world.carGroup.position.x += Math.sin(rotY) * this.carSpeed * dt;
+    this.world.carGroup.position.z += Math.cos(rotY) * this.carSpeed * dt;
+
+    // Wegbegrenzing (blijf op straat tussen de stoepen)
+    if (this.world.carGroup.position.z > 23.0) {
+      if (this.world.carGroup.position.x < -3.6) {
+        this.world.carGroup.position.x = -3.6;
+        if (rotY < 0) this.world.carGroup.rotation.y *= 0.8;
+      } else if (this.world.carGroup.position.x > 3.6) {
+        this.world.carGroup.position.x = 3.6;
+        if (rotY > 0) this.world.carGroup.rotation.y *= 0.8;
+      }
+    }
+
+    // Wielen laten draaien
+    if (this.world.carWheels) {
+      for (const w of this.world.carWheels) {
+        if (w.children[0]) {
+          w.children[0].rotation.x += this.carSpeed * 3.0 * dt;
+        }
+      }
+    }
+
+    // Achtervolgingscamera
+    const carPos = this.world.carGroup.position;
+    const targetCam = new THREE.Vector3(
+      carPos.x - Math.sin(rotY) * 5.4,
+      carPos.y + 2.3,
+      carPos.z - Math.cos(rotY) * 5.4
+    );
+    this.camera.position.lerp(targetCam, Math.min(dt * 8, 1.0));
+    this.camera.lookAt(carPos.x, carPos.y + 1.1, carPos.z + 2.5);
+
+    // Check of de school is bereikt (Kiss & Ride parkeerhaven bij z >= 74.0)
+    if (this.world.carGroup.position.z >= 74.0) {
+      this.arriveAtSchool();
+    }
+  }
+
+  arriveAtSchool() {
+    this.gameState = 'PLAYING';
+    sounds.stopCarEngine();
+    sounds.playCarDoor();
+
+    this.world.carGroup.position.set(0.5, this.world.LOWER_Y, 76.5);
+    this.world.carGroup.rotation.y = 0;
+    this.carSpeed = 0;
+
+    this.player.group.position.set(2.2, this.world.LOWER_Y, 77.0);
+    this.player.position.copy(this.player.group.position);
+    this.player.rotation = 0;
+    this.player.group.rotation.y = 0;
+    this.player.group.visible = true;
+
+    this.cameraYaw = 0;
+    this.cameraPitch = 0.35;
+    this.currentCameraDistance = 4.2;
+
+    if (this.world.lockerMarker) this.world.lockerMarker.visible = true;
+    if (this.world.lockerArrow) this.world.lockerArrow.visible = true;
+
+    this.setObjective('🏫 Je bent op school! Loop naar binnen door de dubbele schooldeuren naar kluisje #7!');
+  }
+
+  handleLockerReached() {
+    if (this.gameState === 'WON' || this.lockerCompleted) return;
+    this.lockerCompleted = true;
+
+    this.world.openLocker();
+    sounds.playLockerOpen();
+
+    if (this.player.backpackGroup) {
+      this.player.backpackGroup.visible = false;
+    }
+
+    this.triggerConfetti(this.world.interactiveObjects.locker.position);
+    sounds.playItemComplete();
+
+    this.setObjective('🔐 Alles veilig opgeborgen in kluisje #7!');
+
+    setTimeout(() => {
+      sounds.playLockerClose();
+      sounds.playSchoolBell();
+      this.finishGame();
+    }, 1400);
+  }
+
+  finishGame() {
+    if (this.gameState === 'WON') return;
     this.gameState = 'WON';
     this.elapsedTime = (performance.now() - this.startTime) / 1000;
     this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
-    this.setObjective('🎉 Je bent helemaal klaar en vertrekt naar school!');
+    this.setObjective('🎉 Je bent helemaal klaar en net op tijd voor de les!');
 
     const seconds = this.elapsedTime.toFixed(1);
     this.finalTimeEl.textContent = `${seconds}s`;
@@ -1073,8 +1306,8 @@ class Game {
     const speurtochtBox = document.getElementById('speurtocht-result-box');
     if (speurtochtBox) {
       speurtochtBox.innerHTML = `
-        <div style="font-size: 18px; margin-bottom: 3px;">🌟 Speurtocht: 5/5 Schoolspullen Verzameld!</div>
-        <div>Agenda, drinkfles, broodtrommel, etui en fietssleutel allemaal op tijd in je tas!</div>
+        <div style="font-size: 18px; margin-bottom: 3px;">🌟 Speurtocht & Kluisje: 10/10</div>
+        <div>Alle 5 schoolspullen gevonden, veilig in de auto meegenomen en netjes opgeborgen in kluisje #7!</div>
       `;
     }
 
@@ -1114,7 +1347,7 @@ class Game {
       const bottomName = this.player.customization.bottomType === 'PANTS' ? 'lange broek' : 'korte broek';
       const genderName = this.player.customization.gender === 'BOY' ? 'stoere jongen' : 'hippe meid';
       const bagName = this.player.customization.backpackType === 'CLASSIC' ? 'rugzak' : (this.player.customization.backpackType === 'SPORT' ? 'schoudertas' : 'tas');
-      outfitDesc.textContent = `Je bent vertrokken als een ${genderName} met een ${topName}, ${bottomName} en je gevulde ${bagName} om!`;
+      outfitDesc.textContent = `Je zit klaar in de klas als een ${genderName} in een ${topName} en ${bottomName}. Je ${bagName} staat netjes in kluisje #7!`;
     }
 
     setTimeout(() => {
@@ -1129,7 +1362,7 @@ class Game {
     this.lastTime = time;
 
     // Countdown timer voor schoolbel (08:30)
-    if (this.gameState === 'PLAYING' || this.gameState === 'CUSTOMIZING') {
+    if (this.gameState === 'PLAYING' || this.gameState === 'CUSTOMIZING' || this.gameState === 'DRIVING') {
       this.elapsedTime = (time - this.startTime) / 1000;
       this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
       this.updateTimerUI();
@@ -1139,21 +1372,25 @@ class Game {
       }
     }
 
-    // Jump handling
-    if (this.gameState === 'PLAYING') {
-      if (this.controls.consumeJump()) {
-        if (this.player.jump()) {
-          sounds.playJump();
+    if (this.gameState === 'DRIVING') {
+      this.updateDriving(dt);
+    } else {
+      // Jump handling
+      if (this.gameState === 'PLAYING') {
+        if (this.controls.consumeJump()) {
+          if (this.player.jump()) {
+            sounds.playJump();
+          }
         }
       }
+
+      // Speler updaten (alleen lopen als gameState PLAYING is)
+      const moveVector = (this.gameState === 'PLAYING') ? this.controls.getMoveVector() : new THREE.Vector2(0, 0);
+      this.player.update(dt, moveVector, this.cameraYaw, sounds);
+      this.updateCamera(dt);
     }
 
-    // Speler updaten (alleen lopen als gameState PLAYING is)
-    const moveVector = (this.gameState === 'PLAYING') ? this.controls.getMoveVector() : new THREE.Vector2(0, 0);
-    this.player.update(dt, moveVector, this.cameraYaw, sounds);
-
     this.world.update(dt, time / 1000);
-    this.updateCamera(dt);
     this.updateConfetti(dt);
     this.checkObjectives();
 

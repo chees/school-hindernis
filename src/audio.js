@@ -6,6 +6,9 @@ class SoundEffects {
     this.ctx = null;
     this.muted = false;
     this.alarmInterval = null;
+    this.engineGain = null;
+    this.engineOscs = [];
+    this.engineFilter = null;
   }
 
   init() {
@@ -487,6 +490,210 @@ class SoundEffects {
     bellOsc1.stop(now + duration);
     bellOsc2.stop(now + duration);
     modOsc.stop(now + duration);
+  }
+
+  // Autodeur die dichtslaat
+  playCarDoor() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+
+    // 1. Snelle klik van het deurslot
+    const clickOsc = this.ctx.createOscillator();
+    const clickGain = this.ctx.createGain();
+    clickOsc.type = 'triangle';
+    clickOsc.frequency.setValueAtTime(1400, now);
+    clickOsc.frequency.exponentialRampToValueAtTime(300, now + 0.04);
+    clickGain.gain.setValueAtTime(0.2, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    clickOsc.connect(clickGain);
+    clickGain.connect(this.ctx.destination);
+    clickOsc.start(now);
+    clickOsc.stop(now + 0.04);
+
+    // 2. Doffe zware autodeur klap (rubber + metaal)
+    const thudOsc = this.ctx.createOscillator();
+    const thudGain = this.ctx.createGain();
+    thudOsc.type = 'sine';
+    thudOsc.frequency.setValueAtTime(120, now + 0.02);
+    thudOsc.frequency.exponentialRampToValueAtTime(38, now + 0.22);
+    thudGain.gain.setValueAtTime(0.35, now + 0.02);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    thudOsc.connect(thudGain);
+    thudGain.connect(this.ctx.destination);
+    thudOsc.start(now + 0.02);
+    thudOsc.stop(now + 0.25);
+  }
+
+  // Autotoeter (vrolijk toet-toet!)
+  playCarHorn() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const playHonk = (startTime, dur) => {
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc1.type = 'triangle';
+      osc2.type = 'sawtooth';
+      // Dual-tone auto toeter: A4 (440Hz) + C#5 (554Hz)
+      osc1.frequency.setValueAtTime(440, startTime);
+      osc2.frequency.setValueAtTime(554, startTime);
+
+      gain.gain.setValueAtTime(0.16, startTime);
+      gain.gain.setValueAtTime(0.16, startTime + dur - 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.start(startTime);
+      osc2.start(startTime);
+      osc1.stop(startTime + dur);
+      osc2.stop(startTime + dur);
+    };
+
+    const now = this.ctx.currentTime;
+    playHonk(now, 0.14);
+    playHonk(now + 0.18, 0.18);
+  }
+
+  // Start continu motorgeluid van de auto
+  startCarEngine() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+    this.stopCarEngine();
+
+    const now = this.ctx.currentTime;
+    this.engineGain = this.ctx.createGain();
+    this.engineGain.gain.setValueAtTime(0.01, now);
+    this.engineGain.gain.linearRampToValueAtTime(0.09, now + 0.3);
+
+    this.engineFilter = this.ctx.createBiquadFilter();
+    this.engineFilter.type = 'lowpass';
+    this.engineFilter.frequency.setValueAtTime(260, now);
+
+    // Twee lage oscillatoren voor het snorrende motortoerental
+    const osc1 = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
+    osc1.type = 'sawtooth';
+    osc2.type = 'triangle';
+    osc1.frequency.setValueAtTime(48, now);
+    osc2.frequency.setValueAtTime(96, now);
+
+    osc1.connect(this.engineFilter);
+    osc2.connect(this.engineFilter);
+    this.engineFilter.connect(this.engineGain);
+    this.engineGain.connect(this.ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    this.engineOscs = [osc1, osc2];
+  }
+
+  // Pas motorgeluid aan op rijsnelheid (speedFactor tussen 0 en 1)
+  updateCarEngine(speedFactor) {
+    if (!this.engineOscs || this.engineOscs.length === 0 || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const clamped = Math.max(0, Math.min(1.5, speedFactor));
+    const baseFreq = 48 + clamped * 65; // Van 48Hz tot ~145Hz
+
+    if (this.engineOscs[0]) {
+      this.engineOscs[0].frequency.setTargetAtTime(baseFreq, now, 0.08);
+    }
+    if (this.engineOscs[1]) {
+      this.engineOscs[1].frequency.setTargetAtTime(baseFreq * 2, now, 0.08);
+    }
+    if (this.engineFilter) {
+      this.engineFilter.frequency.setTargetAtTime(260 + clamped * 350, now, 0.08);
+    }
+  }
+
+  // Stop motorgeluid
+  stopCarEngine() {
+    if (this.engineGain && this.ctx) {
+      const now = this.ctx.currentTime;
+      this.engineGain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+      setTimeout(() => {
+        for (const osc of this.engineOscs) {
+          try { osc.stop(); osc.disconnect(); } catch (e) {}
+        }
+        this.engineOscs = [];
+        this.engineGain = null;
+        this.engineFilter = null;
+      }, 260);
+    }
+  }
+
+  // Schoolkluisje openen (mechanische kluisdeur klik en zacht piepje)
+  playLockerOpen() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+
+    // Klik van het slot
+    const latchOsc = this.ctx.createOscillator();
+    const latchGain = this.ctx.createGain();
+    latchOsc.type = 'sine';
+    latchOsc.frequency.setValueAtTime(1600, now);
+    latchOsc.frequency.exponentialRampToValueAtTime(700, now + 0.05);
+    latchGain.gain.setValueAtTime(0.18, now);
+    latchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    latchOsc.connect(latchGain);
+    latchGain.connect(this.ctx.destination);
+    latchOsc.start(now);
+    latchOsc.stop(now + 0.06);
+
+    // Metaalachtige galm
+    const resOsc = this.ctx.createOscillator();
+    const resGain = this.ctx.createGain();
+    resOsc.type = 'triangle';
+    resOsc.frequency.setValueAtTime(320, now + 0.03);
+    resOsc.frequency.linearRampToValueAtTime(290, now + 0.3);
+    resGain.gain.setValueAtTime(0.12, now + 0.03);
+    resGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    resOsc.connect(resGain);
+    resGain.connect(this.ctx.destination);
+    resOsc.start(now + 0.03);
+    resOsc.stop(now + 0.35);
+  }
+
+  // Schoolkluisje dichtslaan (metalen kluisdeur 'KLAK')
+  playLockerClose() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+
+    // 1. Scherpe metalen sluiting
+    const snapOsc = this.ctx.createOscillator();
+    const snapGain = this.ctx.createGain();
+    snapOsc.type = 'sawtooth';
+    snapOsc.frequency.setValueAtTime(950, now);
+    snapOsc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+    snapGain.gain.setValueAtTime(0.25, now);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    snapOsc.connect(snapGain);
+    snapGain.connect(this.ctx.destination);
+    snapOsc.start(now);
+    snapOsc.stop(now + 0.09);
+
+    // 2. Diepe holle metalen kast weerklank
+    const boxOsc = this.ctx.createOscillator();
+    const boxGain = this.ctx.createGain();
+    boxOsc.type = 'triangle';
+    boxOsc.frequency.setValueAtTime(190, now + 0.02);
+    boxOsc.frequency.exponentialRampToValueAtTime(75, now + 0.4);
+    boxGain.gain.setValueAtTime(0.28, now + 0.02);
+    boxGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    boxOsc.connect(boxGain);
+    boxGain.connect(this.ctx.destination);
+    boxOsc.start(now + 0.02);
+    boxOsc.stop(now + 0.45);
   }
 }
 
