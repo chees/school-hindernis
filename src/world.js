@@ -284,8 +284,12 @@ export class GameWorld {
     this.cameraOccluders.push(bedRoomFloor, hallFloor1, hallFloor2);
 
     // MUREN BOVEN (Verzonken met 5cm in de vloerplaat om coplanair z-fighting met de vloer uit te sluiten)
-    // Noordwand slaapkamer
-    this.addWall(-4, y + 1.5, -8.0, 8.0, 3.1, 0.2, this.materials.wallUpper);
+    // Noordwand slaapkamer met een royale raamopening (x: -5.4 tot -2.6, y: y+0.8 tot y+2.4)
+    this.addWall(-6.7, y + 1.55, -8.0, 2.6, 3.1, 0.2, this.materials.wallUpper); // Links van raam
+    this.addWall(-1.3, y + 1.55, -8.0, 2.6, 3.1, 0.2, this.materials.wallUpper); // Rechts van raam
+    this.addWall(-4.0, y + 0.4, -8.0, 2.8, 0.8, 0.2, this.materials.wallUpper);  // Onder raam (borstwering)
+    this.addWall(-4.0, y + 2.75, -8.0, 2.8, 0.7, 0.2, this.materials.wallUpper); // Boven raam
+
     // Linkerwand slaapkamer (West)
     this.addWall(-8.0, y + 1.5, -3.25, 0.2, 3.1, 9.3, this.materials.wallUpper);
     // Voorwand slaapkamer (Zuid)
@@ -300,8 +304,11 @@ export class GameWorld {
     this.addWall(0, y + 1.5, 0.25, 0.2, 3.1, 2.3, this.materials.wallUpper);
 
     // Noordwand overloop en gang (doorlopend gesloten van x: -8.0 tot 6.0 bij z = -8.0)
-    // Gang noordwand (x: 0 tot 2.2) met een mooi raam
-    this.addWall(1.1, y + 1.5, -8.0, 2.2, 3.1, 0.2, this.materials.wallUpper);
+    // Gang noordwand (x: 0 tot 2.2) met een mooi open raam
+    this.addWall(0.15, y + 1.55, -8.0, 0.3, 3.1, 0.2, this.materials.wallUpper); // Links van raam
+    this.addWall(2.05, y + 1.55, -8.0, 0.3, 3.1, 0.2, this.materials.wallUpper); // Rechts van raam
+    this.addWall(1.1, y + 0.45, -8.0, 1.6, 0.9, 0.2, this.materials.wallUpper);  // Onder raam
+    this.addWall(1.1, y + 2.7, -8.0, 1.6, 0.8, 0.2, this.materials.wallUpper);   // Boven raam
     this.createWindow(1.1, y + 1.6, -7.89, 1.6, 1.4);
 
     // Noordwand badkamer / overloopdeel (x: 2.2 tot 6.0)
@@ -1940,6 +1947,20 @@ export class GameWorld {
   // --- BUITENOMGEVING, STRAAT & VOORTUIN ---
   createOutdoorEnvironment() {
     const y = this.LOWER_Y;
+
+    // 0. Achtertuin achter het huis (zichtbaar door de slaapkamer- en gangramen)
+    const backyardGeo = new THREE.PlaneGeometry(50.0, 35.0);
+    backyardGeo.rotateX(-Math.PI / 2);
+    const backyard = new THREE.Mesh(backyardGeo, this.materials.grass);
+    backyard.position.set(-2.0, y + 0.001, -25.5);
+    backyard.receiveShadow = true;
+    this.scene.add(backyard);
+
+    // Bomen in de achtertuin
+    this.createTree(-5.0, y, -15.5);
+    this.createTree(-1.8, y, -18.5);
+    this.createTree(-8.5, y, -13.5);
+    this.createTree(3.2, y, -16.0);
 
     // 1. Voortuin & Paden
     // Betegeld tuinpad van voordeur (z: 13.5) naar oprit (z: 23.0)

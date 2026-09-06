@@ -4,6 +4,7 @@ import { Player } from './player.js';
 import { InputControls } from './controls.js';
 import { sounds } from './audio.js';
 import { weather } from './weather.js';
+import { SkyboxManager } from './skybox.js';
 
 class Game {
   constructor() {
@@ -70,7 +71,7 @@ class Game {
       60,
       window.innerWidth / window.innerHeight,
       0.2,
-      80
+      250
     );
 
     this.cameraYaw = 0;
@@ -89,6 +90,8 @@ class Game {
 
   initGameObjects() {
     this.world = new GameWorld(this.scene);
+    this.skybox = new SkyboxManager(this.scene, this.world);
+    this.skybox.setWeather(weather.getWeather());
     this.player = new Player(this.scene, this.world);
     this.controls = new InputControls(this.canvas);
 
@@ -371,11 +374,10 @@ class Game {
   updateWeatherUI() {
     const w = weather.getWeather();
 
-    // HUD Pill
-    const hudIcon = document.getElementById('hud-weather-icon');
-    const hudText = document.getElementById('hud-weather-text');
-    if (hudIcon) hudIcon.textContent = w.icon;
-    if (hudText) hudText.textContent = `${w.temp} ${w.label}`;
+    // Werk de 3D Skybox bij op basis van het weer
+    if (this.skybox) {
+      this.skybox.setWeather(w);
+    }
 
     // Waking up hint
     const wakeSummary = document.getElementById('wakeup-weather-summary');
@@ -1423,6 +1425,10 @@ class Game {
       this.player.updateThoughtBubble(this.camera);
     }
 
+    if (this.skybox) {
+      this.skybox.update(dt, this.camera.position);
+    }
+
     this.world.update(dt, time / 1000);
     this.updateConfetti(dt);
     this.checkObjectives();
@@ -1432,5 +1438,10 @@ class Game {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  new Game();
+  const game = new Game();
+  window.game = game;
+  window.setWeather = (type) => {
+    weather.setWeather(type);
+    game.updateWeatherUI();
+  };
 });
