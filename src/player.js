@@ -526,11 +526,11 @@ export class Player {
 
     // Drie kleine wolkbolletjes die opstijgen
     const b1 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    b1.position.set(0.18, 1.45, 0.05);
+    b1.position.set(0.12, 0.10, 0);
     this.thoughtBubbleGroup.add(b1);
 
     const b2 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    b2.position.set(0.24, 1.55, 0.08);
+    b2.position.set(0.20, 0.22, 0);
     this.thoughtBubbleGroup.add(b2);
 
     // Grote denkballon wolk met WC icoon
@@ -556,12 +556,18 @@ export class Player {
 
     const bubbleTex = new THREE.CanvasTexture(canvas);
     const bubbleGeo = new THREE.PlaneGeometry(0.40, 0.40);
-    const bubbleMat = new THREE.MeshBasicMaterial({ map: bubbleTex, transparent: true, side: THREE.DoubleSide });
+    const bubbleMat = new THREE.MeshBasicMaterial({
+      map: bubbleTex,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
     this.bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
-    this.bubbleMesh.position.set(0.32, 1.76, 0.10);
+    this.bubbleMesh.position.set(0.32, 0.42, 0);
     this.thoughtBubbleGroup.add(this.bubbleMesh);
 
-    this.group.add(this.thoughtBubbleGroup);
+    this.thoughtBubbleGroup.renderOrder = 10;
+    this.scene.add(this.thoughtBubbleGroup);
     this.thoughtBubbleGroup.visible = false; // Pas zichtbaar na wakker worden
   }
 
@@ -649,7 +655,7 @@ export class Player {
     return true;
   }
 
-  update(dt, inputVector, cameraAngle, soundManager) {
+  update(dt, inputVector, cameraAngle, soundManager, camera) {
     if (this.state !== 'ACTIVE') return;
 
     const isMoving = inputVector.lengthSq() > 0.01;
@@ -719,12 +725,8 @@ export class Player {
       }
     }
 
-    // Animeren van de denkballon als deze zichtbaar is
-    if (this.thoughtBubbleGroup && this.thoughtBubbleGroup.visible) {
-      this.thoughtBubbleGroup.position.y = Math.sin(performance.now() * 0.005) * 0.04;
-      if (this.bubbleMesh) {
-        this.bubbleMesh.rotation.y = -this.rotation - cameraAngle + Math.PI;
-      }
+    if (camera) {
+      this.updateThoughtBubble(camera);
     }
 
     const groundY = this.world.getGroundHeightAt(this.position.x, this.position.z, this.position.y);
@@ -743,6 +745,32 @@ export class Player {
 
     this.group.position.copy(this.position);
     this.group.rotation.y = this.rotation;
+  }
+
+  updateThoughtBubble(camera) {
+    if (!this.thoughtBubbleGroup) return;
+
+    if (!this.group.visible || this.toiletNeed <= 0 || this.state === 'SLEEPING') {
+      this.thoughtBubbleGroup.visible = false;
+      return;
+    }
+
+    if (this.state === 'ACTIVE' && this.toiletNeed > 0) {
+      this.thoughtBubbleGroup.visible = true;
+    }
+
+    if (!this.thoughtBubbleGroup.visible) return;
+
+    const bob = Math.sin(performance.now() * 0.005) * 0.04;
+    this.thoughtBubbleGroup.position.set(
+      this.position.x,
+      this.position.y + 1.35 + bob,
+      this.position.z
+    );
+
+    if (camera) {
+      this.thoughtBubbleGroup.quaternion.copy(camera.quaternion);
+    }
   }
 
   setProximityFade(alpha) {

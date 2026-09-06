@@ -1187,6 +1187,7 @@ class Game {
     if (this.world.carArrow) this.world.carArrow.visible = false;
 
     this.player.group.visible = false;
+    if (this.player.thoughtBubbleGroup) this.player.thoughtBubbleGroup.visible = false;
     this.carSpeed = 0;
 
     this.setObjective('🚗 Rijd veilig naar school! [W/Pijl omhoog] = Gas, [A/D] = Sturen, [Spatie] = Toeteren');
@@ -1417,8 +1418,9 @@ class Game {
 
       // Speler updaten (alleen lopen als gameState PLAYING is)
       const moveVector = (this.gameState === 'PLAYING') ? this.controls.getMoveVector() : new THREE.Vector2(0, 0);
-      this.player.update(dt, moveVector, this.cameraYaw, sounds);
+      this.player.update(dt, moveVector, this.cameraYaw, sounds, this.camera);
       this.updateCamera(dt);
+      this.player.updateThoughtBubble(this.camera);
     }
 
     this.world.update(dt, time / 1000);
