@@ -13,6 +13,9 @@ class Game {
     this.startTime = 0;
     this.elapsedTime = 0;
     this.timerInterval = null;
+    const testTimeParam = new URLSearchParams(window.location.search).get('time');
+    this.totalTime = testTimeParam ? parseFloat(testTimeParam) : 180; // 3 minuten (180s) tot schoolbel 08:30
+    this.timeLeft = this.totalTime;
 
     // Speurtocht toestand
     this.hasBag = false;
@@ -146,6 +149,13 @@ class Game {
     this.toiletText = document.getElementById('hud-toilet-text');
     this.toiletFill = document.getElementById('hud-toilet-fill');
 
+    this.timerPill = document.getElementById('hud-timer-pill');
+    this.timerText = document.getElementById('hud-timer-text');
+    this.timerFill = document.getElementById('hud-timer-fill');
+    this.gameoverModal = document.getElementById('gameover-modal');
+    this.gameoverStats = document.getElementById('gameover-stats');
+    this.finalTimeLeftEl = document.getElementById('final-time-left');
+
     this.speurtochtHud = document.getElementById('speurtocht-hud');
     this.speurtochtCount = document.getElementById('speurtocht-count');
     this.pickupToast = document.getElementById('pickup-toast');
@@ -155,6 +165,7 @@ class Game {
     this.updateWeatherUI();
     this.updateToiletUI();
     this.updateSpeurtochtUI();
+    this.updateTimerUI();
 
     // Word wakker knop
     const wakeupBtn = document.getElementById('btn-wakeup');
@@ -165,6 +176,12 @@ class Game {
     document.getElementById('btn-explore').addEventListener('click', () => {
       this.victoryModal.classList.remove('active');
     });
+
+    // Knop in game over modal
+    const retryGameoverBtn = document.getElementById('btn-retry-gameover');
+    if (retryGameoverBtn) {
+      retryGameoverBtn.addEventListener('click', () => this.restartGame());
+    }
 
     // Bovenbalk knoppen
     const muteBtn = document.getElementById('btn-mute');
@@ -267,6 +284,12 @@ class Game {
       this.player.equipBackpack();
       this.handleFrontDoorReached();
     }
+
+    if (this.gameState === 'PLAYING' && this.startTime === 0) {
+      this.startTime = performance.now();
+      this.timeLeft = this.totalTime;
+      this.updateTimerUI();
+    }
   }
 
   showPickupToast(icon, text) {
@@ -338,6 +361,64 @@ class Game {
       if (this.toiletText) this.toiletText.textContent = 'Opgelucht!';
       if (this.toiletFill) this.toiletFill.style.width = '0%';
     }
+  }
+
+  formatTime(seconds) {
+    const clamped = Math.max(0, Math.ceil(seconds));
+    const mins = Math.floor(clamped / 60);
+    const secs = clamped % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  updateTimerUI() {
+    if (!this.timerText || !this.timerFill) return;
+    this.timerText.textContent = this.formatTime(this.timeLeft);
+    const pct = Math.max(0, Math.min(100, (this.timeLeft / this.totalTime) * 100));
+    this.timerFill.style.width = `${pct}%`;
+
+    if (this.timerPill) {
+      if (this.timeLeft <= 25) {
+        this.timerPill.classList.add('critical');
+        this.timerPill.classList.remove('warning');
+      } else if (this.timeLeft <= 60) {
+        this.timerPill.classList.add('warning');
+        this.timerPill.classList.remove('critical');
+      } else {
+        this.timerPill.classList.remove('warning', 'critical');
+      }
+    }
+  }
+
+  handleTimeOut() {
+    if (this.gameState === 'LOST' || this.gameState === 'WON') return;
+    this.gameState = 'LOST';
+    this.timeLeft = 0;
+    this.updateTimerUI();
+    sounds.playSchoolBell();
+
+    if (this.wardrobeModal) {
+      this.wardrobeModal.classList.remove('active');
+    }
+
+    if (this.gameoverStats) {
+      const dressedText = this.player.isDressed ? '✅ Aangekleed' : '❌ Nog in pyjama';
+      const bagText = this.hasBag ? '✅ Schooltas gepakt' : '❌ Schooltas vergeten';
+      const toiletText = this.player.toiletNeed === 0 ? '✅ Naar de wc geweest' : '❌ Hoge nood';
+      const itemsText = `🎒 ${this.speurtochtCountFound}/${this.speurtochtTotal} schoolspullen`;
+
+      this.gameoverStats.innerHTML = `
+        <div style="font-weight: 700; margin-bottom: 6px; color: #1e293b;">Wat had je al gedaan?</div>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #475569;">
+          <div>${itemsText} • ${bagText}</div>
+          <div>${dressedText} • ${toiletText}</div>
+        </div>
+      `;
+    }
+
+    if (this.gameoverModal) {
+      this.gameoverModal.classList.add('active');
+    }
+    this.setObjective('🔔 TRRRING! De schoolbel rinkelt al... je bent te laat voor school!');
   }
 
   setupCustomizerEvents() {
@@ -501,6 +582,8 @@ class Game {
     this.wakeupModal.classList.add('fade-out');
     this.gameState = 'PLAYING';
     this.startTime = performance.now();
+    this.timeLeft = this.totalTime;
+    this.updateTimerUI();
 
     this.world.uncoverBed();
     this.player.wakeUp(() => {
@@ -532,8 +615,15 @@ class Game {
     this.gameState = 'WAKING';
     this.victoryModal.classList.remove('active');
     this.wardrobeModal.classList.remove('active');
+    if (this.gameoverModal) this.gameoverModal.classList.remove('active');
     this.wakeupModal.classList.remove('fade-out');
     this.wakeupModal.style.display = '';
+
+    // Timer resetten
+    this.timeLeft = this.totalTime;
+    this.elapsedTime = 0;
+    if (this.timerPill) this.timerPill.classList.remove('warning', 'critical');
+    this.updateTimerUI();
 
     // Nieuw willekeurig weerbericht
     weather.currentWeather = weather.pickRandomWeather();
@@ -970,10 +1060,14 @@ class Game {
 
     this.gameState = 'WON';
     this.elapsedTime = (performance.now() - this.startTime) / 1000;
+    this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
     this.setObjective('🎉 Je bent helemaal klaar en vertrekt naar school!');
 
     const seconds = this.elapsedTime.toFixed(1);
     this.finalTimeEl.textContent = `${seconds}s`;
+    if (this.finalTimeLeftEl) {
+      this.finalTimeLeftEl.textContent = `${this.formatTime(this.timeLeft)} over!`;
+    }
 
     // Speurtocht score
     const speurtochtBox = document.getElementById('speurtocht-result-box');
@@ -1033,6 +1127,17 @@ class Game {
 
     const dt = Math.min((time - this.lastTime) / 1000, 0.1);
     this.lastTime = time;
+
+    // Countdown timer voor schoolbel (08:30)
+    if (this.gameState === 'PLAYING' || this.gameState === 'CUSTOMIZING') {
+      this.elapsedTime = (time - this.startTime) / 1000;
+      this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
+      this.updateTimerUI();
+
+      if (this.timeLeft <= 0) {
+        this.handleTimeOut();
+      }
+    }
 
     // Jump handling
     if (this.gameState === 'PLAYING') {

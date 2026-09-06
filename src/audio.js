@@ -446,6 +446,48 @@ class SoundEffects {
       osc.stop(t + 0.4);
     }, 90);
   }
+
+  // Luidruchtige schoolbel (TRRRRRING!) als de tijd op is
+  playSchoolBell() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const duration = 2.8;
+
+    // Twee harmonische beltonen
+    const bellOsc1 = this.ctx.createOscillator();
+    const bellOsc2 = this.ctx.createOscillator();
+    bellOsc1.type = 'triangle';
+    bellOsc2.type = 'sine';
+    bellOsc1.frequency.setValueAtTime(1480, now);
+    bellOsc2.frequency.setValueAtTime(1760, now);
+
+    // Snelle tremolo / klepel modulatie (26 Hz)
+    const modOsc = this.ctx.createOscillator();
+    const modGain = this.ctx.createGain();
+    modOsc.type = 'square';
+    modOsc.frequency.setValueAtTime(26, now);
+    modGain.gain.setValueAtTime(0.08, now);
+    modOsc.connect(modGain.gain);
+
+    const mainGain = this.ctx.createGain();
+    mainGain.gain.setValueAtTime(0.18, now);
+    mainGain.gain.setValueAtTime(0.18, now + duration - 0.4);
+    mainGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    bellOsc1.connect(mainGain);
+    bellOsc2.connect(mainGain);
+    modGain.connect(mainGain);
+    mainGain.connect(this.ctx.destination);
+
+    bellOsc1.start(now);
+    bellOsc2.start(now);
+    modOsc.start(now);
+    bellOsc1.stop(now + duration);
+    bellOsc2.stop(now + duration);
+    modOsc.stop(now + duration);
+  }
 }
 
 export const sounds = new SoundEffects();

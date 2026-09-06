@@ -20,6 +20,16 @@
         <span>School Hindernis</span>
       </div>
 
+      <!-- Tijd tot de schoolbel indicator -->
+      <div class="timer-pill" id="hud-timer-pill" title="Tijd tot de schoolbel (08:30)">
+        <span id="hud-timer-icon">⏰</span>
+        <div class="timer-content">
+          <span class="timer-label">Schoolbel over:</span>
+          <span id="hud-timer-text" class="timer-digits">03:00</span>
+        </div>
+        <div class="timer-meter"><div id="hud-timer-fill" style="width: 100%;"></div></div>
+      </div>
+
       <!-- Weerbadge bovenaan -->
       <div class="weather-pill" id="hud-weather-pill" title="Weer van vandaag">
         <span id="hud-weather-icon">☀️</span>
@@ -137,8 +147,11 @@
       <div class="wakeup-routine-hint" id="wakeup-toilet-hint">
         🚽 Ochtendroutine: <strong>Je moet nodig naar de wc!</strong>
       </div>
+      <div class="wakeup-time-limit-hint" id="wakeup-time-limit-hint">
+        ⏰ Schoolbel: gaat om <strong>08:30</strong> (je hebt <strong>3 minuten</strong>)!
+      </div>
       <p style="margin-top: 8px; color: #cbd5e1; font-size: 15px;">
-        De schoolbel wacht niet. Word snel wakker, ga naar de badkamer en kleed je aan!
+        De schoolbel wacht niet. Word snel wakker, pak je schooltas, zoek je spullen en vertrek op tijd!
       </p>
       <button id="btn-wakeup" class="alarm-btn">
         ☀️ WORD WAKKER!
@@ -296,11 +309,28 @@
       </div>
 
       <div class="stats-box">
-        ⏱️ Tijd: <span id="final-time">00:00</span>
+        ⏱️ Tijd gespeeld: <span id="final-time">00:00</span> • Resterend: <span id="final-time-left">00:00</span>
       </div>
       <div class="modal-btn-row">
         <button id="btn-play-again" class="btn-primary">🔄 Opnieuw Spelen</button>
         <button id="btn-explore" class="btn-secondary">🚶 Rondlopen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Te laat voor school Modal (als de schoolbel rinkelt!) -->
+  <div id="gameover-modal">
+    <div class="gameover-card">
+      <div style="font-size: 56px;">🔔⏰🏃‍♂️</div>
+      <h2>TRRRRRING! DE SCHOOLBEL GAAT!</h2>
+      <p id="gameover-desc">
+        Oei! De 3 minuten zijn voorbij en de schoolbel rinkelt al! Je bent helaas te laat voor de les.
+      </p>
+      <div id="gameover-stats" class="gameover-stats-box">
+        <!-- Voortgang tot aan de bel -->
+      </div>
+      <div class="modal-btn-row">
+        <button id="btn-retry-gameover" class="btn-primary">🔄 Probeer Opnieuw</button>
       </div>
     </div>
   </div>
