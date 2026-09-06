@@ -753,8 +753,27 @@ export class GameWorld {
       riserMesh.castShadow = true;
       stairGroup.add(riserMesh);
 
+      // Dichte onderbouw onder elke trede tot aan de begane grond (sluit de hele ruimte onder de trap hermetisch af)
+      const underHeight = topOfStepY - treadThickness;
+      if (underHeight > 0.04) {
+        const underGeo = new THREE.BoxGeometry(width, underHeight, stepDepth + 0.005);
+        const underMesh = new THREE.Mesh(underGeo, this.materials.wallLower);
+        underMesh.position.set(centerX, underHeight / 2, stepZ);
+        underMesh.castShadow = true;
+        underMesh.receiveShadow = true;
+        stairGroup.add(underMesh);
+        this.cameraOccluders.push(underMesh);
+      }
+
       this.cameraOccluders.push(treadMesh, riserMesh);
     }
+
+    // Dichte muren rondom en achter het stuk onder de trap (volledig afgesloten met muren)
+    // 1. Achterwand direct achter de trap (z = -0.75) over de volle breedte tot aan de oostwand
+    this.addWall(4.55, yBottom + 1.675, -0.75, 4.9, 3.35, 0.2, this.materials.wallLower);
+
+    // 2. Westwand van de holte achter de trap (van z = -4.0 tot z = -0.65 bij x = 2.12)
+    this.addWall(xMin - 0.08, yBottom + 1.675, -2.35, 0.16, 3.35, 3.3, this.materials.wallLower);
 
     // Trapleuningen aan weerszijden
     this.createStairHandrail(xMax + 0.04, yBottom, yTop, zTop, zBottom, this.materials.brass, this.materials.metal);
@@ -1788,6 +1807,12 @@ export class GameWorld {
     if (x >= s.xMin && x <= s.xMax && z >= s.zTop && z <= s.zBottom) {
       const progress = (z - s.zTop) / (s.zBottom - s.zTop);
       const stairY = s.yTop - progress * (s.yTop - s.yBottom);
+
+      // Als de speler/entiteit zich significant onder de trap bevindt (bijv. begane grond):
+      if (currentY !== null && currentY < stairY - 0.45) {
+        return this.LOWER_Y;
+      }
+
       return stairY;
     }
 
