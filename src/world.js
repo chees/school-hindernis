@@ -319,15 +319,15 @@ export class GameWorld {
     this.createWindow(-8.0, y + 1.6, -3.0, 1.8, 1.4, 'x'); // Slaapkamer westraam
 
     // Voorwand slaapkamer (Zuid)
-    this.addWall(-4, y + 1.5, 1.5, 8.0, 3.1, 0.2, this.materials.wallUpper);
+    this.addWall(-4, y + 1.55, 1.5, 8.0, 3.1, 0.2, this.materials.wallUpper);
 
-    // Tussenwand slaapkamer/gang met deuropening bij z = -2.6 tot -1.0
-    // Noordelijk deel
-    this.addWall(0, y + 1.5, -5.25, 0.2, 3.1, 5.3, this.materials.wallUpper);
-    // Bovenkant deurpost
-    this.addWall(0, y + 2.6, -1.8, 0.2, 0.8, 1.6, this.materials.wallUpper);
-    // Zuidelijk deel
-    this.addWall(0, y + 1.5, 0.25, 0.2, 3.1, 2.3, this.materials.wallUpper);
+    // Tussenwand slaapkamer/gang met deuropening bij z = -2.6 tot -0.9
+    // Noordelijk deel: van z = -7.9 tot z = -2.6
+    this.addWall(0, y + 1.55, -5.25, 0.2, 3.1, 5.3, this.materials.wallUpper);
+    // Bovenkant deurpost: sluit exact aan van z = -2.60 tot z = -0.90 (d = 1.7m), hoogte 0.9m van y+2.20 tot y+3.10
+    this.addWall(0, y + 2.65, -1.75, 0.2, 0.9, 1.7, this.materials.wallUpper);
+    // Zuidelijk deel: van z = -0.9 tot z = 1.4
+    this.addWall(0, y + 1.55, 0.25, 0.2, 3.1, 2.3, this.materials.wallUpper);
 
     // Noordwand overloop en gang met open raam
     this.addWall(0.15, y + 1.55, -8.0, 0.3, 3.1, 0.2, this.materials.wallUpper); // Links van raam
@@ -382,15 +382,15 @@ export class GameWorld {
 
     // 2. Muren van de badkamer:
     // Westmuur (x = 2.2):
-    // Noordelijk muurdeel: van z = -8.0 tot z = -2.8 (lengte 5.2m)
-    this.addWall(2.2, y + 1.5, -5.4, 0.2, 3.1, 5.2, this.materials.bathroomTileWall);
+    // Noordelijk muurdeel: van z = -8.0 tot z = -2.8 (lengte 5.2m, top y+3.10)
+    this.addWall(2.2, y + 1.55, -5.4, 0.2, 3.1, 5.2, this.materials.bathroomTileWall);
 
     // Brede, open doorgang direct tegenover de slaapkamerdeur: z = -2.8 tot z = -0.8 (breedte 2.0 meter!)
-    // Bovenkant deurpost boven de doorgang
+    // Bovenkant deurpost boven de doorgang (sluit naadloos aan van z = -2.80 tot z = -0.80, top y+3.10)
     this.addWall(2.2, y + 2.65, -1.8, 0.2, 0.9, 2.0, this.materials.bathroomTileWall);
 
-    // Zuidelijk hoekpaaltje naast de trap: van z = -0.8 tot z = -0.5 (lengte 0.3m)
-    this.addWall(2.2, y + 1.5, -0.65, 0.2, 3.1, 0.3, this.materials.wallUpper);
+    // Zuidelijk hoekpaaltje naast de trap: van z = -0.8 tot z = -0.5 (lengte 0.3m, top y+3.10)
+    this.addWall(2.2, y + 1.55, -0.65, 0.2, 3.1, 0.3, this.materials.bathroomTileWall);
 
     // Deurbordje "🚻 BADKAMER" boven de open ingang, gericht naar de gang en slaapkamer (-X)
     this.createBathroomSign(2.09, y + 2.35, -1.8);
