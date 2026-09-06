@@ -151,6 +151,19 @@ export class GameWorld {
       potColor: new THREE.MeshStandardMaterial({ color: 0xd27d53, roughness: 0.7 }),
       alarmClock: new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.4 }),
 
+      // Keuken materialen
+      kitchenCounter: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }),
+      kitchenTop: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25, metalness: 0.1 }),
+      kitchenFloor: new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        roughness: 0.6,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      }),
+      fridgeMat: new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.35, roughness: 0.3 }),
+      stoveMat: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 }),
+
       // Speurtocht & Schoolspullen materialen
       itemGold: new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.2 }),
       itemBookCover: new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 }),
@@ -197,6 +210,7 @@ export class GameWorld {
     this.createUpperFloor();
     this.createStairs();
     this.createLowerFloor();
+    this.createKitchen();
     this.createBathroom();
     this.createWardrobe();
     this.createDecorations();
@@ -815,6 +829,134 @@ export class GameWorld {
     this.createCoatRack(-3.5, y, 13.0);
   }
 
+  // --- DE KEUKEN BENEDEN ---
+  createKitchen() {
+    const y = this.LOWER_Y;
+
+    // 1. Keukenvloer tegelzone (x: -7.9 tot -1.5, z: -3.9 tot 1.2)
+    const tileGeo = new THREE.PlaneGeometry(6.4, 5.1);
+    tileGeo.rotateX(-Math.PI / 2);
+    const kitchenTile = new THREE.Mesh(tileGeo, this.materials.kitchenFloor);
+    kitchenTile.position.set(-4.7, y + 0.003, -1.35);
+    kitchenTile.receiveShadow = true;
+    this.scene.add(kitchenTile);
+
+    // 2. Keukenblok / Aanrecht langs de noordwand (x: -6.5 tot -2.5 bij z = -3.5)
+    // Onderkasten
+    const counterBaseGeo = new THREE.BoxGeometry(4.0, 0.86, 0.8);
+    const counterBase = new THREE.Mesh(counterBaseGeo, this.materials.kitchenCounter);
+    counterBase.position.set(-4.5, y + 0.43, -3.5);
+    counterBase.castShadow = true;
+    counterBase.receiveShadow = true;
+    this.scene.add(counterBase);
+
+    // Aanrechtblad (gepolijst composiet / wit marmer)
+    const counterTopGeo = new THREE.BoxGeometry(4.06, 0.05, 0.86);
+    const counterTop = new THREE.Mesh(counterTopGeo, this.materials.kitchenTop);
+    counterTop.position.set(-4.5, y + 0.885, -3.5);
+    counterTop.castShadow = true;
+    counterTop.receiveShadow = true;
+    this.scene.add(counterTop);
+
+    // RVS Spoelbak (x = -4.8, z = -3.45)
+    const sinkGeo = new THREE.BoxGeometry(0.7, 0.02, 0.5);
+    const sink = new THREE.Mesh(sinkGeo, this.materials.metal);
+    sink.position.set(-4.8, y + 0.912, -3.45);
+    this.scene.add(sink);
+
+    const sinkInnerGeo = new THREE.BoxGeometry(0.6, 0.03, 0.4);
+    const sinkInner = new THREE.Mesh(sinkInnerGeo, this.materials.kitchenCounter);
+    sinkInner.position.set(-4.8, y + 0.91, -3.45);
+    this.scene.add(sinkInner);
+
+    // Chromen Keukenkraan met elegante boog
+    const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.22, 12), this.materials.chrome);
+    faucetBase.position.set(-4.8, y + 1.02, -3.65);
+    this.scene.add(faucetBase);
+
+    const faucetSpout = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.18, 12), this.materials.chrome);
+    faucetSpout.rotation.x = Math.PI / 3;
+    faucetSpout.position.set(-4.8, y + 1.16, -3.58);
+    this.scene.add(faucetSpout);
+
+    // Inductiekookplaat (x = -3.1, z = -3.45)
+    const stoveGeo = new THREE.BoxGeometry(0.8, 0.02, 0.55);
+    const stove = new THREE.Mesh(stoveGeo, this.materials.stoveMat);
+    stove.position.set(-3.1, y + 0.912, -3.45);
+    this.scene.add(stove);
+
+    // Kookzones (4 ringen)
+    const ringOffsets = [
+      { x: -0.22, z: -0.13 }, { x: 0.22, z: -0.13 },
+      { x: -0.22, z: 0.13 }, { x: 0.22, z: 0.13 }
+    ];
+    for (const ro of ringOffsets) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.07, 0.09, 16), this.materials.kitchenTop);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(-3.1 + ro.x, y + 0.924, -3.45 + ro.z);
+      this.scene.add(ring);
+    }
+
+    // Afzuigkap boven het fornuis
+    const hoodGeo = new THREE.BoxGeometry(0.9, 0.15, 0.5);
+    const hood = new THREE.Mesh(hoodGeo, this.materials.metal);
+    hood.position.set(-3.1, y + 2.1, -3.55);
+    hood.castShadow = true;
+    this.scene.add(hood);
+
+    const pipeGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.7, 12);
+    const pipe = new THREE.Mesh(pipeGeo, this.materials.metal);
+    pipe.position.set(-3.1, y + 2.5, -3.55);
+    this.scene.add(pipe);
+
+    // 3. Koelkast in de hoek (x = -7.3, z = -3.35)
+    const fridgeGroup = new THREE.Group();
+    fridgeGroup.position.set(-7.3, y, -3.35);
+
+    const fridgeBody = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.15, 0.8), this.materials.fridgeMat);
+    fridgeBody.position.set(0, 1.075, 0);
+    fridgeBody.castShadow = true;
+    fridgeGroup.add(fridgeBody);
+
+    // Handgrepen koelkast
+    const handleFridge1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.35, 8), this.materials.chrome);
+    handleFridge1.position.set(0.35, 1.35, 0.42);
+    fridgeGroup.add(handleFridge1);
+
+    const handleFridge2 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8), this.materials.chrome);
+    handleFridge2.position.set(0.35, 0.65, 0.42);
+    fridgeGroup.add(handleFridge2);
+
+    this.scene.add(fridgeGroup);
+
+    // 4. Bovenkastjes aan de noordmuur
+    const upperCabGeo = new THREE.BoxGeometry(2.0, 0.7, 0.35);
+    const upperCab = new THREE.Mesh(upperCabGeo, this.materials.kitchenCounter);
+    upperCab.position.set(-5.5, y + 2.1, -3.75);
+    upperCab.castShadow = true;
+    this.scene.add(upperCab);
+
+    // 5. Keukenraam boven de spoelbak
+    this.createWindow(-4.8, y + 1.8, -3.89, 1.5, 0.9);
+
+    // 6. Colliders voor de keuken
+    // Koelkast collider
+    this.colliders.push({
+      minX: -7.75, maxX: -6.85,
+      minY: y, maxY: y + 2.2,
+      minZ: -3.8, maxZ: -2.9
+    });
+
+    // Aanrecht collider
+    this.colliders.push({
+      minX: -6.55, maxX: -2.45,
+      minY: y, maxY: y + 1.0,
+      minZ: -3.95, maxZ: -3.05
+    });
+
+    this.cameraOccluders.push(counterBase, fridgeBody);
+  }
+
   // --- DE KLEERKAST (HOLLE CONSTRUCTIE ZONDER INTERSECTIES) ---
   createWardrobe() {
     const x = -7.35;
@@ -1308,9 +1450,9 @@ export class GameWorld {
       onInteract: () => this.pickUpSpeurtochtItem('agenda')
     };
 
-    // 2. Drinkfles / Dopper (Badkamer boven, op wastafel)
+    // 2. Drinkfles / Dopper (Beneden in de keuken op het aanrecht)
     const bottleGroup = new THREE.Group();
-    bottleGroup.position.set(5.58, this.UPPER_Y + 0.95, -3.45);
+    bottleGroup.position.set(-4.2, this.LOWER_Y + 0.94, -3.45);
     const bottleBody = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.24, 16), this.materials.itemBottle);
     bottleBody.castShadow = true;
     bottleGroup.add(bottleBody);
@@ -1324,22 +1466,22 @@ export class GameWorld {
 
     const bottleMarker = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.52, 24), this.materials.glowMarker);
     bottleMarker.rotation.x = -Math.PI / 2;
-    bottleMarker.position.set(4.95, this.UPPER_Y + 0.005, -3.45);
+    bottleMarker.position.set(-4.2, this.LOWER_Y + 0.005, -2.5);
     this.scene.add(bottleMarker);
 
     this.speurtochtItems.bottle = {
       id: 'bottle',
       name: 'Drinkfles',
       icon: '💧',
-      hint: 'In de badkamer op de wastafel',
+      hint: 'Beneden in de keuken op het aanrecht',
       mesh: bottleGroup,
       marker: bottleMarker,
-      baseY: this.UPPER_Y + 0.95,
+      baseY: this.LOWER_Y + 0.94,
       animOffset: 1.2,
       picked: false
     };
     this.interactiveObjects.item_bottle = {
-      position: new THREE.Vector3(4.95, this.UPPER_Y, -3.45),
+      position: new THREE.Vector3(-4.2, this.LOWER_Y, -2.5),
       radius: 1.6,
       picked: false,
       onInteract: () => this.pickUpSpeurtochtItem('bottle')
