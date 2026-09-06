@@ -1171,16 +1171,19 @@ export class GameWorld {
     this.wardrobeArrow.visible = false;
     this.wardrobeMarker.visible = false;
 
-    this.animatedObjects.push({
-      update: (dt) => {
-        if (this.doorLeft.rotation.y > -Math.PI * 0.65) {
-          this.doorLeft.rotation.y -= dt * 2.5;
-        }
-        if (this.doorRight.rotation.y < Math.PI * 0.65) {
-          this.doorRight.rotation.y += dt * 2.5;
-        }
-      }
-    });
+    // Sluit eventuele eerdere animatie uit
+    this.wardrobeAnimating = true;
+  }
+
+  closeWardrobe() {
+    this.wardrobeAnimating = false;
+    if (this.interactiveObjects.wardrobe) {
+      this.interactiveObjects.wardrobe.opened = false;
+    }
+    if (this.doorLeft) this.doorLeft.rotation.y = 0;
+    if (this.doorRight) this.doorRight.rotation.y = 0;
+    if (this.wardrobeArrow) this.wardrobeArrow.visible = true;
+    if (this.wardrobeMarker) this.wardrobeMarker.visible = true;
   }
 
   // --- HULP ELEMENTEN (BED, WEKKER, BUREAU, DECORATIES) ---
@@ -1979,6 +1982,11 @@ export class GameWorld {
     if (this.lockerMarker) this.lockerMarker.visible = false;
     if (this.lockerItemsGroup) this.lockerItemsGroup.visible = false;
     if (this.interactiveObjects.locker) this.interactiveObjects.locker.opened = false;
+    if (this.sinkWaterStream) this.sinkWaterStream.visible = false;
+    if (this.interactiveObjects.sink) this.interactiveObjects.sink.active = false;
+    if (this.showerParticlesGroup) this.showerParticlesGroup.visible = false;
+    if (this.interactiveObjects.shower) this.interactiveObjects.shower.active = false;
+    this.closeWardrobe();
     this.resetAlarmClock();
   }
 
@@ -2166,6 +2174,15 @@ export class GameWorld {
   update(dt, elapsed) {
     for (const anim of this.animatedObjects) {
       anim.update(dt, elapsed);
+    }
+
+    if (this.wardrobeAnimating && this.doorLeft && this.doorRight) {
+      if (this.doorLeft.rotation.y > -Math.PI * 0.65) {
+        this.doorLeft.rotation.y -= dt * 2.5;
+      }
+      if (this.doorRight.rotation.y < Math.PI * 0.65) {
+        this.doorRight.rotation.y += dt * 2.5;
+      }
     }
 
     if (this.wardrobeArrow && this.wardrobeArrow.visible) {

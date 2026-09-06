@@ -182,10 +182,14 @@ class Game {
     wakeupBtn.addEventListener('click', () => this.handleWakeup());
 
     // Knoppen in overwinning modal
-    document.getElementById('btn-play-again').addEventListener('click', () => this.restartGame());
-    document.getElementById('btn-explore').addEventListener('click', () => {
-      this.victoryModal.classList.remove('active');
-    });
+    const playAgainBtn = document.getElementById('btn-play-again');
+    if (playAgainBtn) playAgainBtn.addEventListener('click', () => this.restartGame());
+    const exploreBtn = document.getElementById('btn-explore');
+    if (exploreBtn) {
+      exploreBtn.addEventListener('click', () => {
+        this.victoryModal.classList.remove('active');
+      });
+    }
 
     // Knop in game over modal
     const retryGameoverBtn = document.getElementById('btn-retry-gameover');
@@ -707,7 +711,7 @@ class Game {
     this.setObjective('☀️ Word snel wakker om op tijd op school te zijn!');
 
     // Nieuw willekeurig weerbericht
-    weather.currentWeather = weather.pickRandomWeather();
+    weather.currentWeather = weather.pickRandomWeather(true);
     this.updateWeatherUI();
 
     // Speurtocht resetten

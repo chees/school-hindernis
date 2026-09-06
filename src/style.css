@@ -711,18 +711,21 @@ body.has-touch #camera-touch-zone {
 }
 
 .toilet-feedback-box {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid #10b981;
-  color: #a7f3d0;
-  padding: 8px 14px;
-  border-radius: 12px;
-  margin-top: 8px;
+  background: #ecfdf5;
+  border: 2px solid #10b981;
+  color: #065f46;
+  padding: 12px 16px;
+  border-radius: 14px;
+  margin-top: 10px;
+  margin-bottom: 16px;
   font-size: 14px;
+  font-weight: 600;
+  text-align: center;
 }
 .toilet-feedback-box.missed {
-  background: rgba(239, 68, 68, 0.15);
+  background: #fef2f2;
   border-color: #ef4444;
-  color: #fca5a5;
+  color: #991b1b;
 }
 
 /* Kleerkast Customizer Studio Modal */

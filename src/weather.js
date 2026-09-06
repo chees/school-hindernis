@@ -35,15 +35,18 @@ export class WeatherManager {
     this.currentWeather = this.pickRandomWeather();
   }
 
-  pickRandomWeather() {
-    if (typeof window !== 'undefined') {
+  pickRandomWeather(ignoreUrlParam = false) {
+    if (!ignoreUrlParam && typeof window !== 'undefined') {
       const param = new URLSearchParams(window.location.search).get('weather');
       if (param && WEATHER_TYPES[param.toUpperCase()]) {
         return WEATHER_TYPES[param.toUpperCase()];
       }
     }
     const types = [WEATHER_TYPES.SUNNY, WEATHER_TYPES.RAINY, WEATHER_TYPES.CHILLY];
-    return types[Math.floor(Math.random() * types.length)];
+    // Zorg bij willekeurige keuze voor afwisseling ten opzichte van het vorige weer
+    const candidates = types.filter(t => !this.currentWeather || t.id !== this.currentWeather.id);
+    const pool = candidates.length > 0 ? candidates : types;
+    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   setWeather(typeKey) {
