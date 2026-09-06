@@ -15,32 +15,30 @@
   <div id="ui-overlay">
     <!-- Top Status Bar -->
     <header class="top-bar">
-      <div class="brand-badge">
-        <span>🎒</span>
-        <span>School Hindernis</span>
-      </div>
-
-      <!-- Tijd tot de schoolbel indicator -->
-      <div class="timer-pill" id="hud-timer-pill" title="Tijd tot de schoolbel (08:30)">
-        <span id="hud-timer-icon">⏰</span>
-        <div class="timer-content">
-          <span class="timer-label">Schoolbel over:</span>
-          <span id="hud-timer-text" class="timer-digits">03:00</span>
+      <!-- Statusbadges links: Timer, Weer, WC -->
+      <div class="top-left-group">
+        <!-- Tijd tot de schoolbel indicator -->
+        <div class="timer-pill" id="hud-timer-pill" title="Tijd tot de schoolbel (08:30)">
+          <span id="hud-timer-icon">⏰</span>
+          <div class="timer-content">
+            <span class="timer-label">Schoolbel over:</span>
+            <span id="hud-timer-text" class="timer-digits">03:00</span>
+          </div>
+          <div class="timer-meter"><div id="hud-timer-fill" style="width: 100%;"></div></div>
         </div>
-        <div class="timer-meter"><div id="hud-timer-fill" style="width: 100%;"></div></div>
-      </div>
 
-      <!-- Weerbadge bovenaan -->
-      <div class="weather-pill" id="hud-weather-pill" title="Weer van vandaag">
-        <span id="hud-weather-icon">☀️</span>
-        <span id="hud-weather-text">24°C Zonnig</span>
-      </div>
+        <!-- Weerbadge bovenaan -->
+        <div class="weather-pill" id="hud-weather-pill" title="Weer van vandaag">
+          <span id="hud-weather-icon">☀️</span>
+          <span id="hud-weather-text">24°C Zonnig</span>
+        </div>
 
-      <!-- WC-status indicator bovenaan -->
-      <div class="toilet-pill urgent" id="hud-toilet-pill" title="WC Status">
-        <span id="hud-toilet-icon">🚽</span>
-        <span id="hud-toilet-text">Hoge nood!</span>
-        <div class="toilet-meter"><div id="hud-toilet-fill" style="width: 100%;"></div></div>
+        <!-- WC-status indicator bovenaan -->
+        <div class="toilet-pill urgent" id="hud-toilet-pill" title="WC Status">
+          <span id="hud-toilet-icon">🚽</span>
+          <span id="hud-toilet-text">Hoge nood!</span>
+          <div class="toilet-meter"><div id="hud-toilet-fill" style="width: 100%;"></div></div>
+        </div>
       </div>
 
       <div class="objective-banner" id="objective-text">

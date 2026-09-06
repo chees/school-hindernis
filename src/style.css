@@ -46,19 +46,11 @@ html, body {
   pointer-events: auto;
 }
 
-.brand-badge {
+.top-left-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 8px 14px;
-  border-radius: 9999px;
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  flex-wrap: nowrap;
 }
 
 .objective-banner {
