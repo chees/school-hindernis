@@ -1483,7 +1483,10 @@ class Game {
       // Jump handling
       if (this.gameState === 'PLAYING') {
         if (this.controls.consumeJump()) {
-          if (this.player.jump()) {
+          const jumpResult = this.player.jump();
+          if (jumpResult === 'BED_BOUNCE') {
+            sounds.playBedBounce();
+          } else if (jumpResult) {
             sounds.playJump();
           }
         }

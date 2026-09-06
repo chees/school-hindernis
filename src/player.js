@@ -36,9 +36,13 @@ export class Player {
       backpackColor: 0x10b981 // Groen
     };
 
+    this.isBedBouncing = false;
+    this.bedBouncePoseTimer = 0;
+
     this.group = new THREE.Group();
     this.buildCharacter();
     this.createThoughtBubble();
+    this.createWheeeBubble();
     this.scene.add(this.group);
 
     this.setSleepingPose();
@@ -571,6 +575,102 @@ export class Player {
     this.thoughtBubbleGroup.visible = false; // Pas zichtbaar na wakker worden
   }
 
+  createWheeeBubble() {
+    this.wheeeBubbleGroup = new THREE.Group();
+
+    this.wheeeCanvas = document.createElement('canvas');
+    this.wheeeCanvas.width = 256;
+    this.wheeeCanvas.height = 128;
+    this.wheeeCtx = this.wheeeCanvas.getContext('2d');
+
+    this.wheeeTex = new THREE.CanvasTexture(this.wheeeCanvas);
+    const bubbleGeo = new THREE.PlaneGeometry(0.85, 0.42);
+    this.wheeeMat = new THREE.MeshBasicMaterial({
+      map: this.wheeeTex,
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    this.wheeeMesh = new THREE.Mesh(bubbleGeo, this.wheeeMat);
+    this.wheeeBubbleGroup.add(this.wheeeMesh);
+
+    this.wheeeBubbleGroup.renderOrder = 15;
+    this.scene.add(this.wheeeBubbleGroup);
+    this.wheeeBubbleGroup.visible = false;
+    this.wheeeTimer = 0;
+  }
+
+  showWheeeBubble() {
+    if (!this.wheeeBubbleGroup || !this.wheeeCtx) return;
+
+    const phrases = [
+      { text: 'WHEEEEE! 🎉', bg: '#f43f5e', border: '#ffe4e6' },
+      { text: 'BOING! ✨', bg: '#8b5cf6', border: '#ede9fe' },
+      { text: 'WHEEE! 🎈', bg: '#06b6d4', border: '#cffafe' },
+      { text: 'YIPPIEEE! 🌟', bg: '#10b981', border: '#d1fae5' }
+    ];
+    const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+
+    const ctx = this.wheeeCtx;
+    ctx.clearRect(0, 0, 256, 128);
+
+    const x = 12, y = 14, w = 232, h = 90, r = 24;
+    ctx.fillStyle = phrase.bg;
+    ctx.strokeStyle = phrase.border;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 6;
+    ctx.fillText(phrase.text, 128, 59);
+
+    this.wheeeTex.needsUpdate = true;
+    this.wheeeBubbleGroup.visible = true;
+    this.wheeeTimer = 0.75;
+    this.wheeeBubbleGroup.scale.set(0.6, 0.6, 0.6);
+  }
+
+  updateWheeeBubble(camera, dt) {
+    if (!this.wheeeBubbleGroup || !this.wheeeBubbleGroup.visible) return;
+
+    this.wheeeTimer -= dt;
+    if (this.wheeeTimer <= 0) {
+      this.wheeeBubbleGroup.visible = false;
+      return;
+    }
+
+    const progress = (0.75 - this.wheeeTimer) / 0.75;
+    const currentScale = Math.min(1.0, 0.6 + progress * 0.5);
+    this.wheeeBubbleGroup.scale.set(currentScale, currentScale, currentScale);
+    this.wheeeMat.opacity = Math.max(0, this.wheeeTimer / 0.4);
+
+    this.wheeeBubbleGroup.position.set(
+      this.position.x,
+      this.position.y + 1.85 + progress * 0.35,
+      this.position.z
+    );
+
+    if (camera) {
+      this.wheeeBubbleGroup.quaternion.copy(camera.quaternion);
+    }
+  }
+
   useToilet() {
     this.toiletNeed = 0;
     if (this.thoughtBubbleGroup) {
@@ -583,8 +683,12 @@ export class Player {
   setSleepingPose() {
     this.state = 'SLEEPING';
     this.toiletNeed = 100;
+    this.isBedBouncing = false;
     if (this.thoughtBubbleGroup) {
       this.thoughtBubbleGroup.visible = false;
+    }
+    if (this.wheeeBubbleGroup) {
+      this.wheeeBubbleGroup.visible = false;
     }
     this.group.position.set(-5.8, this.world.UPPER_Y + 0.6, -5.5);
     this.bodyGroup.rotation.x = -Math.PI / 2;
@@ -649,7 +753,20 @@ export class Player {
   }
 
   jump() {
-    if (this.state !== 'ACTIVE' || !this.isGrounded) return false;
+    if (this.state !== 'ACTIVE') return false;
+
+    // Check of speler op het bed staat of vlak erboven
+    const onBed = this.world && this.world.isOnBed(this.position.x, this.position.z, this.position.y);
+    if (onBed) {
+      this.velocity.y = 8.5;
+      this.isGrounded = false;
+      this.isBedBouncing = true;
+      if (this.world.bounceBed) this.world.bounceBed();
+      this.showWheeeBubble();
+      return 'BED_BOUNCE';
+    }
+
+    if (!this.isGrounded) return false;
     this.velocity.y = this.jumpForce;
     this.isGrounded = false;
     return true;
@@ -725,21 +842,53 @@ export class Player {
       }
     }
 
+    // Speelse animatie tijdens het stuiteren op het bed: armen hoog in de lucht en vrolijk wapperen!
+    if (this.isBedBouncing && !this.isGrounded) {
+      const armWave = Math.sin(performance.now() * 0.018) * 0.25;
+      this.leftArmPivot.rotation.x = -2.7 + armWave;
+      this.rightArmPivot.rotation.x = -2.7 - armWave;
+      this.leftArmPivot.rotation.z = -0.35;
+      this.rightArmPivot.rotation.z = 0.35;
+
+      const legKick = Math.sin(performance.now() * 0.014) * 0.2;
+      this.leftLegPivot.rotation.x = 0.4 + legKick;
+      this.rightLegPivot.rotation.x = 0.4 - legKick;
+    }
+
     if (camera) {
       this.updateThoughtBubble(camera);
+      this.updateWheeeBubble(camera, dt);
     }
 
     const groundY = this.world.getGroundHeightAt(this.position.x, this.position.z, this.position.y);
     this.velocity.y += this.gravity * dt;
     this.position.y += this.velocity.y * dt;
 
+    const onBed = this.world && this.world.isOnBed(this.position.x, this.position.z, this.position.y);
+
     if (this.position.y <= groundY) {
       this.position.y = groundY;
-      this.velocity.y = 0;
-      this.isGrounded = true;
+      if (onBed && groundY >= this.world.UPPER_Y + 0.35) {
+        // Bed-stuiteren! Elastisch trampoline effect
+        const fallSpeed = Math.abs(this.velocity.y);
+        const bounceForce = Math.min(8.6, Math.max(7.5, fallSpeed * 1.15 + 2.0));
+        this.velocity.y = bounceForce;
+        this.isGrounded = false;
+        this.isBedBouncing = true;
+        if (this.world.bounceBed) this.world.bounceBed();
+        if (soundManager) soundManager.playBedBounce();
+        this.showWheeeBubble();
+      } else {
+        this.velocity.y = 0;
+        this.isGrounded = true;
+        this.isBedBouncing = false;
+      }
     } else {
       if (this.position.y - groundY > 0.1) {
         this.isGrounded = false;
+      }
+      if (!onBed && this.position.y <= this.world.UPPER_Y + 0.2) {
+        this.isBedBouncing = false;
       }
     }
 

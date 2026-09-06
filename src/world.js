@@ -1214,9 +1214,9 @@ export class GameWorld {
 
     // Matras (ligt direct op het frame op y = 0.35 + 0.11 = 0.46)
     const matGeo = new THREE.BoxGeometry(2.1, 0.22, 1.35);
-    const mattress = new THREE.Mesh(matGeo, this.materials.mattress);
-    mattress.position.set(0.04, 0.46, 0);
-    bed.add(mattress);
+    this.mattressMesh = new THREE.Mesh(matGeo, this.materials.mattress);
+    this.mattressMesh.position.set(0.04, 0.46, 0);
+    bed.add(this.mattressMesh);
 
     // Kussen (ligt op het matras)
     const pilGeo = new THREE.BoxGeometry(0.5, 0.12, 0.9);
@@ -1234,11 +1234,37 @@ export class GameWorld {
 
     this.scene.add(bed);
 
+    // Hoofdbord collider (voorkomt springen/vallen door het houten hoofdbord naar de westmuur)
     this.colliders.push({
-      minX: x - 1.2, maxX: x + 1.2,
+      minX: x - 1.25, maxX: x - 0.92,
       minY: y, maxY: y + 1.4,
-      minZ: z - 0.8, maxZ: z + 0.8
+      minZ: z - 0.78, maxZ: z + 0.78
     });
+
+    // Bedframe zijranden collider op vloerniveau (zodat je er op de vloer niet doorheen loopt, maar er wel OP kunt springen)
+    this.colliders.push({
+      minX: x - 0.95, maxX: x + 1.18,
+      minY: y, maxY: y + 0.52,
+      minZ: z - 0.78, maxZ: z + 0.78
+    });
+  }
+
+  isOnBed(x, z, currentY = null) {
+    // Bed is gecentreerd op (-5.8, UPPER_Y, -5.5)
+    // Matras bereik: X van -6.85 tot -4.75, Z van -6.20 tot -4.80
+    const inBedBounds = (x >= -6.85 && x <= -4.75 && z >= -6.20 && z <= -4.80);
+    if (!inBedBounds) return false;
+
+    // Moet zich op de bovenverdieping bevinden (niet eronder op de begane grond)
+    if (currentY !== null && currentY < (this.UPPER_Y + this.LOWER_Y) / 2) {
+      return false;
+    }
+    return true;
+  }
+
+  bounceBed() {
+    this.bedBounceAnimating = true;
+    this.bedBounceTimer = 0;
   }
 
   uncoverBed() {
@@ -2360,6 +2386,13 @@ export class GameWorld {
     const isUpperLevel = currentY === null ? (x < s.xMin || z < s.zTop) : (currentY >= midY);
 
     if (isUpperBounds && isUpperLevel) {
+      // Bevindt de speler zich bovenop het matras van het bed?
+      if (this.isOnBed(x, z, currentY)) {
+        const bedSurfaceY = this.UPPER_Y + 0.55;
+        if (currentY === null || currentY >= this.UPPER_Y + 0.35) {
+          return bedSurfaceY;
+        }
+      }
       return this.UPPER_Y;
     }
 
@@ -2422,6 +2455,28 @@ export class GameWorld {
       }
       if (this.doorRight.rotation.y < Math.PI * 0.65) {
         this.doorRight.rotation.y += dt * 2.5;
+      }
+    }
+
+    if (this.bedBounceAnimating) {
+      this.bedBounceTimer += dt * 18;
+      const compression = Math.sin(this.bedBounceTimer) * Math.exp(-this.bedBounceTimer * 0.35) * 0.08;
+      if (this.mattressMesh) {
+        this.mattressMesh.position.y = 0.46 - compression;
+        this.mattressMesh.scale.y = 1.0 - compression * 1.5;
+      }
+      if (this.blanketMesh) {
+        this.blanketMesh.position.y = 0.58 - compression;
+      }
+      if (this.bedBounceTimer > Math.PI * 3.5) {
+        this.bedBounceAnimating = false;
+        if (this.mattressMesh) {
+          this.mattressMesh.position.y = 0.46;
+          this.mattressMesh.scale.y = 1.0;
+        }
+        if (this.blanketMesh) {
+          this.blanketMesh.position.y = 0.58;
+        }
       }
     }
 

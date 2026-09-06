@@ -173,6 +173,79 @@ class SoundEffects {
     osc.stop(now + 0.22);
   }
 
+  // Vrolijk bed-stuiteren met elastische matrasveer en vrolijke "Wheee!" geluidjes
+  playBedBounce() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+
+    // 1. Elastische matrasveer / cartoon "Boing!" klank
+    const springOsc = this.ctx.createOscillator();
+    const springGain = this.ctx.createGain();
+    springOsc.type = 'triangle';
+    springOsc.frequency.setValueAtTime(145 + Math.random() * 25, now);
+    springOsc.frequency.exponentialRampToValueAtTime(420 + Math.random() * 40, now + 0.08);
+    springOsc.frequency.exponentialRampToValueAtTime(180, now + 0.22);
+
+    springGain.gain.setValueAtTime(0.14, now);
+    springGain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+    springOsc.connect(springGain);
+    springGain.connect(this.ctx.destination);
+    springOsc.start(now);
+    springOsc.stop(now + 0.24);
+
+    // 2. Vrolijk stemmetje / "Wheeeee!" formant-synthese
+    const voiceOsc = this.ctx.createOscillator();
+    const voiceGain = this.ctx.createGain();
+    const voiceFilter = this.ctx.createBiquadFilter();
+
+    // Bandpass formant filter simuleert het heldere menselijke "eeeee" vokaal
+    voiceFilter.type = 'bandpass';
+    voiceFilter.frequency.setValueAtTime(2400 + (Math.random() * 260 - 130), now);
+    voiceFilter.Q.setValueAtTime(3.6, now);
+
+    const pitchVariant = Math.random();
+    let startFreq, peakFreq, duration;
+
+    if (pitchVariant < 0.35) {
+      // Hoge speelse "Wheeeeee!"
+      startFreq = 390;
+      peakFreq = 840;
+      duration = 0.52;
+    } else if (pitchVariant < 0.70) {
+      // Extra enthousiaste "Wahoo-wheee!"
+      startFreq = 440;
+      peakFreq = 960;
+      duration = 0.58;
+    } else {
+      // Snelle vrolijke "Yippeee!"
+      startFreq = 360;
+      peakFreq = 780;
+      duration = 0.46;
+    }
+
+    voiceOsc.type = 'sawtooth';
+    voiceOsc.frequency.setValueAtTime(startFreq, now + 0.03);
+    voiceOsc.frequency.exponentialRampToValueAtTime(peakFreq, now + 0.24);
+    // Speels vibrato op het hoogtepunt van de sprong
+    voiceOsc.frequency.linearRampToValueAtTime(peakFreq + 30, now + 0.34);
+    voiceOsc.frequency.linearRampToValueAtTime(peakFreq - 20, now + 0.42);
+
+    voiceGain.gain.setValueAtTime(0.001, now);
+    voiceGain.gain.linearRampToValueAtTime(0.15, now + 0.08);
+    voiceGain.gain.setValueAtTime(0.15, now + 0.28);
+    voiceGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    voiceOsc.connect(voiceFilter);
+    voiceFilter.connect(voiceGain);
+    voiceGain.connect(this.ctx.destination);
+
+    voiceOsc.start(now + 0.03);
+    voiceOsc.stop(now + duration + 0.02);
+  }
+
   // Kleerkast openen & succes jingle
   playWardrobeOpen() {
     if (this.muted || !this.ctx) return;
