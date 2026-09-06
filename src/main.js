@@ -392,19 +392,46 @@ class Game {
     if (wAdvice) wAdvice.textContent = w.advice;
   }
 
-  updateToiletUI() {
+  updateToiletUI(justUsed = false) {
     if (!this.toiletPill) return;
     const need = this.player ? this.player.toiletNeed : 100;
+
     if (need > 0) {
+      if (this.toiletRelievedTimeout) {
+        clearTimeout(this.toiletRelievedTimeout);
+        this.toiletRelievedTimeout = null;
+      }
+      this.toiletPill.style.display = 'flex';
+      this.toiletPill.style.opacity = '1';
       this.toiletPill.className = 'toilet-pill urgent';
       if (this.toiletIcon) this.toiletIcon.textContent = '🚽';
       if (this.toiletText) this.toiletText.textContent = 'Hoge nood!';
       if (this.toiletFill) this.toiletFill.style.width = `${need}%`;
-    } else {
+    } else if (justUsed) {
+      // Laat heel even zien dat je opgelucht bent, daarna verdwijnt de pil uit de bovenbalk
+      this.toiletPill.style.display = 'flex';
       this.toiletPill.className = 'toilet-pill relieved';
       if (this.toiletIcon) this.toiletIcon.textContent = '✨';
       if (this.toiletText) this.toiletText.textContent = 'Opgelucht!';
       if (this.toiletFill) this.toiletFill.style.width = '0%';
+      this.toiletPill.style.opacity = '1';
+
+      if (this.toiletRelievedTimeout) clearTimeout(this.toiletRelievedTimeout);
+      this.toiletRelievedTimeout = setTimeout(() => {
+        this.toiletPill.style.opacity = '0';
+        setTimeout(() => {
+          if (this.player && this.player.toiletNeed <= 0) {
+            this.toiletPill.style.display = 'none';
+          }
+        }, 400);
+      }, 1800);
+    } else {
+      // Als je niet naar de wc hoeft, staat dit niet in beeld boven
+      if (this.toiletRelievedTimeout) {
+        clearTimeout(this.toiletRelievedTimeout);
+        this.toiletRelievedTimeout = null;
+      }
+      this.toiletPill.style.display = 'none';
     }
   }
 
@@ -719,6 +746,10 @@ class Game {
     }
     if (this.world.toiletArrow) this.world.toiletArrow.visible = true;
     if (this.world.toiletMarker) this.world.toiletMarker.visible = true;
+    if (this.toiletRelievedTimeout) {
+      clearTimeout(this.toiletRelievedTimeout);
+      this.toiletRelievedTimeout = null;
+    }
     this.updateToiletUI();
 
     this.cameraYaw = 0;
@@ -1038,7 +1069,7 @@ class Game {
       if (activeInteraction === 'TOILET') {
         this.world.flushToilet();
         this.player.useToilet();
-        this.updateToiletUI();
+        this.updateToiletUI(true);
         sounds.playRelief();
         this.setObjective('🚰 Lekker opgelucht! Was even je handen of pak je tas!');
       } else if (activeInteraction === 'SINK') {
