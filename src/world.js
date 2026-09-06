@@ -1198,8 +1198,10 @@ export class GameWorld {
   }
 
   checkCollision(newX, newZ, radius = 0.35, playerY = 0) {
+    const playerFeet = playerY + 0.15;
+    const playerHead = playerY + 1.35;
     for (const box of this.colliders) {
-      if (playerY + 0.1 >= box.minY && playerY + 0.5 <= box.maxY + 0.8) {
+      if (playerFeet <= box.maxY && playerHead >= box.minY) {
         if (
           newX + radius > box.minX &&
           newX - radius < box.maxX &&
