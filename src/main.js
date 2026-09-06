@@ -149,6 +149,12 @@ class Game {
     this.actionBtn = document.getElementById('btn-action');
     this.actionBtnIcon = document.getElementById('action-btn-icon');
     this.actionBtnLabel = document.getElementById('action-btn-label');
+    if (this.actionBtn) {
+      this.actionBtn.disabled = true;
+      this.actionBtn.classList.remove('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = '';
+    }
     this.wakeupModal = document.getElementById('wakeup-modal');
     this.wardrobeModal = document.getElementById('wardrobe-modal');
     this.victoryModal = document.getElementById('victory-modal');
@@ -753,6 +759,12 @@ class Game {
       this.toiletRelievedTimeout = null;
     }
     this.updateToiletUI();
+    if (this.actionBtn) {
+      this.actionBtn.disabled = true;
+      this.actionBtn.classList.remove('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = '';
+    }
 
     this.cameraYaw = 0;
     this.cameraPitch = 0.35;
@@ -985,55 +997,37 @@ class Game {
 
     if (distToToilet <= toilet.radius) {
       activeInteraction = 'TOILET';
-      this.promptEl.textContent = this.player.toiletNeed > 0
-        ? '🚽 Druk op [E] of tik op [WC] om naar de wc te gaan!'
-        : '🚽 Druk op [E] of tik op [WC] om nog eens door te spoelen!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚽';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'WC';
     } else if (distToSink <= sink.radius) {
       activeInteraction = 'SINK';
-      this.promptEl.textContent = '🚰 Druk op [E] of tik op [Kraan] om je handen te wassen!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚰';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kraan';
     } else if (distToShower <= shower.radius) {
       activeInteraction = 'SHOWER';
-      this.promptEl.textContent = '🚿 Druk op [E] of tik op [Douche] om de douche te starten!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚿';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Douche';
     } else if (!this.hasBag && schoolBag && distToBag <= schoolBag.radius) {
       activeInteraction = 'BAG';
-      this.promptEl.textContent = '🎒 Druk op [E] of tik op [Tas] om je schooltas te pakken!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🎒';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Tas';
     } else if (distToWardrobe <= wardrobe.radius && !this.player.isDressed) {
       activeInteraction = 'WARDROBE';
-      this.promptEl.textContent = '✨ Druk op [E] of tik op [Kast] om je aan te kleden!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚪';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kast';
     } else if (!this.frontDoorOpen && frontDoor && distToDoor <= frontDoor.radius) {
       const isReady = this.player.isDressed && this.hasBag && (this.speurtochtCountFound === this.speurtochtTotal);
       if (isReady) {
         activeInteraction = 'FRONTDOOR';
-        this.promptEl.textContent = '🚪 Druk op [E] of tik op [Open] om de voordeur te openen!';
         if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚪';
         if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Open';
-      } else {
-        if (!this.player.isDressed) {
-          this.promptEl.textContent = '⚠️ Je loopt nog in pyjama! Kleed je eerst aan bij de kast.';
-        } else if (!this.hasBag) {
-          this.promptEl.textContent = '⚠️ Je hebt je schooltas nog niet! Pak hem boven op je bureau.';
-        } else {
-          this.promptEl.textContent = `⚠️ Je bent nog spullen vergeten! (${this.speurtochtCountFound}/5 in tas)`;
-        }
       }
     } else if (distToCar <= (car ? car.radius : 0) && !this.carBoarded) {
       activeInteraction = 'CAR';
-      this.promptEl.textContent = '🚗 Druk op [E] of tik op [Instappen] om in de auto te stappen!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚗';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Instappen';
     } else if (distToLocker <= (locker ? locker.radius : 0) && !this.lockerCompleted) {
       activeInteraction = 'LOCKER';
-      this.promptEl.textContent = '🎒 Druk op [E] of tik op [Kluisje] om je spullen in kluisje #7 te leggen!';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🔐';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kluisje';
     }
@@ -1047,7 +1041,6 @@ class Game {
           const d = playerPos.distanceTo(interactObj.position);
           if (d <= interactObj.radius) {
             activeInteraction = 'ITEM_' + key;
-            this.promptEl.textContent = `${it.icon} Druk op [E] of tik op [Pak] om ${it.name} te pakken!`;
             if (this.actionBtnIcon) this.actionBtnIcon.textContent = it.icon;
             if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Pak';
             break;
@@ -1056,18 +1049,41 @@ class Game {
       }
     }
 
+    // Actieknop status: alleen actief en pulserend als er een geldige interactie is
     if (activeInteraction) {
-      this.promptEl.classList.add('visible');
-      this.actionBtn.classList.add('active-glow');
-    } else if (!frontDoor || distToDoor > frontDoor.radius) {
+      if (this.actionBtn) {
+        this.actionBtn.disabled = false;
+        this.actionBtn.classList.add('active-glow');
+      }
+    } else {
+      if (this.actionBtn) {
+        this.actionBtn.disabled = true;
+        this.actionBtn.classList.remove('active-glow');
+        if (this.actionBtnIcon) this.actionBtnIcon.textContent = '';
+        if (this.actionBtnLabel) this.actionBtnLabel.textContent = '';
+      }
+    }
+
+    if (this.promptEl) {
       this.promptEl.classList.remove('visible');
-      this.actionBtn.classList.remove('active-glow');
     }
 
     const interact = this.controls.consumeInteract();
     const keyE = this.controls.keys['KeyE'];
-    if ((activeInteraction && interact) || (activeInteraction && keyE)) {
+    if (interact || keyE) {
       this.controls.keys['KeyE'] = false;
+
+      // Waarschuwing als speler bij voordeur staat maar nog niet mag vertrekken
+      if (!this.frontDoorOpen && frontDoor && distToDoor <= frontDoor.radius && !activeInteraction) {
+        if (!this.player.isDressed) {
+          this.showPickupToast('⚠️', 'Je loopt nog in pyjama! Kleed je eerst aan bij de kast.');
+        } else if (!this.hasBag) {
+          this.showPickupToast('🎒', 'Je hebt je schooltas nog niet! Pak hem boven op je bureau.');
+        } else {
+          this.showPickupToast('📋', `Je bent nog spullen vergeten! (${this.speurtochtCountFound}/5 in tas)`);
+        }
+        return;
+      }
       if (activeInteraction === 'TOILET') {
         this.world.flushToilet();
         this.player.useToilet();
@@ -1120,8 +1136,13 @@ class Game {
   handleWardrobeReached() {
     if (this.player.isDressed || this.gameState === 'CUSTOMIZING') return;
 
-    this.promptEl.classList.remove('visible');
-    this.actionBtn.classList.remove('active-glow');
+    if (this.promptEl) this.promptEl.classList.remove('visible');
+    if (this.actionBtn) {
+      this.actionBtn.disabled = true;
+      this.actionBtn.classList.remove('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = '';
+    }
 
     // Draai speler richting de camera/spiegel
     this.player.rotation = Math.PI / 2;
@@ -1193,8 +1214,12 @@ class Game {
     this.carSpeed = 0;
 
     this.setObjective('🚗 Rijd veilig naar school! [W/Pijl omhoog] = Gas, [A/D] = Sturen, [Spatie] = Toeteren');
-    if (this.actionBtnIcon) this.actionBtnIcon.textContent = '📢';
-    if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Toet!';
+    if (this.actionBtn) {
+      this.actionBtn.disabled = false;
+      this.actionBtn.classList.add('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '📢';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Toet!';
+    }
   }
 
   updateDriving(dt) {
@@ -1209,9 +1234,7 @@ class Game {
     if (this.controls.keys['Space'] || this.controls.consumeInteract()) {
       this.controls.keys['Space'] = false;
       sounds.playCarHorn();
-      this.promptEl.textContent = '📢 TOET TOET!';
-      this.promptEl.classList.add('visible');
-      setTimeout(() => this.promptEl.classList.remove('visible'), 900);
+      this.showPickupToast('📢', 'TOET TOET!');
     }
 
     // Acceleratie & frictie
@@ -1296,6 +1319,13 @@ class Game {
 
     if (this.world.lockerMarker) this.world.lockerMarker.visible = true;
     if (this.world.lockerArrow) this.world.lockerArrow.visible = true;
+
+    if (this.actionBtn) {
+      this.actionBtn.disabled = true;
+      this.actionBtn.classList.remove('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = '';
+    }
 
     this.setObjective('🏫 Je bent op school! Loop naar binnen door de dubbele schooldeuren naar kluisje #7!');
   }

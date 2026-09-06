@@ -177,9 +177,11 @@ export class InputControls {
     if (actionBtn) {
       actionBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        if (actionBtn.disabled) return;
         this.interactRequested = true;
       }, { passive: false });
       actionBtn.addEventListener('click', (e) => {
+        if (actionBtn.disabled) return;
         this.interactRequested = true;
       });
     }

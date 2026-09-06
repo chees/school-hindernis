@@ -213,7 +213,18 @@ body.has-touch #camera-touch-zone {
   justify-content: center;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: transform 0.15s, opacity 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.touch-action-btn:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.25);
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  box-shadow: none;
+  animation: none !important;
+  transform: none !important;
 }
 
 .touch-action-btn span {
@@ -229,7 +240,8 @@ body.has-touch #camera-touch-zone {
 
 #btn-action.active-glow {
   background: #10b981;
-  border-color: #6ee7b7;
+  border: 3px solid #6ee7b7;
+  opacity: 1;
   animation: pulse-action 1s infinite alternate;
 }
 
@@ -338,28 +350,9 @@ body.has-touch #camera-touch-zone {
   transform: scale(0.95);
 }
 
-/* Prompt tooltip floating in 3D */
+/* Prompt tooltip disabled/hidden */
 #interaction-prompt {
-  position: absolute;
-  top: 60%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(16, 185, 129, 0.95);
-  border: 2px solid #ffffff;
-  color: white;
-  font-weight: 800;
-  font-size: 16px;
-  padding: 10px 22px;
-  border-radius: 9999px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.25s, transform 0.25s;
-}
-
-#interaction-prompt.visible {
-  opacity: 1;
-  transform: translate(-50%, -65%);
+  display: none !important;
 }
 
 /* Victory / Completed Modal */
