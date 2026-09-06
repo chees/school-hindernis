@@ -27,6 +27,12 @@ export class InputControls {
 
     // Detecteer of het een touchscreen betreft
     this.isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (this.isTouchDevice) {
+      document.body.classList.add('has-touch');
+    }
+    window.addEventListener('touchstart', () => {
+      document.body.classList.add('has-touch');
+    }, { once: true, passive: true });
 
     this.initKeyboard();
     this.initMouse();
