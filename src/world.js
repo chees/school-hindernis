@@ -2503,21 +2503,21 @@ export class GameWorld {
   createSpeurtochtItems() {
     // 1. Schoolagenda / Huiswerkschrift (Slaapkamer boven, in de boekenkast)
     const agendaGroup = new THREE.Group();
-    agendaGroup.position.set(-0.22, this.UPPER_Y + 0.59, -4.5);
-    const coverMesh = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.03, 0.34), this.materials.itemBookCover);
+    agendaGroup.position.set(-0.25, this.UPPER_Y + 0.78, -4.5);
+    const coverMesh = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.026, 0.26), this.materials.itemBookCover);
     coverMesh.castShadow = true;
     agendaGroup.add(coverMesh);
-    const pagesMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.024, 0.32), this.materials.itemPages);
+    const pagesMesh = new THREE.Mesh(new THREE.BoxGeometry(0.185, 0.022, 0.245), this.materials.itemPages);
     pagesMesh.position.set(0.005, 0, 0);
     agendaGroup.add(pagesMesh);
-    const ribbonMesh = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.005, 0.12), this.materials.itemAccentRed);
-    ribbonMesh.position.set(0, 0.018, 0.16);
+    const ribbonMesh = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.005, 0.10), this.materials.itemAccentRed);
+    ribbonMesh.position.set(0, 0.016, 0.13);
     agendaGroup.add(ribbonMesh);
     this.scene.add(agendaGroup);
 
     const agendaMarker = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.52, 24), this.materials.glowMarker);
     agendaMarker.rotation.x = -Math.PI / 2;
-    agendaMarker.position.set(-0.95, this.UPPER_Y + 0.005, -4.5);
+    agendaMarker.position.set(-0.85, this.UPPER_Y + 0.005, -4.5);
     this.scene.add(agendaMarker);
 
     this.speurtochtItems.agenda = {
@@ -2527,12 +2527,13 @@ export class GameWorld {
       hint: 'In de boekenkast in de slaapkamer',
       mesh: agendaGroup,
       marker: agendaMarker,
-      baseY: this.UPPER_Y + 0.59,
+      baseY: this.UPPER_Y + 0.78,
+      bobAmp: 0.02,
       animOffset: 0,
       picked: false
     };
     this.interactiveObjects.item_agenda = {
-      position: new THREE.Vector3(-0.8, this.UPPER_Y, -4.5),
+      position: new THREE.Vector3(-0.85, this.UPPER_Y, -4.5),
       radius: 1.6,
       picked: false,
       onInteract: () => this.pickUpSpeurtochtItem('agenda')
@@ -2565,6 +2566,7 @@ export class GameWorld {
       mesh: bottleGroup,
       marker: bottleMarker,
       baseY: this.LOWER_Y + 0.94,
+      bobAmp: 0.03,
       animOffset: 1.2,
       picked: false
     };
@@ -2575,19 +2577,9 @@ export class GameWorld {
       onInteract: () => this.pickUpSpeurtochtItem('bottle')
     };
 
-    // 3. Broodtrommel / Lunchbox (Beneden in de hal op een bijzettafeltje)
-    const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.72, 0.55), this.materials.woodFurniture);
-    tableMesh.position.set(-1.8, this.LOWER_Y + 0.36, 4.2);
-    tableMesh.castShadow = true;
-    this.scene.add(tableMesh);
-    this.colliders.push({
-      minX: -2.25, maxX: -1.35,
-      minY: this.LOWER_Y, maxY: this.LOWER_Y + 0.8,
-      minZ: 3.85, maxZ: 4.55
-    });
-
+    // 3. Broodtrommel / Lunchbox (Beneden op de eettafel)
     const lunchGroup = new THREE.Group();
-    lunchGroup.position.set(-1.8, this.LOWER_Y + 0.82, 4.2);
+    lunchGroup.position.set(-4.75, this.LOWER_Y + 0.82, 2.4);
     const lunchBody = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.22), this.materials.itemLunchbox);
     lunchBody.castShadow = true;
     lunchGroup.add(lunchBody);
@@ -2598,22 +2590,23 @@ export class GameWorld {
 
     const lunchMarker = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.55, 24), this.materials.glowMarker);
     lunchMarker.rotation.x = -Math.PI / 2;
-    lunchMarker.position.set(-1.8, this.LOWER_Y + 0.005, 4.85);
+    lunchMarker.position.set(-4.1, this.LOWER_Y + 0.005, 2.4);
     this.scene.add(lunchMarker);
 
     this.speurtochtItems.lunchbox = {
       id: 'lunchbox',
       name: 'Broodtrommel',
       icon: '🥪',
-      hint: 'Beneden in de hal op het tafeltje',
+      hint: 'Beneden op de eettafel',
       mesh: lunchGroup,
       marker: lunchMarker,
       baseY: this.LOWER_Y + 0.82,
+      bobAmp: 0.018,
       animOffset: 2.4,
       picked: false
     };
     this.interactiveObjects.item_lunchbox = {
-      position: new THREE.Vector3(-1.8, this.LOWER_Y, 4.8),
+      position: new THREE.Vector3(-4.1, this.LOWER_Y, 2.4),
       radius: 1.6,
       picked: false,
       onInteract: () => this.pickUpSpeurtochtItem('lunchbox')
@@ -2665,6 +2658,7 @@ export class GameWorld {
       mesh: pencilGroup,
       marker: pencilMarker,
       baseY: this.LOWER_Y + 0.94,
+      bobAmp: 0.025,
       animOffset: 3.6,
       picked: false
     };
@@ -2675,13 +2669,39 @@ export class GameWorld {
       onInteract: () => this.pickUpSpeurtochtItem('pencilcase')
     };
 
-    // 5. Fietssleutel (Beneden bij de kapstok / sleutelplankje)
-    const shelfMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.28), this.materials.woodFurniture);
-    shelfMesh.position.set(-3.42, this.LOWER_Y + 1.10, 12.5);
-    this.scene.add(shelfMesh);
+    // 5. Fietssleutel (Beneden bij de kapstok aan het sleutelrekje aan de zuidmuur)
+    const keyRackGroup = new THREE.Group();
+    keyRackGroup.position.set(-2.4, this.LOWER_Y, 13.38);
+
+    // Wandbordje van eikenhout gemonteerd tegen de zuidmuur
+    const keyBoard = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.26, 0.03), this.materials.woodFurniture);
+    keyBoard.position.set(0, 1.30, 0);
+    keyBoard.castShadow = true;
+    keyRackGroup.add(keyBoard);
+
+    // Plankje / richel
+    const keyLedge = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.025, 0.14), this.materials.woodFurniture);
+    keyLedge.position.set(0, 1.18, -0.07);
+    keyLedge.castShadow = true;
+    keyRackGroup.add(keyLedge);
+
+    // Keramieken sleutelschaaltje op het plankje
+    const keyDish = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.065, 0.025, 16), this.materials.fruitBowlMat);
+    keyDish.position.set(0, 1.20, -0.07);
+    keyDish.castShadow = true;
+    keyRackGroup.add(keyDish);
+
+    // 3 Messing sleutelhaakjes aan het bordje
+    for (const hx of [-0.15, 0, 0.15]) {
+      const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.04, 8), this.materials.brass);
+      hook.rotation.x = Math.PI / 2;
+      hook.position.set(hx, 1.34, -0.02);
+      keyRackGroup.add(hook);
+    }
+    this.scene.add(keyRackGroup);
 
     const keyGroup = new THREE.Group();
-    keyGroup.position.set(-3.25, this.LOWER_Y + 1.18, 12.5);
+    keyGroup.position.set(-2.4, this.LOWER_Y + 1.28, 13.31);
     const ringMesh = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.007, 8, 16), this.materials.itemGold);
     keyGroup.add(ringMesh);
     const stemMesh = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.11, 0.008), this.materials.itemGold);
@@ -2694,22 +2714,23 @@ export class GameWorld {
 
     const keyMarker = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.55, 24), this.materials.glowMarker);
     keyMarker.rotation.x = -Math.PI / 2;
-    keyMarker.position.set(-2.85, this.LOWER_Y + 0.005, 12.5);
+    keyMarker.position.set(-2.4, this.LOWER_Y + 0.005, 12.6);
     this.scene.add(keyMarker);
 
     this.speurtochtItems.key = {
       id: 'key',
       name: 'Fietssleutel',
       icon: '🔑',
-      hint: 'Bij de kapstok naast de voordeur',
+      hint: 'Bij de kapstok aan het sleutelrekje',
       mesh: keyGroup,
       marker: keyMarker,
-      baseY: this.LOWER_Y + 1.18,
+      baseY: this.LOWER_Y + 1.28,
+      bobAmp: 0.015,
       animOffset: 4.8,
       picked: false
     };
     this.interactiveObjects.item_key = {
-      position: new THREE.Vector3(-2.85, this.LOWER_Y, 12.5),
+      position: new THREE.Vector3(-2.4, this.LOWER_Y, 12.6),
       radius: 1.6,
       picked: false,
       onInteract: () => this.pickUpSpeurtochtItem('key')
@@ -3065,7 +3086,8 @@ export class GameWorld {
       const it = this.speurtochtItems[key];
       if (!it.picked && it.mesh && it.mesh.visible) {
         it.mesh.rotation.y += dt * 1.6;
-        it.mesh.position.y = it.baseY + Math.sin(elapsed * 3.5 + it.animOffset) * 0.05;
+        const amp = it.bobAmp !== undefined ? it.bobAmp : 0.035;
+        it.mesh.position.y = it.baseY + Math.sin(elapsed * 3.5 + it.animOffset) * amp;
       }
     }
 
