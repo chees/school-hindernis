@@ -228,7 +228,55 @@ export class GameWorld {
       lockerBlue: new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.3, roughness: 0.4 }),
       lockerGreen: new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.3, roughness: 0.4 }),
       lockerPink: new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.3, roughness: 0.4 }),
-      lockerInside: new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.5, roughness: 0.5 })
+      lockerInside: new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.5, roughness: 0.5 }),
+
+      // Woonkamer & Eethoek materialen
+      sofaFabric: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 }), // Stijlvol warm leisteen/antraciet textiel
+      sofaCushionYellow: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.75 }), // Warm mosterdgeel sierkussen
+      sofaCushionTeal: new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.75 }), // Fris cyaan/teal sierkussen
+      sofaWoodLegs: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 }),
+      coffeeTableWood: new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.45 }), // Warm eiken salontafelblad
+      coffeeTableLegs: new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 }), // Zwart staal
+      livingRug: new THREE.MeshStandardMaterial({
+        color: 0xeeece8,
+        roughness: 0.9,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      }),
+      livingRugBorder: new THREE.MeshStandardMaterial({
+        color: 0xd6d3d1,
+        roughness: 0.9,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3
+      }),
+      tvStandWood: new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.45 }), // Donker modern tv-meubel
+      tvFrame: new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.6, roughness: 0.2 }),
+      tvScreen: new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        emissive: 0x0ea5e9,
+        emissiveIntensity: 0.18,
+        roughness: 0.15,
+        metalness: 0.2
+      }),
+      soundbarMat: new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.35, metalness: 0.4 }),
+      consoleMat: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3, metalness: 0.1 }),
+      lampBrass: new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 }),
+      lampShadeWarm: new THREE.MeshStandardMaterial({
+        color: 0xfef08a,
+        emissive: 0xfef08a,
+        emissiveIntensity: 0.4,
+        roughness: 0.6
+      }),
+      diningTableWood: new THREE.MeshStandardMaterial({ color: 0xa16207, roughness: 0.4 }), // Massief eiken
+      diningChairSeat: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 }),
+      diningChairLegs: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 }),
+      fruitBowlMat: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 }),
+      fruitApple: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 }),
+      fruitBanana: new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }),
+      cupMat: new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.25 }),
+      magazineMat: new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.4 })
     };
   }
 
@@ -238,6 +286,7 @@ export class GameWorld {
     this.createStairs();
     this.createLowerFloor();
     this.createKitchen();
+    this.createLivingRoom();
     this.createBathroom();
     this.createWardrobe();
     this.createDecorations();
@@ -1040,6 +1089,482 @@ export class GameWorld {
     });
 
     this.cameraOccluders.push(counterBase, fridgeBody);
+  }
+
+  // --- DE WOONKAMER & EETHOEK BENEDEN ---
+  createLivingRoom() {
+    const y = this.LOWER_Y;
+
+    // ==========================================
+    // 1. ZITHOEK (LIVING ROOM LOUNGE)
+    // ==========================================
+
+    // A. Warm geweven woonkamer vloerkleed met rand
+    const rugGeo = new THREE.PlaneGeometry(2.8, 2.4);
+    rugGeo.rotateX(-Math.PI / 2);
+    const rug = new THREE.Mesh(rugGeo, this.materials.livingRug);
+    rug.position.set(-5.6, y + 0.003, 10.8);
+    rug.receiveShadow = true;
+    this.scene.add(rug);
+
+    const rugBorderGeo = new THREE.PlaneGeometry(2.94, 2.54);
+    rugBorderGeo.rotateX(-Math.PI / 2);
+    const rugBorder = new THREE.Mesh(rugBorderGeo, this.materials.livingRugBorder);
+    rugBorder.position.set(-5.6, y + 0.002, 10.8);
+    rugBorder.receiveShadow = true;
+    this.scene.add(rugBorder);
+
+    // B. Grote Moderne Loungebank / Hoekbank (naar het westen gericht, met gezicht naar de TV)
+    const sofaGroup = new THREE.Group();
+
+    // 1) Houten conische pootjes onder de bank
+    const legPositions = [
+      [-3.95, 9.65], [-3.95, 12.0],
+      [-4.75, 9.65], [-4.75, 10.9],
+      [-5.45, 11.45], [-5.45, 12.0]
+    ];
+    const legGeo = new THREE.CylinderGeometry(0.032, 0.02, 0.14, 8);
+    for (const [lx, lz] of legPositions) {
+      const leg = new THREE.Mesh(legGeo, this.materials.sofaWoodLegs);
+      leg.position.set(lx, y + 0.07, lz);
+      leg.castShadow = true;
+      sofaGroup.add(leg);
+    }
+
+    // 2) Bank basis/onderstel (plint)
+    const baseMainGeo = new THREE.BoxGeometry(0.9, 0.16, 2.4);
+    const baseMain = new THREE.Mesh(baseMainGeo, this.materials.sofaFabric);
+    baseMain.position.set(-4.35, y + 0.22, 10.8);
+    baseMain.castShadow = true;
+    baseMain.receiveShadow = true;
+    sofaGroup.add(baseMain);
+
+    // Chaise longue / L-uitbouw onderstel
+    const baseChaiseGeo = new THREE.BoxGeometry(0.8, 0.16, 0.8);
+    const baseChaise = new THREE.Mesh(baseChaiseGeo, this.materials.sofaFabric);
+    baseChaise.position.set(-5.15, y + 0.22, 11.75);
+    baseChaise.castShadow = true;
+    baseChaise.receiveShadow = true;
+    sofaGroup.add(baseChaise);
+
+    // 3) Zachte dikke zitkussens (zithoogte ca. 0.46m - 0.48m)
+    const cushion1 = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.14, 0.76), this.materials.sofaFabric);
+    cushion1.position.set(-4.35, y + 0.37, 9.98);
+    cushion1.castShadow = true;
+    sofaGroup.add(cushion1);
+
+    const cushion2 = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.14, 0.76), this.materials.sofaFabric);
+    cushion2.position.set(-4.35, y + 0.37, 10.8);
+    cushion2.castShadow = true;
+    sofaGroup.add(cushion2);
+
+    const cushion3 = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.14, 0.76), this.materials.sofaFabric);
+    cushion3.position.set(-4.35, y + 0.37, 11.62);
+    cushion3.castShadow = true;
+    sofaGroup.add(cushion3);
+
+    const chaiseCushion = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.14, 0.76), this.materials.sofaFabric);
+    chaiseCushion.position.set(-5.16, y + 0.37, 11.62);
+    chaiseCushion.castShadow = true;
+    sofaGroup.add(chaiseCushion);
+
+    // 4) Rugleuning achteraan (aan de oostkant van de bank, rug naar de overloop/hal)
+    const backrestGeo = new THREE.BoxGeometry(0.2, 0.44, 2.5);
+    const backrest = new THREE.Mesh(backrestGeo, this.materials.sofaFabric);
+    backrest.position.set(-3.85, y + 0.58, 10.8);
+    backrest.castShadow = true;
+    sofaGroup.add(backrest);
+
+    // 3x zachte rugleuningkussens
+    for (let i = 0; i < 3; i++) {
+      const bCushion = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.38, 0.72), this.materials.sofaFabric);
+      bCushion.position.set(-4.0, y + 0.58, 9.98 + i * 0.82);
+      bCushion.rotation.z = 0.08;
+      bCushion.castShadow = true;
+      sofaGroup.add(bCushion);
+    }
+
+    // 5) Armleuningen
+    const armNorth = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.26, 0.16), this.materials.sofaFabric);
+    armNorth.position.set(-4.35, y + 0.46, 9.54);
+    armNorth.castShadow = true;
+    sofaGroup.add(armNorth);
+
+    const armSouth = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.26, 0.8), this.materials.sofaFabric);
+    armSouth.position.set(-5.62, y + 0.46, 11.75);
+    armSouth.castShadow = true;
+    sofaGroup.add(armSouth);
+
+    // 6) Sierkussens (Mosterdgeel en Fris Teal)
+    const pillowGeo = new THREE.BoxGeometry(0.1, 0.3, 0.3);
+
+    const pillow1 = new THREE.Mesh(pillowGeo, this.materials.sofaCushionYellow);
+    pillow1.position.set(-4.2, y + 0.52, 9.68);
+    pillow1.rotation.set(0.1, 0.3, 0.15);
+    pillow1.castShadow = true;
+    sofaGroup.add(pillow1);
+
+    const pillow2 = new THREE.Mesh(pillowGeo, this.materials.sofaCushionTeal);
+    pillow2.position.set(-4.25, y + 0.50, 9.85);
+    pillow2.rotation.set(-0.1, -0.2, 0.1);
+    pillow2.castShadow = true;
+    sofaGroup.add(pillow2);
+
+    const pillow3 = new THREE.Mesh(pillowGeo, this.materials.sofaCushionYellow);
+    pillow3.position.set(-5.4, y + 0.50, 11.75);
+    pillow3.rotation.set(0.15, 1.4, 0.1);
+    pillow3.castShadow = true;
+    sofaGroup.add(pillow3);
+
+    this.scene.add(sofaGroup);
+
+    // Colliders voor de bank
+    this.colliders.push({
+      minX: -4.85, maxX: -3.75,
+      minY: y, maxY: y + 0.50,
+      minZ: 9.5, maxZ: 12.1
+    });
+    this.colliders.push({
+      minX: -5.65, maxX: -4.85,
+      minY: y, maxY: y + 0.50,
+      minZ: 11.35, maxZ: 12.1
+    });
+    this.colliders.push({
+      minX: -3.98, maxX: -3.7,
+      minY: y, maxY: y + 0.9,
+      minZ: 9.5, maxZ: 12.1
+    });
+
+    // C. Design Salontafel
+    const tableGroup = new THREE.Group();
+    tableGroup.position.set(-6.1, y, 10.8);
+
+    const coffeeTop = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, 1.15), this.materials.coffeeTableWood);
+    coffeeTop.position.set(0, 0.40, 0);
+    coffeeTop.castShadow = true;
+    coffeeTop.receiveShadow = true;
+    tableGroup.add(coffeeTop);
+
+    const cLegGeo = new THREE.CylinderGeometry(0.015, 0.012, 0.38, 8);
+    const cLegCoords = [
+      [-0.28, -0.48], [-0.28, 0.48],
+      [0.28, -0.48], [0.28, 0.48]
+    ];
+    for (const [cx, cz] of cLegCoords) {
+      const cLeg = new THREE.Mesh(cLegGeo, this.materials.coffeeTableLegs);
+      cLeg.position.set(cx, 0.19, cz);
+      cLeg.castShadow = true;
+      tableGroup.add(cLeg);
+    }
+
+    // Koffiemok
+    const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.09, 16), this.materials.cupMat);
+    mug.position.set(0.12, 0.465, -0.22);
+    mug.castShadow = true;
+    tableGroup.add(mug);
+
+    // Magazine
+    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.01, 0.28), this.materials.magazineMat);
+    mag.position.set(-0.08, 0.425, 0.15);
+    mag.rotation.y = 0.25;
+    mag.castShadow = true;
+    tableGroup.add(mag);
+
+    this.scene.add(tableGroup);
+
+    this.colliders.push({
+      minX: -6.5, maxX: -5.7,
+      minY: y, maxY: y + 0.48,
+      minZ: 10.2, maxZ: 11.4
+    });
+
+    // D. Modern TV-Meubel & Grote Smart Flatscreen Televisie
+    const tvUnitGroup = new THREE.Group();
+    tvUnitGroup.position.set(-7.6, y, 10.8);
+
+    // 1) Dressoir romp
+    const tvStand = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.46, 2.1), this.materials.tvStandWood);
+    tvStand.position.set(0, 0.25, 0);
+    tvStand.castShadow = true;
+    tvStand.receiveShadow = true;
+    tvUnitGroup.add(tvStand);
+
+    // 4 pootjes
+    const tvLegGeo = new THREE.CylinderGeometry(0.02, 0.015, 0.06, 8);
+    for (const [tx, tz] of [[-0.18, -0.95], [-0.18, 0.95], [0.18, -0.95], [0.18, 0.95]]) {
+      const tLeg = new THREE.Mesh(tvLegGeo, this.materials.coffeeTableLegs);
+      tLeg.position.set(tx, 0.03, tz);
+      tvUnitGroup.add(tLeg);
+    }
+
+    // Open middenvak met console
+    const openShelf = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.14, 0.65), this.materials.wardrobeInside);
+    openShelf.position.set(0.02, 0.32, 0);
+    tvUnitGroup.add(openShelf);
+
+    // Console
+    const consoleMesh = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.05, 0.35), this.materials.consoleMat);
+    consoleMesh.position.set(0.04, 0.28, 0);
+    consoleMesh.castShadow = true;
+    tvUnitGroup.add(consoleMesh);
+
+    const consoleLight = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.06), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    consoleLight.position.set(0.175, 0.29, 0);
+    tvUnitGroup.add(consoleLight);
+
+    // 2) Soundbar
+    const soundbar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 1.1), this.materials.soundbarMat);
+    soundbar.position.set(0.08, 0.51, 0);
+    soundbar.castShadow = true;
+    tvUnitGroup.add(soundbar);
+
+    // 3) TV Voet & Standaard
+    const tvBase = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.45), this.materials.tvFrame);
+    tvBase.position.set(-0.02, 0.49, 0);
+    tvUnitGroup.add(tvBase);
+
+    const tvPillar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.24, 0.12), this.materials.tvFrame);
+    tvPillar.position.set(-0.02, 0.61, 0);
+    tvUnitGroup.add(tvPillar);
+
+    // 4) Grote Flatscreen Televisie (1.55m breed, 0.88m hoog)
+    const tvFrameMesh = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.88, 1.55), this.materials.tvFrame);
+    tvFrameMesh.position.set(-0.02, 1.15, 0);
+    tvFrameMesh.castShadow = true;
+    tvUnitGroup.add(tvFrameMesh);
+
+    // Scherm met subtiele cyan glow
+    const tvScreenMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.48, 0.82), this.materials.tvScreen);
+    tvScreenMesh.position.set(0.007, 1.15, 0);
+    tvScreenMesh.rotation.y = Math.PI / 2;
+    tvUnitGroup.add(tvScreenMesh);
+
+    const tvLed = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.01), new THREE.MeshBasicMaterial({ color: 0x22c55e }));
+    tvLed.position.set(0.007, 0.73, 0.72);
+    tvUnitGroup.add(tvLed);
+
+    this.scene.add(tvUnitGroup);
+
+    this.colliders.push({
+      minX: -7.88, maxX: -7.3,
+      minY: y, maxY: y + 1.65,
+      minZ: 9.7, maxZ: 11.9
+    });
+
+    // E. Staande Booglamp (in de zuidwesthoek)
+    const lampGroup = new THREE.Group();
+    lampGroup.position.set(-7.3, y, 12.6);
+
+    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.04, 20), this.materials.lampBrass);
+    lampBase.position.set(0, 0.02, 0);
+    lampGroup.add(lampBase);
+
+    const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.8, 12), this.materials.lampBrass);
+    lampPole.position.set(0, 0.92, 0);
+    lampGroup.add(lampPole);
+
+    const lampArch = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.02, 0.02), this.materials.lampBrass);
+    lampArch.position.set(0.18, 1.81, -0.15);
+    lampGroup.add(lampArch);
+
+    const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.26, 0.28, 20, 1, true), this.materials.lampShadeWarm);
+    shade.position.set(0.36, 1.70, -0.15);
+    shade.castShadow = true;
+    lampGroup.add(shade);
+
+    const warmLight = new THREE.PointLight(0xffedd5, 0.45, 4.2);
+    warmLight.position.set(0.36, 1.62, -0.15);
+    lampGroup.add(warmLight);
+
+    this.scene.add(lampGroup);
+
+    this.colliders.push({
+      minX: -7.55, maxX: -7.05,
+      minY: y, maxY: y + 1.85,
+      minZ: 12.35, maxZ: 12.85
+    });
+
+    // F. Grote Kamerplant (Monstera in terracotta pot)
+    const plantGroup = new THREE.Group();
+    plantGroup.position.set(-7.3, y, 9.2);
+
+    const potGeo = new THREE.CylinderGeometry(0.32, 0.22, 0.55, 16);
+    const pot = new THREE.Mesh(potGeo, this.materials.potColor);
+    pot.position.set(0, 0.275, 0);
+    pot.castShadow = true;
+    plantGroup.add(pot);
+
+    const soilGeo = new THREE.CylinderGeometry(0.30, 0.30, 0.04, 16);
+    const soil = new THREE.Mesh(soilGeo, new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 }));
+    soil.position.set(0, 0.53, 0);
+    plantGroup.add(soil);
+
+    for (let i = 0; i < 8; i++) {
+      const leafGeo = new THREE.SphereGeometry(0.28, 8, 8);
+      leafGeo.scale(1.2, 0.15, 2.0);
+      const leaf = new THREE.Mesh(leafGeo, this.materials.leafGreen);
+      leaf.position.set(0, 0.65, 0);
+      leaf.rotation.y = (i * Math.PI) / 4 + 0.2;
+      leaf.rotation.x = 0.42 + (i % 2) * 0.1;
+      leaf.castShadow = true;
+      plantGroup.add(leaf);
+    }
+    this.scene.add(plantGroup);
+
+    this.colliders.push({
+      minX: -7.65, maxX: -6.95,
+      minY: y, maxY: y + 1.2,
+      minZ: 8.85, maxZ: 9.55
+    });
+
+    // G. Wandplank boven de TV met boeken en vetplantje
+    const shelfGroup = new THREE.Group();
+    shelfGroup.position.set(-7.75, y + 1.95, 10.8);
+
+    const shelfBoard = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.03, 1.8), this.materials.coffeeTableWood);
+    shelfBoard.castShadow = true;
+    shelfGroup.add(shelfBoard);
+
+    for (const sz of [-0.7, 0.7]) {
+      const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.16, 0.02), this.materials.coffeeTableLegs);
+      bracket.position.set(0, -0.08, sz);
+      shelfGroup.add(bracket);
+    }
+
+    const bookColors = [0x2563eb, 0xef4444, 0x10b981, 0xf59e0b, 0x8b5cf6];
+    for (let i = 0; i < 5; i++) {
+      const bookMat = new THREE.MeshStandardMaterial({ color: bookColors[i], roughness: 0.6 });
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.045), bookMat);
+      b.position.set(0, 0.105, -0.55 + i * 0.05);
+      shelfGroup.add(b);
+    }
+
+    const miniPot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.08, 12), this.materials.potColor);
+    miniPot.position.set(0, 0.055, 0.5);
+    shelfGroup.add(miniPot);
+    const miniPlant = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), this.materials.leafGreen);
+    miniPlant.position.set(0, 0.11, 0.5);
+    shelfGroup.add(miniPlant);
+
+    this.scene.add(shelfGroup);
+
+    // ==========================================
+    // 2. EETHOEK (DINING AREA)
+    // ==========================================
+
+    const diningGroup = new THREE.Group();
+    diningGroup.position.set(-5.2, y, 2.4);
+
+    // A. Massief Eiken Eettafel (1.6m x 0.95m x 0.76m)
+    const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 0.95), this.materials.diningTableWood);
+    tableTop.position.set(0, 0.735, 0);
+    tableTop.castShadow = true;
+    tableTop.receiveShadow = true;
+    diningGroup.add(tableTop);
+
+    const tLegGeo = new THREE.BoxGeometry(0.07, 0.71, 0.07);
+    const tLegCoords = [
+      [-0.70, -0.38], [-0.70, 0.38],
+      [0.70, -0.38], [0.70, 0.38]
+    ];
+    for (const [tx, tz] of tLegCoords) {
+      const leg = new THREE.Mesh(tLegGeo, this.materials.diningChairLegs);
+      leg.position.set(tx, 0.355, tz);
+      leg.castShadow = true;
+      diningGroup.add(leg);
+    }
+
+    // Fruitschaal met fruit
+    const fruitBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.09, 0.07, 16), this.materials.fruitBowlMat);
+    fruitBowl.position.set(0, 0.795, 0);
+    fruitBowl.castShadow = true;
+    diningGroup.add(fruitBowl);
+
+    const apple1 = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), this.materials.fruitApple);
+    apple1.position.set(-0.04, 0.84, 0.03);
+    apple1.castShadow = true;
+    diningGroup.add(apple1);
+
+    const apple2 = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), this.materials.fruitApple);
+    apple2.position.set(0.05, 0.835, -0.02);
+    apple2.castShadow = true;
+    diningGroup.add(apple2);
+
+    const banana = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.16, 8), this.materials.fruitBanana);
+    banana.rotation.z = 0.45;
+    banana.rotation.y = 0.8;
+    banana.position.set(0.01, 0.85, 0.04);
+    banana.castShadow = true;
+    diningGroup.add(banana);
+
+    // B. 4 Moderne Eetkamerstoelen
+    const chairCoords = [
+      { x: -0.42, z: -0.72, rotY: 0 },
+      { x: 0.42, z: -0.72, rotY: 0 },
+      { x: -0.42, z: 0.72, rotY: Math.PI },
+      { x: 0.42, z: 0.72, rotY: Math.PI }
+    ];
+
+    for (const c of chairCoords) {
+      const chair = new THREE.Group();
+      chair.position.set(c.x, 0, c.z);
+      chair.rotation.y = c.rotY;
+
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.04, 0.42), this.materials.diningChairSeat);
+      seat.position.set(0, 0.46, 0);
+      seat.castShadow = true;
+      chair.add(seat);
+
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.40, 0.04), this.materials.diningChairSeat);
+      back.position.set(0, 0.68, -0.19);
+      back.castShadow = true;
+      chair.add(back);
+
+      const cLegGeo = new THREE.CylinderGeometry(0.02, 0.015, 0.44, 8);
+      for (const [px, pz] of [[-0.18, -0.16], [0.18, -0.16], [-0.18, 0.16], [0.18, 0.16]]) {
+        const cLeg = new THREE.Mesh(cLegGeo, this.materials.diningChairLegs);
+        cLeg.position.set(px, 0.22, pz);
+        cLeg.castShadow = true;
+        chair.add(cLeg);
+      }
+
+      diningGroup.add(chair);
+    }
+
+    // C. Hanglamp boven de eettafel
+    const lampCord = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 1.15, 6), this.materials.coffeeTableLegs);
+    lampCord.position.set(0, 2.75, 0);
+    diningGroup.add(lampCord);
+
+    const lampDome = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.28, 0.22, 20, 1, true), this.materials.tvStandWood);
+    lampDome.position.set(0, 2.10, 0);
+    lampDome.castShadow = true;
+    diningGroup.add(lampDome);
+
+    const diningLight = new THREE.PointLight(0xfff7ed, 0.40, 3.8);
+    diningLight.position.set(0, 2.0, 0);
+    diningGroup.add(diningLight);
+
+    this.scene.add(diningGroup);
+
+    // Eettafel & stoelen colliders
+    this.colliders.push({
+      minX: -6.05, maxX: -4.35,
+      minY: y, maxY: y + 0.85,
+      minZ: 1.88, maxZ: 2.92
+    });
+    this.colliders.push({
+      minX: -5.85, maxX: -4.55,
+      minY: y, maxY: y + 0.9,
+      minZ: 1.45, maxZ: 1.85
+    });
+    this.colliders.push({
+      minX: -5.85, maxX: -4.55,
+      minY: y, maxY: y + 0.9,
+      minZ: 2.95, maxZ: 3.35
+    });
+
+    this.cameraOccluders.push(tvStand, backrest, tableTop);
   }
 
   // --- DE KLEERKAST (HOLLE CONSTRUCTIE ZONDER INTERSECTIES) ---
@@ -2396,7 +2921,27 @@ export class GameWorld {
       return this.UPPER_Y;
     }
 
+    // Benedenverdieping: controleer of de speler bovenop de zitting van de bank staat
+    if (this.isOnSofa(x, z, currentY)) {
+      const sofaSurfaceY = this.LOWER_Y + 0.48;
+      if (currentY === null || currentY >= this.LOWER_Y + 0.30) {
+        return sofaSurfaceY;
+      }
+    }
+
     return this.LOWER_Y;
+  }
+
+  isOnSofa(x, z, currentY = null) {
+    // Bank zitting bereik beneden: X van -5.5 tot -3.85, Z van 9.5 tot 12.1
+    const inSofaBounds = (x >= -5.5 && x <= -3.85 && z >= 9.5 && z <= 12.1);
+    if (!inSofaBounds) return false;
+
+    // Alleen op de benedenverdieping
+    if (currentY !== null && currentY >= (this.UPPER_Y + this.LOWER_Y) / 2) {
+      return false;
+    }
+    return true;
   }
 
   isOnStairs(x, z) {
