@@ -171,6 +171,13 @@ export class GameWorld {
       potColor: new THREE.MeshStandardMaterial({ color: 0xd27d53, roughness: 0.7 }),
       alarmClock: new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.4 }),
 
+      // Bureaustoel materialen
+      chairDarkFrame: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45, metalness: 0.5 }),
+      chairChrome: new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.15 }),
+      chairCushion: new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.55, metalness: 0.08 }),
+      chairAccent: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4, metalness: 0.15 }),
+      chairPad: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.75 }),
+
       // Keuken materialen
       kitchenCounter: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }),
       kitchenTop: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25, metalness: 0.1 }),
@@ -1453,17 +1460,250 @@ export class GameWorld {
       desk.add(book);
     });
 
-    const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.06, 0.45), this.materials.rugBedroom);
-    chairSeat.position.set(0, 0.45, 0.7);
-    desk.add(chairSeat);
-
     this.scene.add(desk);
+
+    // Prachtige, realistische ergonomische bureaustoel op wieltjes
+    this.createOfficeChair(x, y, z + 0.65, -0.15);
 
     this.colliders.push({
       minX: x - 0.8, maxX: x + 0.8,
-      minY: y, maxY: y + 0.9,
-      minZ: z - 0.5, maxZ: z + 0.9
+      minY: y, maxY: y + 1.05,
+      minZ: z - 0.5, maxZ: z + 0.95
     });
+  }
+
+  createOfficeChair(x, y, z, rotationY = -0.15) {
+    const chairGroup = new THREE.Group();
+    chairGroup.position.set(x, y, z);
+    chairGroup.rotation.y = rotationY;
+
+    // --- 1. WIELKRUIS & ZWENKWIELEN (5-Sterren Basis) ---
+    // Centrale naafdop
+    const hubGeo = new THREE.CylinderGeometry(0.065, 0.08, 0.05, 16);
+    const hub = new THREE.Mesh(hubGeo, this.materials.chairDarkFrame);
+    hub.position.set(0, 0.08, 0);
+    hub.castShadow = true;
+    chairGroup.add(hub);
+
+    // 5 wielpoten (spaken) verdeeld over 360 graden (elke 72°)
+    const legRadius = 0.28;
+    for (let i = 0; i < 5; i++) {
+      const angle = (i * Math.PI * 2) / 5;
+      const legGroup = new THREE.Group();
+      legGroup.rotation.y = angle;
+
+      // Schuine pootstang
+      const spokeGeo = new THREE.BoxGeometry(0.045, 0.024, legRadius);
+      const spoke = new THREE.Mesh(spokeGeo, this.materials.chairDarkFrame);
+      spoke.position.set(0, 0.058, legRadius / 2);
+      spoke.rotation.x = 0.05;
+      spoke.castShadow = true;
+      legGroup.add(spoke);
+
+      // Caster houder (verticaal asje aan uiteinde)
+      const pinGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.035, 8);
+      const pin = new THREE.Mesh(pinGeo, this.materials.chairChrome);
+      pin.position.set(0, 0.045, legRadius);
+      legGroup.add(pin);
+
+      // Dubbel zwenkwieltje (twin-wheel caster)
+      const wheelWidth = 0.012;
+      const wheelRadius = 0.025;
+      const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 12);
+
+      const leftWheel = new THREE.Mesh(wheelGeo, this.materials.chairPad);
+      leftWheel.rotation.z = Math.PI / 2;
+      leftWheel.position.set(-0.016, wheelRadius, legRadius);
+      leftWheel.castShadow = true;
+      legGroup.add(leftWheel);
+
+      const rightWheel = new THREE.Mesh(wheelGeo, this.materials.chairPad);
+      rightWheel.rotation.z = Math.PI / 2;
+      rightWheel.position.set(0.016, wheelRadius, legRadius);
+      rightWheel.castShadow = true;
+      legGroup.add(rightWheel);
+
+      // Wielkapje bovenop het zwenkwiel
+      const capGeo = new THREE.BoxGeometry(0.044, 0.02, 0.038);
+      const cap = new THREE.Mesh(capGeo, this.materials.chairDarkFrame);
+      cap.position.set(0, wheelRadius + 0.016, legRadius);
+      legGroup.add(cap);
+
+      chairGroup.add(legGroup);
+    }
+
+    // --- 2. HYDRAULISCHE GASVEER (Piston) ---
+    // Onderste zwarte cilindrische mantel
+    const pistonBaseGeo = new THREE.CylinderGeometry(0.036, 0.042, 0.16, 16);
+    const pistonBase = new THREE.Mesh(pistonBaseGeo, this.materials.chairDarkFrame);
+    pistonBase.position.set(0, 0.17, 0);
+    pistonBase.castShadow = true;
+    chairGroup.add(pistonBase);
+
+    // Bovenste glanzende chroom stang (telescopisch)
+    const pistonChromeGeo = new THREE.CylinderGeometry(0.024, 0.024, 0.18, 16);
+    const pistonChrome = new THREE.Mesh(pistonChromeGeo, this.materials.chairChrome);
+    pistonChrome.position.set(0, 0.31, 0);
+    pistonChrome.castShadow = true;
+    chairGroup.add(pistonChrome);
+
+    // Kraag / ring tussen mantel en gasveer
+    const collarGeo = new THREE.CylinderGeometry(0.038, 0.038, 0.02, 16);
+    const collar = new THREE.Mesh(collarGeo, this.materials.chairDarkFrame);
+    collar.position.set(0, 0.24, 0);
+    chairGroup.add(collar);
+
+    // --- 3. KANTELMECHANISME & HOOGTEHENDEL ONDER DE ZITTING ---
+    // Mechanismebehuizing
+    const mechBoxGeo = new THREE.BoxGeometry(0.24, 0.04, 0.22);
+    const mechBox = new THREE.Mesh(mechBoxGeo, this.materials.chairDarkFrame);
+    mechBox.position.set(0, 0.40, 0.02);
+    mechBox.castShadow = true;
+    chairGroup.add(mechBox);
+
+    // Verstelhendel (aan rechterzijde van de stoel)
+    const leverBarGeo = new THREE.CylinderGeometry(0.007, 0.007, 0.14, 8);
+    const leverBar = new THREE.Mesh(leverBarGeo, this.materials.chairChrome);
+    leverBar.rotation.z = Math.PI / 2;
+    leverBar.position.set(0.18, 0.40, 0.04);
+    chairGroup.add(leverBar);
+
+    // Hendelknop / paddle
+    const paddleGeo = new THREE.BoxGeometry(0.04, 0.012, 0.03);
+    const paddle = new THREE.Mesh(paddleGeo, this.materials.chairPad);
+    paddle.position.set(0.26, 0.40, 0.04);
+    chairGroup.add(paddle);
+
+    // Kantelweerstand draaiknop (centraal onderkant)
+    const knobGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.06, 12);
+    const knob = new THREE.Mesh(knobGeo, this.materials.chairDarkFrame);
+    knob.position.set(0, 0.35, -0.05);
+    chairGroup.add(knob);
+
+    // --- 4. ERGONOMISCHE ZITTING (Seat Cushion) ---
+    // Zwarte bodemplaat
+    const seatBaseGeo = new THREE.BoxGeometry(0.48, 0.025, 0.48);
+    const seatBase = new THREE.Mesh(seatBaseGeo, this.materials.chairDarkFrame);
+    seatBase.position.set(0, 0.435, 0);
+    seatBase.castShadow = true;
+    chairGroup.add(seatBase);
+
+    // Hoofdkussen zitting (gestoffeerd in koningsblauw)
+    const seatGeo = new THREE.BoxGeometry(0.47, 0.065, 0.47);
+    const seat = new THREE.Mesh(seatGeo, this.materials.chairCushion);
+    seat.position.set(0, 0.475, 0);
+    seat.castShadow = true;
+    seat.receiveShadow = true;
+    chairGroup.add(seat);
+
+    // Ergonomische "waterfall" afronding aan de voorzijde van de zitting
+    const waterfallGeo = new THREE.CylinderGeometry(0.032, 0.032, 0.47, 12);
+    const waterfall = new THREE.Mesh(waterfallGeo, this.materials.chairCushion);
+    waterfall.rotation.z = Math.PI / 2;
+    waterfall.position.set(0, 0.475, -0.235);
+    waterfall.castShadow = true;
+    chairGroup.add(waterfall);
+
+    // Zijranden / dijbeenondersteuning lichte profilering
+    const contourGeo = new THREE.BoxGeometry(0.06, 0.02, 0.42);
+    const leftContour = new THREE.Mesh(contourGeo, this.materials.chairAccent);
+    leftContour.position.set(-0.205, 0.515, 0.01);
+    chairGroup.add(leftContour);
+    const rightContour = new THREE.Mesh(contourGeo, this.materials.chairAccent);
+    rightContour.position.set(0.205, 0.515, 0.01);
+    chairGroup.add(rightContour);
+
+    // --- 5. RUGLEUNING MET RUGGENGRAAT EN LENDENSTEUN ---
+    // Steunbalk / wervelkolom achterop (zwart mat frame)
+    const spineGroup = new THREE.Group();
+    spineGroup.position.set(0, 0.43, 0.22); // Aan de achterkant van de zitting (+Z)
+
+    // Horizontale koppelstang vanuit mechanisme naar achteren
+    const spineBottomGeo = new THREE.BoxGeometry(0.09, 0.035, 0.12);
+    const spineBottom = new THREE.Mesh(spineBottomGeo, this.materials.chairDarkFrame);
+    spineBottom.position.set(0, 0, 0.05);
+    spineBottom.castShadow = true;
+    spineGroup.add(spineBottom);
+
+    // Verticale ruggengraat met ergonomische knik omhoog
+    const spineUpGeo = new THREE.BoxGeometry(0.08, 0.48, 0.04);
+    const spineUp = new THREE.Mesh(spineUpGeo, this.materials.chairDarkFrame);
+    spineUp.position.set(0, 0.26, 0.10);
+    spineUp.rotation.x = -0.10;
+    spineUp.castShadow = true;
+    spineGroup.add(spineUp);
+
+    chairGroup.add(spineGroup);
+
+    // Hoofdrugleuning (ademende mesh + kussen)
+    const backGroup = new THREE.Group();
+    backGroup.position.set(0, 0.74, 0.28);
+    backGroup.rotation.x = -0.10; // ergonomische lighoek (~6 graden)
+
+    // Buitenframe van de rugleuning
+    const backFrameGeo = new THREE.BoxGeometry(0.44, 0.48, 0.03);
+    const backFrame = new THREE.Mesh(backFrameGeo, this.materials.chairDarkFrame);
+    backFrame.castShadow = true;
+    backGroup.add(backFrame);
+
+    // Binnenvlak: ademend mesh / bekleding
+    const backMeshGeo = new THREE.BoxGeometry(0.40, 0.44, 0.04);
+    const backCushion = new THREE.Mesh(backMeshGeo, this.materials.chairCushion);
+    backCushion.position.set(0, 0, -0.01);
+    backCushion.castShadow = true;
+    backGroup.add(backCushion);
+
+    // Lendensteunkussen (Lumbar support)
+    const lumbarGeo = new THREE.BoxGeometry(0.34, 0.11, 0.035);
+    const lumbar = new THREE.Mesh(lumbarGeo, this.materials.chairPad);
+    lumbar.position.set(0, -0.10, -0.03);
+    lumbar.castShadow = true;
+    backGroup.add(lumbar);
+
+    // Bovenste hoofd- / schoudersteun afronding
+    const topCurveGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.44, 12);
+    const topCurve = new THREE.Mesh(topCurveGeo, this.materials.chairDarkFrame);
+    topCurve.rotation.z = Math.PI / 2;
+    topCurve.position.set(0, 0.24, 0);
+    backGroup.add(topCurve);
+
+    chairGroup.add(backGroup);
+
+    // --- 6. ARMLEUNINGEN (Links en Rechts) ---
+    [-1, 1].forEach((side) => {
+      const armGroup = new THREE.Group();
+      armGroup.position.set(side * 0.26, 0.43, 0.04);
+
+      // Horizontale montagebeugel onder de zitting
+      const mountGeo = new THREE.BoxGeometry(0.06, 0.03, 0.12);
+      const mount = new THREE.Mesh(mountGeo, this.materials.chairDarkFrame);
+      mount.position.set(-side * 0.02, 0, 0);
+      armGroup.add(mount);
+
+      // Verticale T-staander met chroom accent
+      const postGeo = new THREE.BoxGeometry(0.04, 0.20, 0.05);
+      const post = new THREE.Mesh(postGeo, this.materials.chairDarkFrame);
+      post.position.set(0, 0.10, 0);
+      post.castShadow = true;
+      armGroup.add(post);
+
+      const postChromeGeo = new THREE.BoxGeometry(0.032, 0.09, 0.042);
+      const postChrome = new THREE.Mesh(postChromeGeo, this.materials.chairChrome);
+      postChrome.position.set(0, 0.15, 0);
+      armGroup.add(postChrome);
+
+      // Armlegger (zacht donker kussen)
+      const padGeo = new THREE.BoxGeometry(0.08, 0.032, 0.24);
+      const pad = new THREE.Mesh(padGeo, this.materials.chairPad);
+      pad.position.set(0, 0.21, 0.01);
+      pad.castShadow = true;
+      armGroup.add(pad);
+
+      chairGroup.add(armGroup);
+    });
+
+    this.scene.add(chairGroup);
+    return chairGroup;
   }
 
   createWindow(x, y, z, w, h, facing = 'z') {
