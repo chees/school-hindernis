@@ -83,13 +83,20 @@ export class Player {
     this.hairBoyGroup.add(boyHairMesh);
     this.bodyGroup.add(this.hairBoyGroup);
 
-    // 2. Meisjeskapsel (langer haar met schattige paardenstaart)
+    // 2. Meisjeskapsel (langer haar, achterdekking en natuurlijke paardenstaart)
     this.hairGirlGroup = new THREE.Group();
     const girlHairGeo = new THREE.BoxGeometry(0.40, 0.20, 0.40);
     const girlHairMesh = new THREE.Mesh(girlHairGeo, this.hairMat);
     girlHairMesh.position.set(0, 1.33, 0.005);
     girlHairMesh.castShadow = true;
     this.hairGirlGroup.add(girlHairMesh);
+
+    // Achterkant haar (bedekt achterhoofd tot aan de nek)
+    const backHairGeo = new THREE.BoxGeometry(0.39, 0.26, 0.08);
+    const backHairMesh = new THREE.Mesh(backHairGeo, this.hairMat);
+    backHairMesh.position.set(0, 1.17, -0.17);
+    backHairMesh.castShadow = true;
+    this.hairGirlGroup.add(backHairMesh);
 
     // Lokken langs het gezicht
     const lockGeo = new THREE.BoxGeometry(0.08, 0.26, 0.12);
@@ -101,20 +108,26 @@ export class Player {
     rightLock.position.set(0.21, 1.20, 0.08);
     this.hairGirlGroup.add(rightLock);
 
-    // Paardenstaart aan de achterkant
-    const ponytailGeo = new THREE.CylinderGeometry(0.06, 0.11, 0.34, 8);
+    // Elastiekje / scrunchie voor de paardenstaart (helder roze/rood)
+    const tieGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.05, 12);
+    const tieMesh = new THREE.Mesh(tieGeo, new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.5 }));
+    tieMesh.position.set(0, 1.28, -0.22);
+    tieMesh.rotation.x = 0.45;
+    this.hairGirlGroup.add(tieMesh);
+
+    // Paardenstaart aan de achterkant (taps toelopend naar beneden en naar achteren hangend)
+    const ponytailGeo = new THREE.CylinderGeometry(0.06, 0.035, 0.36, 10);
     const ponytail = new THREE.Mesh(ponytailGeo, this.hairMat);
-    ponytail.position.set(0, 1.28, -0.26);
-    ponytail.rotation.x = -0.4;
+    ponytail.position.set(0, 1.12, -0.30);
+    ponytail.rotation.x = 0.45;
     ponytail.castShadow = true;
     this.hairGirlGroup.add(ponytail);
 
-    // Elastiekje / scrunchie voor de paardenstaart
-    const tieGeo = new THREE.CylinderGeometry(0.075, 0.075, 0.06, 8);
-    const tieMesh = new THREE.Mesh(tieGeo, new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.5 }));
-    tieMesh.position.set(0, 1.36, -0.22);
-    tieMesh.rotation.x = -0.4;
-    this.hairGirlGroup.add(tieMesh);
+    // Zacht afgerond uiteinde van de paardenstaart
+    const tipGeo = new THREE.SphereGeometry(0.035, 8, 8);
+    const tipMesh = new THREE.Mesh(tipGeo, this.hairMat);
+    tipMesh.position.set(0, 0.96, -0.37);
+    this.hairGirlGroup.add(tipMesh);
 
     this.bodyGroup.add(this.hairGirlGroup);
     this.hairGirlGroup.visible = false; // Start als jongen standaard
