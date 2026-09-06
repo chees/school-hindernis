@@ -4,6 +4,7 @@ export class GameWorld {
   constructor(scene) {
     this.scene = scene;
     this.colliders = [];
+    this.cameraOccluders = [];
     this.interactiveObjects = {};
     this.animatedObjects = [];
 
@@ -159,6 +160,8 @@ export class GameWorld {
     hallFloor2.receiveShadow = true;
     this.scene.add(hallFloor2);
 
+    this.cameraOccluders.push(bedRoomFloor, hallFloor1, hallFloor2);
+
     // MUREN BOVEN (Verzonken met 5cm in de vloerplaat om coplanair z-fighting met de vloer uit te sluiten)
     // Noordwand slaapkamer
     this.addWall(-4, y + 1.5, -8.0, 8.0, 3.1, 0.2, this.materials.wallUpper);
@@ -230,6 +233,8 @@ export class GameWorld {
       riserMesh.position.set(centerX, topOfStepY - treadThickness - riserHeight / 2, stepZ - stepDepth / 2 + riserThickness / 2);
       riserMesh.castShadow = true;
       stairGroup.add(riserMesh);
+
+      this.cameraOccluders.push(treadMesh, riserMesh);
     }
 
     // Trapleuningen aan weerszijden
@@ -281,6 +286,7 @@ export class GameWorld {
     floor.position.set(-0.5, y - 0.1, 4.75);
     floor.receiveShadow = true;
     this.scene.add(floor);
+    this.cameraOccluders.push(floor);
 
     // Rode gangloper (plane met polygonOffset om z-fighting volledig uit te sluiten)
     const runnerGeo = new THREE.PlaneGeometry(2.6, 9.5);
@@ -387,6 +393,15 @@ export class GameWorld {
     wardrobeGroup.add(this.doorRight);
 
     this.scene.add(wardrobeGroup);
+
+    // Kast camera occluder volume (onzichtbaar voor de ogen, detecteerbaar voor de camera)
+    const wardrobeOccluder = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 2.5, 2.2),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+    );
+    wardrobeOccluder.position.set(x, y + 1.25, z);
+    this.scene.add(wardrobeOccluder);
+    this.cameraOccluders.push(wardrobeOccluder);
 
     // Kast collider
     this.colliders.push({
@@ -691,6 +706,8 @@ export class GameWorld {
       minY: y - h / 2, maxY: y + h / 2,
       minZ: z - d / 2, maxZ: z + d / 2
     });
+
+    this.cameraOccluders.push(wall);
   }
 
   addBalustrade(x, yBase, z, w, h, d) {
@@ -705,6 +722,12 @@ export class GameWorld {
       minY: yBase, maxY: yBase + h,
       minZ: z - d / 2, maxZ: z + d / 2
     });
+
+    this.cameraOccluders.push(balustrade);
+  }
+
+  getCameraOccluders() {
+    return this.cameraOccluders;
   }
 
   getGroundHeightAt(x, z) {

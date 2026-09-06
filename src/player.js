@@ -420,4 +420,19 @@ export class Player {
     this.group.position.copy(this.position);
     this.group.rotation.y = this.rotation;
   }
+
+  setProximityFade(alpha) {
+    this.bodyGroup.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (alpha < 0.98) {
+          child.material.transparent = true;
+          child.material.opacity = alpha;
+        } else {
+          child.material.transparent = false;
+          child.material.opacity = 1.0;
+        }
+      }
+    });
+  }
 }
+

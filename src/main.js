@@ -58,7 +58,11 @@ class Game {
 
     this.cameraYaw = 0;
     this.cameraPitch = 0.35;
-    this.cameraDistance = 4.2;
+    this.maxCameraDistance = 4.2;
+    this.minCameraDistance = 0.65;
+    this.currentCameraDistance = 4.2;
+    this.cameraCollisionMargin = 0.28;
+    this.cameraRaycaster = new THREE.Raycaster();
     this.cameraTarget = new THREE.Vector3();
     this.cameraCurrentPos = new THREE.Vector3();
 
@@ -356,6 +360,7 @@ class Game {
 
     this.cameraYaw = 0;
     this.cameraPitch = 0.35;
+    this.currentCameraDistance = this.maxCameraDistance;
     this.camera.position.set(-5.8, 4.8, -4.0);
     this.camera.lookAt(-5.8, 4.0, -5.5);
 
@@ -386,7 +391,7 @@ class Game {
     }
 
     const target = this.player.group.position.clone();
-    target.y += 1.0;
+    target.y += 1.25;
 
     if (this.gameState === 'WAKING') {
       this.camera.lookAt(target);
@@ -405,16 +410,76 @@ class Game {
     this.cameraYaw += deltas.yaw;
     this.cameraPitch = Math.max(0.08, Math.min(1.2, this.cameraPitch + deltas.pitch));
 
-    const camOffset = new THREE.Vector3(
-      Math.sin(this.cameraYaw) * Math.cos(this.cameraPitch) * this.cameraDistance,
-      Math.sin(this.cameraPitch) * this.cameraDistance,
-      Math.cos(this.cameraYaw) * Math.cos(this.cameraPitch) * this.cameraDistance
-    );
+    // Eenheidsrichting vanuit target naar de gewenste camerapositie
+    const dirX = Math.sin(this.cameraYaw) * Math.cos(this.cameraPitch);
+    const dirY = Math.sin(this.cameraPitch);
+    const dirZ = Math.cos(this.cameraYaw) * Math.cos(this.cameraPitch);
+    const camDir = new THREE.Vector3(dirX, dirY, dirZ).normalize();
 
-    const desiredPos = target.clone().add(camOffset);
-    const lerpFactor = Math.min(dt * 8, 1.0);
-    this.camera.position.lerp(desiredPos, lerpFactor);
+    // Multi-probe raycasting om te voorkomen dat de camera achter een muur/plafond verdwijnt
+    let minHitDistance = this.maxCameraDistance;
+    const occluders = this.world.getCameraOccluders();
+
+    if (occluders && occluders.length > 0) {
+      // Bereken haakse vectoren op de zichtas voor een zachte viewport-buffer
+      const camRight = new THREE.Vector3(-camDir.z, 0, camDir.x).normalize();
+      const camUp = new THREE.Vector3().crossVectors(camRight, camDir).normalize();
+      const probeRadius = 0.16;
+
+      const probes = [
+        target,
+        target.clone().addScaledVector(camRight, probeRadius).addScaledVector(camUp, probeRadius * 0.7),
+        target.clone().addScaledVector(camRight, -probeRadius).addScaledVector(camUp, probeRadius * 0.7),
+        target.clone().addScaledVector(camRight, probeRadius).addScaledVector(camUp, -probeRadius * 0.7),
+        target.clone().addScaledVector(camRight, -probeRadius).addScaledVector(camUp, -probeRadius * 0.7)
+      ];
+
+      for (let i = 0; i < probes.length; i++) {
+        this.cameraRaycaster.set(probes[i], camDir);
+        this.cameraRaycaster.far = this.maxCameraDistance;
+        const hits = this.cameraRaycaster.intersectObjects(occluders, false);
+        if (hits.length > 0) {
+          const hitDist = hits[0].distance;
+          if (hitDist > 0.15 && hitDist < minHitDistance) {
+            minHitDistance = hitDist;
+          }
+        }
+      }
+    }
+
+    // Bereken de gewenste afstand met veiligheidsmarge tegen muurvlakken
+    let targetDist = this.maxCameraDistance;
+    if (minHitDistance < this.maxCameraDistance) {
+      targetDist = Math.max(this.minCameraDistance, minHitDistance - this.cameraCollisionMargin);
+    }
+
+    // SpringArm respons: flitsend snel inzoomen bij naderende muur, vloeiend uitzoomen in open ruimte
+    if (targetDist < this.currentCameraDistance) {
+      const snapIn = Math.min(dt * 24, 1.0);
+      this.currentCameraDistance = THREE.MathUtils.lerp(this.currentCameraDistance, targetDist, snapIn);
+    } else {
+      const zoomOut = Math.min(dt * 6, 1.0);
+      this.currentCameraDistance = THREE.MathUtils.lerp(this.currentCameraDistance, targetDist, zoomOut);
+    }
+
+    const desiredPos = target.clone().addScaledVector(camDir, this.currentCameraDistance);
+
+    // Vloerdetectie: voorkom dat de camera door of onder de vloer zakt
+    const groundY = this.world.getGroundHeightAt(desiredPos.x, desiredPos.z);
+    if (desiredPos.y < groundY + 0.35) {
+      desiredPos.y = groundY + 0.35;
+    }
+
+    this.camera.position.copy(desiredPos);
     this.camera.lookAt(target);
+
+    // Zachte transparantie voor het personage als de camera in een krappe hoek dichtbij komt
+    if (this.currentCameraDistance < 1.0) {
+      const alpha = Math.max(0.35, Math.min(1.0, (this.currentCameraDistance - 0.45) / 0.5));
+      this.player.setProximityFade(alpha);
+    } else {
+      this.player.setProximityFade(1.0);
+    }
   }
 
   updateConfetti(dt) {
