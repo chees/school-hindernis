@@ -1354,11 +1354,11 @@ export class GameWorld {
     };
     this.colliders.push(this.frontDoorCollider);
 
-    // Collider voor het geopende deurblad (draait 90 graden naar binnen langs de linkerhalmuur)
+    // Collider voor het geopende deurblad (draait open naar de voortuin op de stoep bij z = 13.38 tot 14.98)
     this.openDoorLeafCollider = {
-      minX: 0.65, maxX: 1.0,
+      minX: 0.65, maxX: 1.05,
       minY: y, maxY: y + 2.6,
-      minZ: 11.75, maxZ: 13.45,
+      minZ: 13.35, maxZ: 15.05,
       enabled: false
     };
     this.colliders.push(this.openDoorLeafCollider);
