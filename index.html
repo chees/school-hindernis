@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>School Hindernis 3D</title>
+  <meta name="description" content="Een 3D avontuurspel voor telefoon en Chromebook. Word wakker, loop de trap af en kleed je aan!" />
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <!-- 3D WebGL Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- UI Overlay Layer -->
+  <div id="ui-overlay">
+    <!-- Top Status Bar -->
+    <header class="top-bar">
+      <div class="brand-badge">
+        <span>🎒</span>
+        <span>School Hindernis</span>
+      </div>
+
+      <!-- Weerbadge bovenaan -->
+      <div class="weather-pill" id="hud-weather-pill" title="Weer van vandaag">
+        <span id="hud-weather-icon">☀️</span>
+        <span id="hud-weather-text">24°C Zonnig</span>
+      </div>
+
+      <div class="objective-banner" id="objective-text">
+        ⏰ De wekker gaat! Word snel wakker...
+      </div>
+
+      <div class="top-controls">
+        <button id="btn-mute" class="hud-btn" title="Geluid aan/uit" aria-label="Geluid aan/uit">🔊</button>
+        <button id="btn-restart" class="hud-btn" title="Herstarten" aria-label="Herstarten">🔄</button>
+        <button id="btn-fullscreen" class="hud-btn" title="Volledig scherm" aria-label="Volledig scherm">⛶</button>
+      </div>
+    </header>
+
+    <!-- Desktop Keyboard Controls Hint -->
+    <footer class="keyboard-hints">
+      <div><span class="key-badge">W A S D</span> Lopen</div>
+      <div><span class="key-badge">Muis</span> Rondkijken</div>
+      <div><span class="key-badge">Spatie</span> Springen</div>
+      <div><span class="key-badge">E</span> Kast Openen</div>
+    </footer>
+
+    <!-- Touch Controls for Mobile / Chromebook Touch -->
+    <div id="touch-controls">
+      <!-- Virtuele Analoge Joystick (Links) -->
+      <div id="joystick-zone">
+        <div id="joystick-base">
+          <div id="joystick-thumb"></div>
+        </div>
+      </div>
+
+      <!-- Touch Actieknoppen (Rechts) -->
+      <div class="action-buttons">
+        <button id="btn-action" class="touch-action-btn" aria-label="Actie / Kast openen">
+          🚪
+          <span>Kast</span>
+        </button>
+        <button id="btn-jump" class="touch-action-btn" aria-label="Springen">
+          👟
+          <span>Spring</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Camera Touch Zone (Rechter helft van scherm) -->
+    <div id="camera-touch-zone"></div>
+
+    <!-- 3D Zwevende Interactie Prompt -->
+    <div id="interaction-prompt">
+      ✨ Druk op [E] of tik op [Kast] om je aan te kleden!
+    </div>
+  </div>
+
+  <!-- Ontwaak Modal / Wekker Scherm -->
+  <div id="wakeup-modal">
+    <div class="alarm-card">
+      <div style="font-size: 40px;">⏰</div>
+      <div class="alarm-time">07:15</div>
+      <h3>TIJD VOOR SCHOOL!</h3>
+      <div class="wakeup-weather-hint" id="wakeup-weather-hint">
+        🌤️ Vandaag: <strong id="wakeup-weather-summary">24°C Zonnig</strong>
+      </div>
+      <p style="margin-top: 8px; color: #cbd5e1; font-size: 15px;">
+        De schoolbel wacht niet. Word snel wakker en ga naar de kleerkast!
+      </p>
+      <button id="btn-wakeup" class="alarm-btn">
+        ☀️ WORD WAKKER!
+      </button>
+    </div>
+  </div>
+
+  <!-- Kleerkast Customizer Studio Modal -->
+  <div id="wardrobe-modal">
+    <div class="wardrobe-card">
+      <div class="wardrobe-header">
+        <h2>🚪 Kleerkast Studio</h2>
+        <p>Kies wie je bent en stem je kleren af op het weer!</p>
+      </div>
+
+      <!-- Weerbericht Box -->
+      <div class="weather-box" id="wardrobe-weather-box">
+        <div class="weather-icon-large" id="wardrobe-weather-icon">☀️</div>
+        <div class="weather-info">
+          <div class="weather-title">
+            <span id="wardrobe-weather-label">Zonnig & Warm</span> • <span id="wardrobe-weather-temp">24°C</span>
+          </div>
+          <div class="weather-advice" id="wardrobe-weather-advice">Het is warm buiten! Een T-shirt met korte mouwen is perfect.</div>
+        </div>
+      </div>
+
+      <div class="customizer-sections">
+        <!-- Geslacht -->
+        <div class="custom-group">
+          <label>1. Wie ben je?</label>
+          <div class="choice-row" id="gender-choices">
+            <button type="button" class="btn-choice active" data-gender="BOY">👦 Jongen</button>
+            <button type="button" class="btn-choice" data-gender="GIRL">👧 Meisje</button>
+          </div>
+        </div>
+
+        <!-- Haarkleur -->
+        <div class="custom-group">
+          <label>2. Haarkleur</label>
+          <div class="swatches-row" id="hair-swatches">
+            <button type="button" class="color-swatch active" data-color="0x4a2e1b" style="background: #4a2e1b;" title="Bruin"></button>
+            <button type="button" class="color-swatch" data-color="0xfbbf24" style="background: #fbbf24;" title="Blond"></button>
+            <button type="button" class="color-swatch" data-color="0x1e1e1e" style="background: #1e1e1e;" title="Zwart"></button>
+            <button type="button" class="color-swatch" data-color="0xc2410c" style="background: #c2410c;" title="Rood/Oranje"></button>
+          </div>
+        </div>
+
+        <!-- Bovenkleding: Trui vs Korte mouwen -->
+        <div class="custom-group">
+          <label>3. Bovenkleding (Let op het weer!)</label>
+          <div class="choice-row" id="top-choices">
+            <button type="button" class="btn-choice active" data-top="SWEATER">🧥 Warme Trui (Lange mouwen)</button>
+            <button type="button" class="btn-choice" data-top="TSHIRT">👕 T-shirt (Korte mouwen)</button>
+          </div>
+          <div class="swatches-row" id="top-swatches" style="margin-top: 8px;">
+            <button type="button" class="color-swatch active" data-color="0xe11d48" style="background: #e11d48;" title="Rood"></button>
+            <button type="button" class="color-swatch" data-color="0x2563eb" style="background: #2563eb;" title="Blauw"></button>
+            <button type="button" class="color-swatch" data-color="0x10b981" style="background: #10b981;" title="Groen"></button>
+            <button type="button" class="color-swatch" data-color="0xf59e0b" style="background: #f59e0b;" title="Geel"></button>
+            <button type="button" class="color-swatch" data-color="0x8b5cf6" style="background: #8b5cf6;" title="Paars"></button>
+          </div>
+        </div>
+
+        <!-- Onderkleding: Broek vs Korte broek -->
+        <div class="custom-group">
+          <label>4. Onderkleding</label>
+          <div class="choice-row" id="bottom-choices">
+            <button type="button" class="btn-choice active" data-bottom="PANTS">👖 Lange Broek</button>
+            <button type="button" class="btn-choice" data-bottom="SHORTS">🩳 Korte Broek / Rok</button>
+          </div>
+          <div class="swatches-row" id="bottom-swatches" style="margin-top: 8px;">
+            <button type="button" class="color-swatch active" data-color="0x1e293b" style="background: #1e293b;" title="Donkerblauwe jeans"></button>
+            <button type="button" class="color-swatch" data-color="0x0f172a" style="background: #0f172a;" title="Zwart"></button>
+            <button type="button" class="color-swatch" data-color="0xd97706" style="background: #d97706;" title="Kaki"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bevestigingsknop -->
+      <button id="btn-wear-outfit" class="btn-wear">
+        ✨ Outfit Aantrekken & Naar School!
+      </button>
+    </div>
+  </div>
+
+  <!-- Overwinning / Kleerkast Bereikt Modal -->
+  <div id="victory-modal">
+    <div class="victory-card">
+      <div style="font-size: 52px;">🎉🎒✨</div>
+      <h2>KLAAR VOOR SCHOOL!</h2>
+      <p id="victory-outfit-desc">
+        Je bent perfect aangekleed in je gekozen outfit met je schoolboekentas om!
+      </p>
+
+      <div id="weather-result-box" class="weather-feedback-box">
+        <!-- Dynamische weer feedback -->
+      </div>
+
+      <div class="stats-box">
+        ⏱️ Tijd: <span id="final-time">00:00</span>
+      </div>
+      <div class="modal-btn-row">
+        <button id="btn-play-again" class="btn-primary">🔄 Opnieuw Spelen</button>
+        <button id="btn-explore" class="btn-secondary">🚶 Rondlopen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Game Script -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
