@@ -256,11 +256,11 @@ export class GameWorld {
   createBathroom() {
     const y = this.UPPER_Y;
 
-    // 1. Badkamervloer: x: 2.2 tot 6.0, z: -8.0 tot -2.6
-    const tileGeo = new THREE.PlaneGeometry(3.78, 5.38);
+    // 1. Badkamervloer: royale ruimte x: 2.2 tot 6.0, z: -8.0 tot -0.6 (3.8m breed x 7.4m diep)
+    const tileGeo = new THREE.PlaneGeometry(3.78, 7.38);
     tileGeo.rotateX(-Math.PI / 2);
     const bathFloor = new THREE.Mesh(tileGeo, this.materials.bathroomTileFloor);
-    bathFloor.position.set(4.1, y + 0.002, -5.3);
+    bathFloor.position.set(4.1, y + 0.002, -4.3);
     bathFloor.receiveShadow = true;
     this.scene.add(bathFloor);
 
@@ -268,37 +268,36 @@ export class GameWorld {
     const rugGeo = new THREE.PlaneGeometry(1.5, 0.9);
     rugGeo.rotateX(-Math.PI / 2);
     const bathRug = new THREE.Mesh(rugGeo, this.materials.bathroomRug);
-    bathRug.position.set(4.8, y + 0.004, -4.5);
+    bathRug.position.set(4.5, y + 0.004, -3.8);
     bathRug.receiveShadow = true;
     this.scene.add(bathRug);
 
     // 2. Muren van de badkamer:
-    // Westmuur tussen gang en badkamer (x = 2.2 van z = -8.0 tot -2.6)
-    this.addWall(2.2, y + 1.5, -5.3, 0.2, 3.1, 5.4, this.materials.bathroomTileWall);
+    // Westmuur (x = 2.2):
+    // Noordelijk muurdeel: van z = -8.0 tot z = -2.8 (lengte 5.2m)
+    this.addWall(2.2, y + 1.5, -5.4, 0.2, 3.1, 5.2, this.materials.bathroomTileWall);
 
-    // Zuidmuur (met deuropening naar de overloop/trapgat bij z = -2.6, x: 2.2 tot 6.0)
-    // Deuropening van x = 3.4 tot 4.8 (breedte 1.4m)
-    // Linker muurdeel (x: 2.2 tot 3.4)
-    this.addWall(2.8, y + 1.5, -2.6, 1.2, 3.1, 0.2, this.materials.wallUpper);
-    // Rechter muurdeel (x: 4.8 tot 6.0)
-    this.addWall(5.4, y + 1.5, -2.6, 1.2, 3.1, 0.2, this.materials.wallUpper);
-    // Bovenkant deurpost
-    this.addWall(4.1, y + 2.65, -2.6, 1.4, 0.9, 0.2, this.materials.wallUpper);
+    // Brede, open doorgang direct tegenover de slaapkamerdeur: z = -2.8 tot z = -0.8 (breedte 2.0 meter!)
+    // Bovenkant deurpost boven de doorgang
+    this.addWall(2.2, y + 2.65, -1.8, 0.2, 0.9, 2.0, this.materials.bathroomTileWall);
 
-    // Deurbordje "🚻 BADKAMER" boven de deur (aan overloopzijde)
-    this.createBathroomSign(4.1, y + 2.35, -2.48);
+    // Zuidelijk hoekpaaltje naast de trap: van z = -0.8 tot z = -0.5 (lengte 0.3m)
+    this.addWall(2.2, y + 1.5, -0.65, 0.2, 3.1, 0.3, this.materials.wallUpper);
+
+    // Deurbordje "🚻 BADKAMER" boven de open ingang, gericht naar de gang en slaapkamer (-X)
+    this.createBathroomSign(2.09, y + 2.35, -1.8);
 
     // Badkamerraam (matglas) aan de noordwand
-    this.createWindow(3.0, y + 1.6, -7.89, 1.4, 1.2);
+    this.createWindow(3.6, y + 1.6, -7.89, 1.4, 1.2);
 
-    // 3. HET TOILET (WC)
-    this.createToilet(2.9, y, -7.3);
+    // 3. HET TOILET (WC) - Ruim opgesteld aan de noordwand met een brede vrije looproute
+    this.createToilet(3.6, y, -7.3);
 
-    // 4. DE DOUCHE
+    // 4. DE DOUCHE - Netjes in de noordoostelijke hoek
     this.createShower(5.2, y, -7.05);
 
-    // 5. WASTAFEL MET KRAAN & SPIEGEL
-    this.createSink(5.72, y, -4.5);
+    // 5. WASTAFEL MET KRAAN & SPIEGEL - Aan de oostwand
+    this.createSink(5.72, y, -3.8);
   }
 
   createBathroomSign(x, y, z) {
@@ -319,8 +318,9 @@ export class GameWorld {
 
     const signTex = new THREE.CanvasTexture(canvas);
     const signGeo = new THREE.PlaneGeometry(1.1, 0.35);
-    const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({ map: signTex }));
+    const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({ map: signTex, side: THREE.DoubleSide }));
     signMesh.position.set(x, y, z);
+    signMesh.rotation.y = -Math.PI / 2; // Kijkt richting -X (naar de gang en slaapkamerdeur)
     this.scene.add(signMesh);
   }
 
@@ -360,15 +360,15 @@ export class GameWorld {
     button.position.set(0, 0.85, -0.32);
     toiletGroup.add(button);
 
-    // Toiletrolhouder aan de westmuur
+    // Toiletrolhouder aan de zijkant
     const holderArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.18), this.materials.chrome);
-    holderArm.position.set(-0.55, 0.70, 0);
+    holderArm.position.set(-0.35, 0.65, 0);
     toiletGroup.add(holderArm);
 
     const rollGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.14, 16);
     const roll = new THREE.Mesh(rollGeo, this.materials.mattress);
     roll.rotation.x = Math.PI / 2;
-    roll.position.set(-0.55, 0.70, 0);
+    roll.position.set(-0.35, 0.65, 0);
     toiletGroup.add(roll);
 
     this.scene.add(toiletGroup);
@@ -377,14 +377,14 @@ export class GameWorld {
     this.colliders.push({
       minX: x - 0.32, maxX: x + 0.32,
       minY: y, maxY: y + 1.2,
-      minZ: z - 0.50, maxZ: z + 0.35
+      minZ: z - 0.48, maxZ: z + 0.35
     });
 
-    // Interactieve marker op de vloer
-    const markerGeo = new THREE.RingGeometry(0.45, 0.65, 32);
+    // Interactieve marker op de vloer (ruim voor het toilet)
+    const markerGeo = new THREE.RingGeometry(0.50, 0.72, 32);
     markerGeo.rotateX(-Math.PI / 2);
     this.toiletMarker = new THREE.Mesh(markerGeo, this.materials.glowMarker);
-    this.toiletMarker.position.set(x, y + 0.005, z + 0.75);
+    this.toiletMarker.position.set(x, y + 0.005, z + 0.85);
     this.scene.add(this.toiletMarker);
 
     // Zwevende gids-pijl / wc-indicator boven het toilet
@@ -395,12 +395,12 @@ export class GameWorld {
       emissive: 0x0284c7,
       emissiveIntensity: 0.8
     }));
-    this.toiletArrow.position.set(x, y + 1.5, z + 0.75);
+    this.toiletArrow.position.set(x, y + 1.5, z + 0.85);
     this.scene.add(this.toiletArrow);
 
     this.interactiveObjects.toilet = {
-      position: new THREE.Vector3(x, y, z + 0.75),
-      radius: 1.6,
+      position: new THREE.Vector3(x, y, z + 0.85),
+      radius: 2.0,
       used: false,
       onInteract: () => this.flushToilet()
     };

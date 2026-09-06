@@ -646,7 +646,7 @@ class Game {
     // Doeltekst updates
     if (this.player.toiletNeed > 0) {
       if (!isDownstairs && !onStairs) {
-        if (playerPos.x >= 2.2 && playerPos.z <= -2.5) {
+        if (playerPos.x >= 2.2 && playerPos.z <= -0.6) {
           this.setObjective('🚽 Je bent in de badkamer! Ga naar het toilet om te plassen.');
         } else {
           this.setObjective('🚽 Hoge nood! Ga naar de badkamer boven om naar de wc te gaan!');
