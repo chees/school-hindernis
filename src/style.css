@@ -619,6 +619,16 @@ html, body {
   gap: 8px;
 }
 
+.choice-row-wrap {
+  flex-wrap: wrap;
+}
+
+.choice-row-wrap .btn-choice {
+  flex: 1 1 28%;
+  padding: 8px 6px;
+  font-size: 12.5px;
+}
+
 .btn-choice {
   flex: 1;
   background: #f1f5f9;
@@ -647,8 +657,9 @@ html, body {
 
 .swatches-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .color-swatch {

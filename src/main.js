@@ -221,16 +221,36 @@ class Game {
   setupCustomizerEvents() {
     // 1. Geslacht
     const genderBtns = document.querySelectorAll('#gender-choices .btn-choice');
+    const hairStyleBtns = document.querySelectorAll('#hair-choices .btn-choice');
+
     genderBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         genderBtns.forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        this.player.setCustomization({ gender: btn.dataset.gender });
+        const gender = btn.dataset.gender;
+        const defaultStyle = gender === 'GIRL' ? 'PONYTAIL' : 'SHORT';
+
+        // Update hair style button active state
+        hairStyleBtns.forEach((b) => {
+          b.classList.toggle('active', b.dataset.style === defaultStyle);
+        });
+
+        this.player.setCustomization({ gender, hairStyle: defaultStyle });
         sounds.playBlip();
       });
     });
 
-    // 2. Haarkleur
+    // 2. Kapsel Stijl
+    hairStyleBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        hairStyleBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.player.setCustomization({ hairStyle: btn.dataset.style });
+        sounds.playBlip();
+      });
+    });
+
+    // Haarkleur
     const hairSwatches = document.querySelectorAll('#hair-swatches .color-swatch');
     hairSwatches.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -281,6 +301,28 @@ class Game {
         bottomSwatches.forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         this.player.setCustomization({ bottomColor: Number(btn.dataset.color) });
+        sounds.playBlip();
+      });
+    });
+
+    // 5. Schooltas Type (Rugzak, Schoudertas, Geen)
+    const backpackBtns = document.querySelectorAll('#backpack-choices .btn-choice');
+    backpackBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        backpackBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.player.setCustomization({ backpackType: btn.dataset.backpack });
+        sounds.playBlip();
+      });
+    });
+
+    // Tas kleur swatches
+    const backpackSwatches = document.querySelectorAll('#backpack-swatches .color-swatch');
+    backpackSwatches.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        backpackSwatches.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.player.setCustomization({ backpackColor: Number(btn.dataset.color) });
         sounds.playBlip();
       });
     });
@@ -383,7 +425,7 @@ class Game {
     this.player.rightLowerLegMesh.material = this.player.pjPantsMat;
     this.player.leftFootMesh.material = this.player.pjSlippersMat;
     this.player.rightFootMesh.material = this.player.pjSlippersMat;
-    this.player.backpackMesh.visible = false;
+    if (this.player.backpackGroup) this.player.backpackGroup.visible = false;
 
     this.world.coverBed();
 
@@ -643,7 +685,8 @@ class Game {
       const topName = this.player.customization.topType === 'SWEATER' ? 'warme trui' : 'T-shirt met korte mouwen';
       const bottomName = this.player.customization.bottomType === 'PANTS' ? 'lange broek' : 'korte broek';
       const genderName = this.player.customization.gender === 'BOY' ? 'stoere jongen' : 'hippe meid';
-      outfitDesc.textContent = `Je hebt gekozen voor een ${genderName} met een ${topName} en een ${bottomName}!`;
+      const bagName = this.player.customization.backpackType === 'CLASSIC' ? 'rugzak' : (this.player.customization.backpackType === 'SPORT' ? 'schoudertas' : 'geen tas');
+      outfitDesc.textContent = `Je hebt gekozen voor een ${genderName} met een ${topName}, ${bottomName} en ${bagName}!`;
     }
 
     setTimeout(() => {
