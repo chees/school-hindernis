@@ -124,7 +124,10 @@ export class GameWorld {
       mirrorMat: new THREE.MeshStandardMaterial({
         color: 0xe2e8f0,
         metalness: 0.95,
-        roughness: 0.05
+        roughness: 0.05,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
       }),
       waterMat: new THREE.MeshStandardMaterial({
         color: 0x38bdf8,
@@ -584,16 +587,17 @@ export class GameWorld {
     this.sinkWaterStream.visible = false;
     sinkGroup.add(this.sinkWaterStream);
 
-    // Grote spiegel boven wastafel aan de oostmuur
-    const mirrorGeo = new THREE.BoxGeometry(0.04, 0.95, 0.85);
-    const mirror = new THREE.Mesh(mirrorGeo, this.materials.mirrorMat);
-    mirror.position.set(0.20, 1.55, 0);
-    sinkGroup.add(mirror);
-
-    const mirrorFrameGeo = new THREE.BoxGeometry(0.05, 1.00, 0.90);
+    // Grote spiegel boven wastafel aan de oostmuur (volledig vrij van z-fighting met wand en lijst)
+    // De oostmuur bevindt zich op x = +0.18 ten opzichte van sinkGroup
+    const mirrorFrameGeo = new THREE.BoxGeometry(0.02, 1.00, 0.90);
     const mirrorFrame = new THREE.Mesh(mirrorFrameGeo, this.materials.chrome);
-    mirrorFrame.position.set(0.21, 1.55, 0);
+    mirrorFrame.position.set(0.165, 1.55, 0);
     sinkGroup.add(mirrorFrame);
+
+    const mirrorGeo = new THREE.BoxGeometry(0.01, 0.92, 0.82);
+    const mirror = new THREE.Mesh(mirrorGeo, this.materials.mirrorMat);
+    mirror.position.set(0.152, 1.55, 0);
+    sinkGroup.add(mirror);
 
     // Zeeppompje
     const soapGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.10, 8);
