@@ -485,8 +485,8 @@ class Game {
       const itemsText = `🎒 ${this.speurtochtCountFound}/${this.speurtochtTotal} schoolspullen`;
 
       this.gameoverStats.innerHTML = `
-        <div style="font-weight: 700; margin-bottom: 6px; color: #1e293b;">Wat had je al gedaan?</div>
-        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #475569;">
+        <div class="result-box-title" style="color: #f87171; font-size: 15px; margin-bottom: 6px;">Wat had je al gedaan?</div>
+        <div class="result-box-desc" style="display: flex; flex-direction: column; gap: 4px; color: #e2e8f0;">
           <div>${itemsText} • ${bagText}</div>
           <div>${dressedText} • ${toiletText}</div>
         </div>
@@ -1399,15 +1399,16 @@ class Game {
     const seconds = this.elapsedTime.toFixed(1);
     this.finalTimeEl.textContent = `${seconds}s`;
     if (this.finalTimeLeftEl) {
-      this.finalTimeLeftEl.textContent = `${this.formatTime(this.timeLeft)} over!`;
+      this.finalTimeLeftEl.textContent = this.formatTime(this.timeLeft);
     }
 
     // Speurtocht score
     const speurtochtBox = document.getElementById('speurtocht-result-box');
     if (speurtochtBox) {
+      speurtochtBox.className = 'result-box speurtocht-feedback-box';
       speurtochtBox.innerHTML = `
-        <div style="font-size: 18px; margin-bottom: 3px;">🌟 Speurtocht & Kluisje: 10/10</div>
-        <div>Alle 5 schoolspullen gevonden, veilig in de auto meegenomen en netjes opgeborgen in kluisje #7!</div>
+        <div class="result-box-title">🌟 Speurtocht & Kluisje: 10/10</div>
+        <div class="result-box-desc">Alle 5 schoolspullen gevonden, veilig in de auto meegenomen en opgeborgen in kluisje #7!</div>
       `;
     }
 
@@ -1415,10 +1416,10 @@ class Game {
     const weatherCheck = weather.checkOutfit(this.player.customization.topType);
     const feedbackBox = document.getElementById('weather-result-box');
     if (feedbackBox) {
-      feedbackBox.className = 'weather-feedback-box ' + (weatherCheck.isSuitable ? 'match' : 'mismatch');
+      feedbackBox.className = 'result-box weather-feedback-box ' + (weatherCheck.isSuitable ? 'match' : 'mismatch');
       feedbackBox.innerHTML = `
-        <div style="font-size: 20px; margin-bottom: 4px;">${weatherCheck.isSuitable ? '🌟 Weer-Score: 10/10' : '⚠️ Weer-Waarschuwing'}</div>
-        <div>${weatherCheck.message}</div>
+        <div class="result-box-title">${weatherCheck.isSuitable ? '🌟 Weer-Score: 10/10' : '⚠️ Weer-Waarschuwing'}</div>
+        <div class="result-box-desc">${weatherCheck.message}</div>
       `;
     }
 
@@ -1426,16 +1427,16 @@ class Game {
     const toiletBox = document.getElementById('toilet-result-box');
     if (toiletBox) {
       if (this.player.toiletNeed === 0) {
-        toiletBox.className = 'toilet-feedback-box';
+        toiletBox.className = 'result-box toilet-feedback-box';
         toiletBox.innerHTML = `
-          <div style="font-size: 18px; margin-bottom: 3px;">🌟 Ochtendroutine: 10/10</div>
-          <div>Netjes op tijd naar de wc geweest en fris aan de dag begonnen!</div>
+          <div class="result-box-title">🌟 Ochtendroutine: 10/10</div>
+          <div class="result-box-desc">Netjes op tijd naar de wc geweest en fris aan de dag begonnen!</div>
         `;
       } else {
-        toiletBox.className = 'toilet-feedback-box missed';
+        toiletBox.className = 'result-box toilet-feedback-box missed';
         toiletBox.innerHTML = `
-          <div style="font-size: 18px; margin-bottom: 3px;">⚠️ Oei, volle blaas!</div>
-          <div>Je bent vertrokken zonder naar de wc te gaan! Vergeet de badkamer volgende keer niet!</div>
+          <div class="result-box-title">⚠️ Oei, volle blaas!</div>
+          <div class="result-box-desc">Je bent vertrokken zonder naar de wc te gaan! Vergeet de badkamer volgende keer niet!</div>
         `;
       }
     }
