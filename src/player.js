@@ -18,6 +18,8 @@ export class Player {
     // Speler toestand & aanpassingen
     this.state = 'SLEEPING'; // SLEEPING, WAKING, ACTIVE
     this.isDressed = false;
+    this.toiletNeed = 100; // 100% hoge nood bij het wakker worden!
+    this.toiletWiggleTimer = 0;
     this.walkCycle = 0;
     this.stepTimer = 0;
 
@@ -35,6 +37,7 @@ export class Player {
 
     this.group = new THREE.Group();
     this.buildCharacter();
+    this.createThoughtBubble();
     this.scene.add(this.group);
 
     this.setSleepingPose();
@@ -507,8 +510,65 @@ export class Player {
     if (this.backpackGroup) this.backpackGroup.visible = (this.customization.backpackType !== 'NONE');
   }
 
+  createThoughtBubble() {
+    this.thoughtBubbleGroup = new THREE.Group();
+
+    // Drie kleine wolkbolletjes die opstijgen
+    const b1 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    b1.position.set(0.18, 1.45, 0.05);
+    this.thoughtBubbleGroup.add(b1);
+
+    const b2 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    b2.position.set(0.24, 1.55, 0.08);
+    this.thoughtBubbleGroup.add(b2);
+
+    // Grote denkballon wolk met WC icoon
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    
+    // Witte wolk achtergrond
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(64, 64, 56, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    // WC emoji
+    ctx.font = '64px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🚽', 64, 68);
+
+    const bubbleTex = new THREE.CanvasTexture(canvas);
+    const bubbleGeo = new THREE.PlaneGeometry(0.40, 0.40);
+    const bubbleMat = new THREE.MeshBasicMaterial({ map: bubbleTex, transparent: true, side: THREE.DoubleSide });
+    this.bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
+    this.bubbleMesh.position.set(0.32, 1.76, 0.10);
+    this.thoughtBubbleGroup.add(this.bubbleMesh);
+
+    this.group.add(this.thoughtBubbleGroup);
+    this.thoughtBubbleGroup.visible = false; // Pas zichtbaar na wakker worden
+  }
+
+  useToilet() {
+    this.toiletNeed = 0;
+    if (this.thoughtBubbleGroup) {
+      this.thoughtBubbleGroup.visible = false;
+    }
+    this.leftLegPivot.rotation.z = 0;
+    this.rightLegPivot.rotation.z = 0;
+  }
+
   setSleepingPose() {
     this.state = 'SLEEPING';
+    this.toiletNeed = 100;
+    if (this.thoughtBubbleGroup) {
+      this.thoughtBubbleGroup.visible = false;
+    }
     this.group.position.set(-5.8, this.world.UPPER_Y + 0.6, -5.5);
     this.bodyGroup.rotation.x = -Math.PI / 2;
     this.bodyGroup.rotation.y = 0;
@@ -517,6 +577,8 @@ export class Player {
     this.rightArmPivot.rotation.x = 0.5;
     this.leftLegPivot.rotation.x = 0;
     this.rightLegPivot.rotation.x = 0;
+    this.leftLegPivot.rotation.z = 0;
+    this.rightLegPivot.rotation.z = 0;
 
     if (this.backpackGroup) {
       this.backpackGroup.visible = false;
@@ -549,6 +611,9 @@ export class Player {
         this.position.copy(this.group.position);
         this.rotation = Math.PI;
         this.bodyGroup.rotation.set(0, 0, 0);
+        if (this.toiletNeed > 0 && this.thoughtBubbleGroup) {
+          this.thoughtBubbleGroup.visible = true;
+        }
         if (onComplete) onComplete();
       }
     };
@@ -612,6 +677,8 @@ export class Player {
       this.rightLegPivot.rotation.x = -legSwing;
       this.leftArmPivot.rotation.x = -legSwing * 0.7;
       this.rightArmPivot.rotation.x = legSwing * 0.7;
+      this.leftLegPivot.rotation.z = 0;
+      this.rightLegPivot.rotation.z = 0;
 
       this.stepTimer += dt;
       if (this.stepTimer > 0.32) {
@@ -627,6 +694,25 @@ export class Player {
       this.leftArmPivot.rotation.x *= 0.8;
       this.rightArmPivot.rotation.x *= 0.8;
       this.stepTimer = 0.25;
+
+      // Hoge-nood wiebelen met de beentjes als je stilstaat en nodig moet plassen!
+      if (this.toiletNeed > 0) {
+        this.toiletWiggleTimer += dt * 9;
+        const wiggle = Math.sin(this.toiletWiggleTimer) * 0.14;
+        this.leftLegPivot.rotation.z = wiggle;
+        this.rightLegPivot.rotation.z = -wiggle;
+      } else {
+        this.leftLegPivot.rotation.z *= 0.8;
+        this.rightLegPivot.rotation.z *= 0.8;
+      }
+    }
+
+    // Animeren van de denkballon als deze zichtbaar is
+    if (this.thoughtBubbleGroup && this.thoughtBubbleGroup.visible) {
+      this.thoughtBubbleGroup.position.y = Math.sin(performance.now() * 0.005) * 0.04;
+      if (this.bubbleMesh) {
+        this.bubbleMesh.rotation.y = -this.rotation - cameraAngle + Math.PI;
+      }
     }
 
     const groundY = this.world.getGroundHeightAt(this.position.x, this.position.z);

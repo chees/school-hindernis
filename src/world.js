@@ -80,6 +80,59 @@ export class GameWorld {
         polygonOffsetUnits: -3
       }),
 
+      // Badkamer materialen
+      bathroomTileFloor: new THREE.MeshStandardMaterial({
+        color: 0xe0f2fe,
+        roughness: 0.25,
+        metalness: 0.05,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      }),
+      bathroomTileWall: new THREE.MeshStandardMaterial({
+        color: 0xf0fdfa,
+        roughness: 0.35,
+        metalness: 0.05
+      }),
+      bathroomRug: new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        roughness: 0.9,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3
+      }),
+      porcelain: new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.15,
+        metalness: 0.02
+      }),
+      toiletSeat: new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        roughness: 0.4
+      }),
+      chrome: new THREE.MeshStandardMaterial({
+        color: 0xf1f5f9,
+        metalness: 0.9,
+        roughness: 0.15
+      }),
+      showerGlass: new THREE.MeshStandardMaterial({
+        color: 0xbae6fd,
+        transparent: true,
+        opacity: 0.38,
+        roughness: 0.05
+      }),
+      mirrorMat: new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        metalness: 0.95,
+        roughness: 0.05
+      }),
+      waterMat: new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.75,
+        roughness: 0.1
+      }),
+
       bedFrame: new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.6 }),
       mattress: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }),
       blanket: new THREE.MeshStandardMaterial({ color: 0x3d72b4, roughness: 0.8 }),
@@ -101,6 +154,7 @@ export class GameWorld {
     this.createUpperFloor();
     this.createStairs();
     this.createLowerFloor();
+    this.createBathroom();
     this.createWardrobe();
     this.createDecorations();
   }
@@ -196,6 +250,398 @@ export class GameWorld {
     this.createBed(-5.8, y, -5.5);
     this.createNightstandWithAlarm(-3.8, y, -6.8);
     this.createDesk(-6.6, y, -1.0);
+  }
+
+  // --- DE BADKAMER (WC, DOUCHE, WASTAFEL MET KRAAN) ---
+  createBathroom() {
+    const y = this.UPPER_Y;
+
+    // 1. Badkamervloer: x: 2.2 tot 6.0, z: -8.0 tot -2.6
+    const tileGeo = new THREE.PlaneGeometry(3.78, 5.38);
+    tileGeo.rotateX(-Math.PI / 2);
+    const bathFloor = new THREE.Mesh(tileGeo, this.materials.bathroomTileFloor);
+    bathFloor.position.set(4.1, y + 0.002, -5.3);
+    bathFloor.receiveShadow = true;
+    this.scene.add(bathFloor);
+
+    // Zachte badmat voor de wastafel & douche
+    const rugGeo = new THREE.PlaneGeometry(1.5, 0.9);
+    rugGeo.rotateX(-Math.PI / 2);
+    const bathRug = new THREE.Mesh(rugGeo, this.materials.bathroomRug);
+    bathRug.position.set(4.8, y + 0.004, -4.5);
+    bathRug.receiveShadow = true;
+    this.scene.add(bathRug);
+
+    // 2. Muren van de badkamer:
+    // Westmuur tussen gang en badkamer (x = 2.2 van z = -8.0 tot -2.6)
+    this.addWall(2.2, y + 1.5, -5.3, 0.2, 3.1, 5.4, this.materials.bathroomTileWall);
+
+    // Zuidmuur (met deuropening naar de overloop/trapgat bij z = -2.6, x: 2.2 tot 6.0)
+    // Deuropening van x = 3.4 tot 4.8 (breedte 1.4m)
+    // Linker muurdeel (x: 2.2 tot 3.4)
+    this.addWall(2.8, y + 1.5, -2.6, 1.2, 3.1, 0.2, this.materials.wallUpper);
+    // Rechter muurdeel (x: 4.8 tot 6.0)
+    this.addWall(5.4, y + 1.5, -2.6, 1.2, 3.1, 0.2, this.materials.wallUpper);
+    // Bovenkant deurpost
+    this.addWall(4.1, y + 2.65, -2.6, 1.4, 0.9, 0.2, this.materials.wallUpper);
+
+    // Deurbordje "🚻 BADKAMER" boven de deur (aan overloopzijde)
+    this.createBathroomSign(4.1, y + 2.35, -2.48);
+
+    // Badkamerraam (matglas) aan de noordwand
+    this.createWindow(3.0, y + 1.6, -7.89, 1.4, 1.2);
+
+    // 3. HET TOILET (WC)
+    this.createToilet(2.9, y, -7.3);
+
+    // 4. DE DOUCHE
+    this.createShower(5.2, y, -7.05);
+
+    // 5. WASTAFEL MET KRAAN & SPIEGEL
+    this.createSink(5.72, y, -4.5);
+  }
+
+  createBathroomSign(x, y, z) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 80;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 256, 80);
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 248, 72);
+    ctx.fillStyle = '#0369a1';
+    ctx.font = 'bold 30px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🚻 BADKAMER', 128, 40);
+
+    const signTex = new THREE.CanvasTexture(canvas);
+    const signGeo = new THREE.PlaneGeometry(1.1, 0.35);
+    const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({ map: signTex }));
+    signMesh.position.set(x, y, z);
+    this.scene.add(signMesh);
+  }
+
+  createToilet(x, y, z) {
+    const toiletGroup = new THREE.Group();
+    toiletGroup.position.set(x, y, z);
+
+    // Witte keramische toiletpot
+    const bowlGeo = new THREE.BoxGeometry(0.40, 0.40, 0.54);
+    const bowl = new THREE.Mesh(bowlGeo, this.materials.porcelain);
+    bowl.position.set(0, 0.20, 0);
+    bowl.castShadow = true;
+    toiletGroup.add(bowl);
+
+    // Wc-bril (donker antraciet)
+    const seatGeo = new THREE.BoxGeometry(0.44, 0.05, 0.52);
+    const seat = new THREE.Mesh(seatGeo, this.materials.toiletSeat);
+    seat.position.set(0, 0.42, 0.01);
+    toiletGroup.add(seat);
+
+    // Water in de pot
+    const waterGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.02, 16);
+    this.toiletWaterMesh = new THREE.Mesh(waterGeo, this.materials.waterMat);
+    this.toiletWaterMesh.position.set(0, 0.36, 0.04);
+    toiletGroup.add(this.toiletWaterMesh);
+
+    // Keramische spoelbak / reservoir aan de achterkant
+    const tankGeo = new THREE.BoxGeometry(0.50, 0.56, 0.24);
+    const tank = new THREE.Mesh(tankGeo, this.materials.porcelain);
+    tank.position.set(0, 0.56, -0.32);
+    tank.castShadow = true;
+    toiletGroup.add(tank);
+
+    // Glanzende chromen doordrukknop
+    const buttonGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.03, 12);
+    const button = new THREE.Mesh(buttonGeo, this.materials.chrome);
+    button.position.set(0, 0.85, -0.32);
+    toiletGroup.add(button);
+
+    // Toiletrolhouder aan de westmuur
+    const holderArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.18), this.materials.chrome);
+    holderArm.position.set(-0.55, 0.70, 0);
+    toiletGroup.add(holderArm);
+
+    const rollGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.14, 16);
+    const roll = new THREE.Mesh(rollGeo, this.materials.mattress);
+    roll.rotation.x = Math.PI / 2;
+    roll.position.set(-0.55, 0.70, 0);
+    toiletGroup.add(roll);
+
+    this.scene.add(toiletGroup);
+
+    // Collider voor toilet
+    this.colliders.push({
+      minX: x - 0.32, maxX: x + 0.32,
+      minY: y, maxY: y + 1.2,
+      minZ: z - 0.50, maxZ: z + 0.35
+    });
+
+    // Interactieve marker op de vloer
+    const markerGeo = new THREE.RingGeometry(0.45, 0.65, 32);
+    markerGeo.rotateX(-Math.PI / 2);
+    this.toiletMarker = new THREE.Mesh(markerGeo, this.materials.glowMarker);
+    this.toiletMarker.position.set(x, y + 0.005, z + 0.75);
+    this.scene.add(this.toiletMarker);
+
+    // Zwevende gids-pijl / wc-indicator boven het toilet
+    const arrowGeo = new THREE.ConeGeometry(0.20, 0.40, 16);
+    arrowGeo.rotateX(Math.PI);
+    this.toiletArrow = new THREE.Mesh(arrowGeo, new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.8
+    }));
+    this.toiletArrow.position.set(x, y + 1.5, z + 0.75);
+    this.scene.add(this.toiletArrow);
+
+    this.interactiveObjects.toilet = {
+      position: new THREE.Vector3(x, y, z + 0.75),
+      radius: 1.6,
+      used: false,
+      onInteract: () => this.flushToilet()
+    };
+  }
+
+  flushToilet() {
+    this.interactiveObjects.toilet.used = true;
+    if (this.toiletArrow) this.toiletArrow.visible = false;
+    if (this.toiletMarker) this.toiletMarker.visible = false;
+
+    // Kolkende wateranimatie in pot
+    if (this.toiletWaterMesh) {
+      const startTime = performance.now();
+      const anim = () => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        if (elapsed < 2.0) {
+          this.toiletWaterMesh.rotation.y += 0.25;
+          const s = 0.8 + Math.sin(elapsed * 10) * 0.2;
+          this.toiletWaterMesh.scale.set(s, 1, s);
+          requestAnimationFrame(anim);
+        } else {
+          this.toiletWaterMesh.scale.set(1, 1, 1);
+        }
+      };
+      requestAnimationFrame(anim);
+    }
+  }
+
+  createShower(x, y, z) {
+    const showerGroup = new THREE.Group();
+    showerGroup.position.set(x, y, z);
+
+    // Douchebak (verhoogd wit plateau)
+    const trayGeo = new THREE.BoxGeometry(1.45, 0.10, 1.45);
+    const tray = new THREE.Mesh(trayGeo, this.materials.porcelain);
+    tray.position.set(0, 0.05, 0);
+    showerGroup.add(tray);
+
+    // Afvoerputje
+    const drainGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.02, 12);
+    const drain = new THREE.Mesh(drainGeo, this.materials.chrome);
+    drain.position.set(0, 0.105, 0);
+    showerGroup.add(drain);
+
+    // Glazen wand (Westzijde van de cabine: x = -0.70)
+    const glassSideGeo = new THREE.BoxGeometry(0.03, 2.1, 1.4);
+    const glassSide = new THREE.Mesh(glassSideGeo, this.materials.showerGlass);
+    glassSide.position.set(-0.70, 1.10, 0);
+    showerGroup.add(glassSide);
+
+    // Glazen wand (Zuidzijde, halve inloopwand: z = 0.70, x van -0.70 tot 0.0)
+    const glassFrontGeo = new THREE.BoxGeometry(0.72, 2.1, 0.03);
+    const glassFront = new THREE.Mesh(glassFrontGeo, this.materials.showerGlass);
+    glassFront.position.set(-0.35, 1.10, 0.70);
+    showerGroup.add(glassFront);
+
+    // Chromen hoekprofiel / paal
+    const postGeo = new THREE.CylinderGeometry(0.02, 0.02, 2.15, 8);
+    const post = new THREE.Mesh(postGeo, this.materials.chrome);
+    post.position.set(-0.70, 1.10, 0.70);
+    showerGroup.add(post);
+
+    // Chromen douchestang aan noordmuur
+    const poleGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.7, 8);
+    const pole = new THREE.Mesh(poleGeo, this.materials.chrome);
+    pole.position.set(0, 1.35, -0.68);
+    showerGroup.add(pole);
+
+    // Mengkraan met draaiknoppen
+    const tapGeo = new THREE.BoxGeometry(0.18, 0.06, 0.08);
+    const tap = new THREE.Mesh(tapGeo, this.materials.chrome);
+    tap.position.set(0, 1.05, -0.65);
+    showerGroup.add(tap);
+
+    // Grote regendouchekop bovenin
+    const headArm = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.45), this.materials.chrome);
+    headArm.position.set(0, 2.15, -0.45);
+    showerGroup.add(headArm);
+
+    const showerHeadGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.03, 16);
+    const showerHead = new THREE.Mesh(showerHeadGeo, this.materials.chrome);
+    showerHead.position.set(0, 2.13, -0.25);
+    showerGroup.add(showerHead);
+
+    // Geanimeerde douche regendruppels (partikels)
+    this.showerParticlesGroup = new THREE.Group();
+    this.showerParticlesGroup.position.set(0, 2.1, -0.25);
+    const dropCount = 24;
+    for (let i = 0; i < dropCount; i++) {
+      const dropGeo = new THREE.CylinderGeometry(0.005, 0.005, 0.12, 4);
+      const drop = new THREE.Mesh(dropGeo, this.materials.waterMat);
+      const radius = Math.random() * 0.15;
+      const angle = Math.random() * Math.PI * 2;
+      drop.position.set(Math.cos(angle) * radius, -Math.random() * 1.8, Math.sin(angle) * radius);
+      this.showerParticlesGroup.add(drop);
+    }
+    this.showerParticlesGroup.visible = false;
+    showerGroup.add(this.showerParticlesGroup);
+
+    this.scene.add(showerGroup);
+
+    // Douchecabine colliders (glaswanden)
+    this.colliders.push({
+      minX: x - 0.78, maxX: x - 0.62,
+      minY: y, maxY: y + 2.2,
+      minZ: z - 0.72, maxZ: z + 0.72
+    });
+    this.colliders.push({
+      minX: x - 0.72, maxX: x + 0.02,
+      minY: y, maxY: y + 2.2,
+      minZ: z + 0.62, maxZ: z + 0.78
+    });
+
+    // Interactieve marker voor de douche
+    const markerGeo = new THREE.RingGeometry(0.40, 0.60, 32);
+    markerGeo.rotateX(-Math.PI / 2);
+    this.showerMarker = new THREE.Mesh(markerGeo, this.materials.glowMarker);
+    this.showerMarker.position.set(x + 0.35, y + 0.005, z + 1.1);
+    this.scene.add(this.showerMarker);
+
+    this.interactiveObjects.shower = {
+      position: new THREE.Vector3(x + 0.35, y, z + 1.1),
+      radius: 1.5,
+      active: false,
+      onInteract: () => this.toggleShower()
+    };
+  }
+
+  toggleShower() {
+    const shower = this.interactiveObjects.shower;
+    shower.active = !shower.active;
+    this.showerParticlesGroup.visible = shower.active;
+
+    if (shower.active) {
+      setTimeout(() => {
+        shower.active = false;
+        if (this.showerParticlesGroup) this.showerParticlesGroup.visible = false;
+      }, 3500);
+    }
+  }
+
+  createSink(x, y, z) {
+    const sinkGroup = new THREE.Group();
+    sinkGroup.position.set(x, y, z);
+
+    // Badkamermeubel (wastafelkast)
+    const cabinetGeo = new THREE.BoxGeometry(0.50, 0.72, 1.10);
+    const cabinet = new THREE.Mesh(cabinetGeo, this.materials.woodFurniture);
+    cabinet.position.set(0, 0.36, 0);
+    cabinet.castShadow = true;
+    sinkGroup.add(cabinet);
+
+    // Handgrepen kast
+    const handleGeo = new THREE.BoxGeometry(0.02, 0.12, 0.02);
+    const h1 = new THREE.Mesh(handleGeo, this.materials.chrome);
+    h1.position.set(-0.26, 0.45, -0.25);
+    sinkGroup.add(h1);
+    const h2 = new THREE.Mesh(handleGeo, this.materials.chrome);
+    h2.position.set(-0.26, 0.45, 0.25);
+    sinkGroup.add(h2);
+
+    // Keramische wasbak
+    const basinGeo = new THREE.BoxGeometry(0.46, 0.16, 0.85);
+    const basin = new THREE.Mesh(basinGeo, this.materials.porcelain);
+    basin.position.set(0, 0.80, 0);
+    basin.castShadow = true;
+    sinkGroup.add(basin);
+
+    // Kraan (chromen mengkraan met gebogen uitloop)
+    const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.14, 8), this.materials.chrome);
+    faucetBase.position.set(0.14, 0.95, 0);
+    sinkGroup.add(faucetBase);
+
+    const faucetSpout = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.025), this.materials.chrome);
+    faucetSpout.position.set(0.07, 1.01, 0);
+    sinkGroup.add(faucetSpout);
+
+    // Kraan waterstraal (geanimeerd)
+    this.sinkWaterStream = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.18, 8), this.materials.waterMat);
+    this.sinkWaterStream.position.set(0, 0.89, 0);
+    this.sinkWaterStream.visible = false;
+    sinkGroup.add(this.sinkWaterStream);
+
+    // Grote spiegel boven wastafel aan de oostmuur
+    const mirrorGeo = new THREE.BoxGeometry(0.04, 0.95, 0.85);
+    const mirror = new THREE.Mesh(mirrorGeo, this.materials.mirrorMat);
+    mirror.position.set(0.20, 1.55, 0);
+    sinkGroup.add(mirror);
+
+    const mirrorFrameGeo = new THREE.BoxGeometry(0.05, 1.00, 0.90);
+    const mirrorFrame = new THREE.Mesh(mirrorFrameGeo, this.materials.chrome);
+    mirrorFrame.position.set(0.21, 1.55, 0);
+    sinkGroup.add(mirrorFrame);
+
+    // Zeeppompje
+    const soapGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.10, 8);
+    const soap = new THREE.Mesh(soapGeo, new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 }));
+    soap.position.set(0.08, 0.93, 0.32);
+    sinkGroup.add(soap);
+
+    // Tandenborstelbeker met tandenborstels
+    const cupGeo = new THREE.CylinderGeometry(0.035, 0.03, 0.09, 8);
+    const cup = new THREE.Mesh(cupGeo, new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.5 }));
+    cup.position.set(0.08, 0.93, -0.32);
+    sinkGroup.add(cup);
+
+    this.scene.add(sinkGroup);
+
+    // Collider voor wastafelmeubel
+    this.colliders.push({
+      minX: x - 0.30, maxX: x + 0.30,
+      minY: y, maxY: y + 1.2,
+      minZ: z - 0.60, maxZ: z + 0.60
+    });
+
+    // Interactieve marker voor de kraan
+    const markerGeo = new THREE.RingGeometry(0.40, 0.60, 32);
+    markerGeo.rotateX(-Math.PI / 2);
+    this.sinkMarker = new THREE.Mesh(markerGeo, this.materials.glowMarker);
+    this.sinkMarker.position.set(x - 0.75, y + 0.005, z);
+    this.scene.add(this.sinkMarker);
+
+    this.interactiveObjects.sink = {
+      position: new THREE.Vector3(x - 0.75, y, z),
+      radius: 1.5,
+      active: false,
+      onInteract: () => this.toggleSink()
+    };
+  }
+
+  toggleSink() {
+    const sink = this.interactiveObjects.sink;
+    sink.active = !sink.active;
+    this.sinkWaterStream.visible = sink.active;
+
+    if (sink.active) {
+      setTimeout(() => {
+        sink.active = false;
+        if (this.sinkWaterStream) this.sinkWaterStream.visible = false;
+      }, 2500);
+    }
   }
 
   // --- TRAP NAAR BENEDEN (VRIJ VAN Z-FIGHTING) ---
@@ -775,6 +1221,20 @@ export class GameWorld {
     if (this.wardrobeArrow && this.wardrobeArrow.visible) {
       this.wardrobeArrow.position.y = this.LOWER_Y + 1.6 + Math.sin(elapsed * 4) * 0.15;
       this.wardrobeArrow.rotation.y += dt * 1.8;
+    }
+
+    if (this.toiletArrow && this.toiletArrow.visible) {
+      this.toiletArrow.position.y = this.UPPER_Y + 1.45 + Math.sin(elapsed * 4.5) * 0.12;
+      this.toiletArrow.rotation.y += dt * 2.0;
+    }
+
+    if (this.showerParticlesGroup && this.showerParticlesGroup.visible) {
+      for (const drop of this.showerParticlesGroup.children) {
+        drop.position.y -= dt * 3.2;
+        if (drop.position.y < -1.8) {
+          drop.position.y = 0;
+        }
+      }
     }
 
     if (this.alarmClockMesh) {

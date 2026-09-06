@@ -127,12 +127,20 @@ class Game {
     this.objectiveEl = document.getElementById('objective-text');
     this.promptEl = document.getElementById('interaction-prompt');
     this.actionBtn = document.getElementById('btn-action');
+    this.actionBtnIcon = document.getElementById('action-btn-icon');
+    this.actionBtnLabel = document.getElementById('action-btn-label');
     this.wakeupModal = document.getElementById('wakeup-modal');
     this.wardrobeModal = document.getElementById('wardrobe-modal');
     this.victoryModal = document.getElementById('victory-modal');
     this.finalTimeEl = document.getElementById('final-time');
 
+    this.toiletPill = document.getElementById('hud-toilet-pill');
+    this.toiletIcon = document.getElementById('hud-toilet-icon');
+    this.toiletText = document.getElementById('hud-toilet-text');
+    this.toiletFill = document.getElementById('hud-toilet-fill');
+
     this.updateWeatherUI();
+    this.updateToiletUI();
 
     // Word wakker knop
     const wakeupBtn = document.getElementById('btn-wakeup');
@@ -216,6 +224,22 @@ class Game {
     if (wLabel) wLabel.textContent = w.label;
     if (wTemp) wTemp.textContent = w.temp;
     if (wAdvice) wAdvice.textContent = w.advice;
+  }
+
+  updateToiletUI() {
+    if (!this.toiletPill) return;
+    const need = this.player ? this.player.toiletNeed : 100;
+    if (need > 0) {
+      this.toiletPill.className = 'toilet-pill urgent';
+      if (this.toiletIcon) this.toiletIcon.textContent = '🚽';
+      if (this.toiletText) this.toiletText.textContent = 'Hoge nood!';
+      if (this.toiletFill) this.toiletFill.style.width = `${need}%`;
+    } else {
+      this.toiletPill.className = 'toilet-pill relieved';
+      if (this.toiletIcon) this.toiletIcon.textContent = '✨';
+      if (this.toiletText) this.toiletText.textContent = 'Opgelucht!';
+      if (this.toiletFill) this.toiletFill.style.width = '0%';
+    }
   }
 
   setupCustomizerEvents() {
@@ -382,7 +406,12 @@ class Game {
 
     this.world.uncoverBed();
     this.player.wakeUp(() => {
-      this.setObjective('🏃 Daal de houten trap af naar de kleerkast beneden!');
+      this.updateToiletUI();
+      if (this.player.toiletNeed > 0) {
+        this.setObjective('🚽 Je hebt hoge nood! Ga naar de badkamer boven om naar de wc te gaan!');
+      } else {
+        this.setObjective('🏃 Daal de houten trap af naar de kleerkast beneden!');
+      }
     });
   }
 
@@ -434,6 +463,13 @@ class Game {
     this.world.interactiveObjects.wardrobe.opened = false;
     if (this.world.wardrobeArrow) this.world.wardrobeArrow.visible = true;
     if (this.world.wardrobeMarker) this.world.wardrobeMarker.visible = true;
+
+    if (this.world.interactiveObjects.toilet) {
+      this.world.interactiveObjects.toilet.used = false;
+    }
+    if (this.world.toiletArrow) this.world.toiletArrow.visible = true;
+    if (this.world.toiletMarker) this.world.toiletMarker.visible = true;
+    this.updateToiletUI();
 
     this.cameraYaw = 0;
     this.cameraPitch = 0.35;
@@ -600,33 +636,98 @@ class Game {
 
     const playerPos = this.player.position;
     const wardrobe = this.world.interactiveObjects.wardrobe;
+    const toilet = this.world.interactiveObjects.toilet;
+    const sink = this.world.interactiveObjects.sink;
+    const shower = this.world.interactiveObjects.shower;
 
     const onStairs = this.world.isOnStairs(playerPos.x, playerPos.z);
     const isDownstairs = playerPos.y < 1.0;
 
-    if (!isDownstairs && !onStairs) {
-      this.setObjective('🚪 Verlaat je slaapkamer en neem de trap naar beneden!');
-    } else if (onStairs) {
-      this.setObjective('🪜 Daal voorzichtig de trap af...');
-    } else if (isDownstairs && !this.player.isDressed) {
-      this.setObjective('✨ Loop naar de kleerkast en open hem om je aan te kleden!');
+    // Doeltekst updates
+    if (this.player.toiletNeed > 0) {
+      if (!isDownstairs && !onStairs) {
+        if (playerPos.x >= 2.2 && playerPos.z <= -2.5) {
+          this.setObjective('🚽 Je bent in de badkamer! Ga naar het toilet om te plassen.');
+        } else {
+          this.setObjective('🚽 Hoge nood! Ga naar de badkamer boven om naar de wc te gaan!');
+        }
+      } else if (onStairs) {
+        this.setObjective('🪜 Oei, met een volle blaas op de trap! Wees voorzichtig...');
+      } else if (isDownstairs && !this.player.isDressed) {
+        this.setObjective('🚽 Hoge nood! Ga boven naar de badkamer, of kleed je eerst snel aan!');
+      }
+    } else {
+      if (!isDownstairs && !onStairs) {
+        this.setObjective('🏃 Heerlijk opgelucht! Neem de houten trap naar beneden.');
+      } else if (onStairs) {
+        this.setObjective('🪜 Daal voorzichtig de trap af...');
+      } else if (isDownstairs && !this.player.isDressed) {
+        this.setObjective('✨ Loop naar de kleerkast en open hem om je aan te kleden!');
+      }
     }
 
+    // Afstanden tot interactieve objecten
+    const distToToilet = toilet ? playerPos.distanceTo(toilet.position) : 999;
+    const distToSink = sink ? playerPos.distanceTo(sink.position) : 999;
+    const distToShower = shower ? playerPos.distanceTo(shower.position) : 999;
     const distToWardrobe = playerPos.distanceTo(wardrobe.position);
-    const inRange = distToWardrobe <= wardrobe.radius && !this.player.isDressed;
 
-    if (inRange) {
+    let activeInteraction = null;
+
+    if (distToToilet <= toilet.radius) {
+      activeInteraction = 'TOILET';
+      this.promptEl.textContent = this.player.toiletNeed > 0
+        ? '🚽 Druk op [E] of tik op [WC] om naar de wc te gaan!'
+        : '🚽 Druk op [E] of tik op [WC] om nog eens door te spoelen!';
       this.promptEl.classList.add('visible');
       this.actionBtn.classList.add('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚽';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'WC';
+    } else if (distToSink <= sink.radius) {
+      activeInteraction = 'SINK';
+      this.promptEl.textContent = '🚰 Druk op [E] of tik op [Kraan] om je handen te wassen!';
+      this.promptEl.classList.add('visible');
+      this.actionBtn.classList.add('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚰';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kraan';
+    } else if (distToShower <= shower.radius) {
+      activeInteraction = 'SHOWER';
+      this.promptEl.textContent = '🚿 Druk op [E] of tik op [Douche] om de douche te starten!';
+      this.promptEl.classList.add('visible');
+      this.actionBtn.classList.add('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚿';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Douche';
+    } else if (distToWardrobe <= wardrobe.radius && !this.player.isDressed) {
+      activeInteraction = 'WARDROBE';
+      this.promptEl.textContent = '✨ Druk op [E] of tik op [Kast] om je aan te kleden!';
+      this.promptEl.classList.add('visible');
+      this.actionBtn.classList.add('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🚪';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kast';
     } else {
       this.promptEl.classList.remove('visible');
       this.actionBtn.classList.remove('active-glow');
     }
 
     const interact = this.controls.consumeInteract();
-    if ((inRange && interact) || (inRange && this.controls.keys['KeyE'])) {
+    const keyE = this.controls.keys['KeyE'];
+    if ((activeInteraction && interact) || (activeInteraction && keyE)) {
       this.controls.keys['KeyE'] = false;
-      this.handleWardrobeReached();
+      if (activeInteraction === 'TOILET') {
+        this.world.flushToilet();
+        this.player.useToilet();
+        this.updateToiletUI();
+        this.setObjective('🚰 Lekker opgelucht! Was even je handen of loop naar de trap!');
+      } else if (activeInteraction === 'SINK') {
+        this.world.toggleSink();
+        sounds.playWaterTap();
+        this.setObjective('🧼 Handen lekker gewassen! Ga nu naar de kleerkast beneden!');
+      } else if (activeInteraction === 'SHOWER') {
+        this.world.toggleShower();
+        sounds.playShower();
+      } else if (activeInteraction === 'WARDROBE') {
+        this.handleWardrobeReached();
+      }
     }
   }
 
@@ -677,6 +778,24 @@ class Game {
         <div style="font-size: 20px; margin-bottom: 4px;">${weatherCheck.isSuitable ? '🌟 Weer-Score: 10/10' : '⚠️ Weer-Waarschuwing'}</div>
         <div>${weatherCheck.message}</div>
       `;
+    }
+
+    // Toilet & Ochtendroutine score
+    const toiletBox = document.getElementById('toilet-result-box');
+    if (toiletBox) {
+      if (this.player.toiletNeed === 0) {
+        toiletBox.className = 'toilet-feedback-box';
+        toiletBox.innerHTML = `
+          <div style="font-size: 18px; margin-bottom: 3px;">🌟 Ochtendroutine: 10/10</div>
+          <div>Netjes op tijd naar de wc geweest en fris aan de dag begonnen!</div>
+        `;
+      } else {
+        toiletBox.className = 'toilet-feedback-box missed';
+        toiletBox.innerHTML = `
+          <div style="font-size: 18px; margin-bottom: 3px;">⚠️ Oei, volle blaas!</div>
+          <div>Je bent vertrokken zonder naar de wc te gaan! Vergeet de badkamer volgende keer niet!</div>
+        `;
+      }
     }
 
     // Beschrijving van de gekozen outfit

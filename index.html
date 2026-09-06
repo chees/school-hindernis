@@ -26,6 +26,13 @@
         <span id="hud-weather-text">24°C Zonnig</span>
       </div>
 
+      <!-- WC-status indicator bovenaan -->
+      <div class="toilet-pill urgent" id="hud-toilet-pill" title="WC Status">
+        <span id="hud-toilet-icon">🚽</span>
+        <span id="hud-toilet-text">Hoge nood!</span>
+        <div class="toilet-meter"><div id="hud-toilet-fill" style="width: 100%;"></div></div>
+      </div>
+
       <div class="objective-banner" id="objective-text">
         ⏰ De wekker gaat! Word snel wakker...
       </div>
@@ -42,7 +49,7 @@
       <div><span class="key-badge">W A S D</span> Lopen</div>
       <div><span class="key-badge">Muis</span> Rondkijken</div>
       <div><span class="key-badge">Spatie</span> Springen</div>
-      <div><span class="key-badge">E</span> Kast Openen</div>
+      <div><span class="key-badge">E</span> Actie / WC / Kast</div>
     </footer>
 
     <!-- Touch Controls for Mobile / Chromebook Touch -->
@@ -56,9 +63,9 @@
 
       <!-- Touch Actieknoppen (Rechts) -->
       <div class="action-buttons">
-        <button id="btn-action" class="touch-action-btn" aria-label="Actie / Kast openen">
-          🚪
-          <span>Kast</span>
+        <button id="btn-action" class="touch-action-btn" aria-label="Actie">
+          <span id="action-btn-icon">🚽</span>
+          <span id="action-btn-label">WC</span>
         </button>
         <button id="btn-jump" class="touch-action-btn" aria-label="Springen">
           👟
@@ -72,7 +79,7 @@
 
     <!-- 3D Zwevende Interactie Prompt -->
     <div id="interaction-prompt">
-      ✨ Druk op [E] of tik op [Kast] om je aan te kleden!
+      ✨ Druk op [E] of tik op [Actie] om te communiceren!
     </div>
   </div>
 
@@ -85,8 +92,11 @@
       <div class="wakeup-weather-hint" id="wakeup-weather-hint">
         🌤️ Vandaag: <strong id="wakeup-weather-summary">24°C Zonnig</strong>
       </div>
+      <div class="wakeup-routine-hint" id="wakeup-toilet-hint">
+        🚽 Ochtendroutine: <strong>Je moet nodig naar de wc!</strong>
+      </div>
       <p style="margin-top: 8px; color: #cbd5e1; font-size: 15px;">
-        De schoolbel wacht niet. Word snel wakker en ga naar de kleerkast!
+        De schoolbel wacht niet. Word snel wakker, ga naar de badkamer en kleed je aan!
       </p>
       <button id="btn-wakeup" class="alarm-btn">
         ☀️ WORD WAKKER!
@@ -233,6 +243,10 @@
 
       <div id="weather-result-box" class="weather-feedback-box">
         <!-- Dynamische weer feedback -->
+      </div>
+
+      <div id="toilet-result-box" class="toilet-feedback-box">
+        <!-- Dynamische toilet feedback -->
       </div>
 
       <div class="stats-box">
