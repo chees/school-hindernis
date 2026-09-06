@@ -156,6 +156,17 @@ export class GameWorld {
       }),
       windowFrame: new THREE.MeshStandardMaterial({ color: 0x242e38, roughness: 0.45 }),
       windowSill: new THREE.MeshStandardMaterial({ color: 0x3d4852, roughness: 0.35 }),
+      roofGlass: new THREE.MeshStandardMaterial({
+        color: 0xcfe7f7,
+        transparent: true,
+        opacity: 0.25,
+        roughness: 0.08,
+        metalness: 0.15,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      }),
+      roofBeam: new THREE.MeshStandardMaterial({ color: 0x2a343d, roughness: 0.5 }),
+      roofGutter: new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.35 }),
       leafGreen: new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.6 }),
       potColor: new THREE.MeshStandardMaterial({ color: 0xd27d53, roughness: 0.7 }),
       alarmClock: new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.4 }),
@@ -225,6 +236,7 @@ export class GameWorld {
     this.createDecorations();
     this.createSchoolBag(-6.6, this.UPPER_Y, -1.0);
     this.createSpeurtochtItems();
+    this.createRoof();
     this.createOutdoorEnvironment();
     this.createCar();
     this.createSchoolAndLockers();
@@ -2069,6 +2081,197 @@ export class GameWorld {
       this.lockerArrow.position.y = this.LOWER_Y + 2.0 + Math.sin(elapsed * 4.5) * 0.14;
       this.lockerArrow.rotation.y += dt * 2.0;
     }
+  }
+
+  // --- HET TRANSPARANTE DAK VAN HET HUIS ---
+  createRoof() {
+    this.roofGroup = new THREE.Group();
+
+    const glassMat = this.materials.roofGlass;
+    const beamMat = this.materials.roofBeam;
+    const gutterMat = this.materials.roofGutter;
+
+    // ==========================================
+    // 1. HOOFDDAK (Bovenverdieping: slaapkamer, badkamer, overloop)
+    // ==========================================
+    // Afmetingen hoofdhuis: x: -8.2 tot 6.2 (nok bij x = -1.0), z: -8.3 tot 1.6
+    const mainLength = 9.9; // van z = -8.3 tot 1.6
+    const mainZCenter = -3.35;
+    const mainEavesY = 6.60;
+    const mainRidgeY = 9.00;
+    const mainRidgeX = -1.0;
+    const mainHalfW = 7.2; // 7.2m links en rechts van de nok
+    const mainDy = mainRidgeY - mainEavesY; // 2.4m
+    const mainSlopeW = Math.hypot(mainHalfW, mainDy); // ~7.59m
+    const mainAngle = Math.atan2(mainDy, mainHalfW); // ~0.322 rad (~18.4°)
+
+    // 1a. Nokbalk (Ridge beam)
+    const mainRidgeBeamGeo = new THREE.BoxGeometry(0.18, 0.22, mainLength);
+    const mainRidgeBeam = new THREE.Mesh(mainRidgeBeamGeo, beamMat);
+    mainRidgeBeam.position.set(mainRidgeX, mainRidgeY, mainZCenter);
+    mainRidgeBeam.castShadow = true;
+    this.roofGroup.add(mainRidgeBeam);
+
+    // 1b. Dakgoten (Gutters) links en rechts
+    const mainGutterGeo = new THREE.BoxGeometry(0.16, 0.14, mainLength + 0.3);
+    const mainGutterWest = new THREE.Mesh(mainGutterGeo, gutterMat);
+    mainGutterWest.position.set(-8.25, mainEavesY, mainZCenter);
+    this.roofGroup.add(mainGutterWest);
+
+    const mainGutterEast = new THREE.Mesh(mainGutterGeo, gutterMat);
+    mainGutterEast.position.set(6.25, mainEavesY, mainZCenter);
+    this.roofGroup.add(mainGutterEast);
+
+    // 1c. Transparant glazen dakvlak West
+    const mainGlassGeo = new THREE.PlaneGeometry(mainSlopeW, mainLength);
+    mainGlassGeo.rotateX(-Math.PI / 2);
+
+    const mainRoofWest = new THREE.Mesh(mainGlassGeo, glassMat);
+    mainRoofWest.position.set((mainRidgeX - 8.2) / 2, (mainRidgeY + mainEavesY) / 2, mainZCenter);
+    mainRoofWest.rotation.z = mainAngle;
+    this.roofGroup.add(mainRoofWest);
+
+    // 1d. Transparant glazen dakvlak Oost
+    const mainRoofEast = new THREE.Mesh(mainGlassGeo, glassMat);
+    mainRoofEast.position.set((mainRidgeX + 6.2) / 2, (mainRidgeY + mainEavesY) / 2, mainZCenter);
+    mainRoofEast.rotation.z = -mainAngle;
+    this.roofGroup.add(mainRoofEast);
+
+    // 1e. Dakspanten (Rafters) over het hoofddak (om de ~2 meter)
+    const rafterGeo = new THREE.BoxGeometry(mainSlopeW, 0.08, 0.08);
+    rafterGeo.rotateX(-Math.PI / 2);
+
+    for (let z = -8.2; z <= 1.61; z += 1.96) {
+      // West spant
+      const rWest = new THREE.Mesh(rafterGeo, beamMat);
+      rWest.position.set((mainRidgeX - 8.2) / 2, (mainRidgeY + mainEavesY) / 2, z);
+      rWest.rotation.z = mainAngle;
+      rWest.castShadow = true;
+      this.roofGroup.add(rWest);
+
+      // Oost spant
+      const rEast = new THREE.Mesh(rafterGeo, beamMat);
+      rEast.position.set((mainRidgeX + 6.2) / 2, (mainRidgeY + mainEavesY) / 2, z);
+      rEast.rotation.z = -mainAngle;
+      rEast.castShadow = true;
+      this.roofGroup.add(rEast);
+    }
+
+    // 1f. Noordelijke topgevel (Puntgevel bij z = -8.3)
+    const northGableGeo = new THREE.BufferGeometry();
+    const nVertices = new Float32Array([
+      -8.2, mainEavesY, -8.3,
+      6.2, mainEavesY, -8.3,
+      mainRidgeX, mainRidgeY, -8.3
+    ]);
+    northGableGeo.setAttribute('position', new THREE.BufferAttribute(nVertices, 3));
+    northGableGeo.computeVertexNormals();
+    const northGableMesh = new THREE.Mesh(northGableGeo, glassMat);
+    this.roofGroup.add(northGableMesh);
+
+    // Schuin frame langs noordelijke puntgevel
+    const nRakeGeo = new THREE.BoxGeometry(mainSlopeW, 0.12, 0.12);
+    nRakeGeo.rotateX(-Math.PI / 2);
+    const nRakeW = new THREE.Mesh(nRakeGeo, beamMat);
+    nRakeW.position.set((mainRidgeX - 8.2) / 2, (mainRidgeY + mainEavesY) / 2, -8.3);
+    nRakeW.rotation.z = mainAngle;
+    this.roofGroup.add(nRakeW);
+
+    const nRakeE = new THREE.Mesh(nRakeGeo, beamMat);
+    nRakeE.position.set((mainRidgeX + 6.2) / 2, (mainRidgeY + mainEavesY) / 2, -8.3);
+    nRakeE.rotation.z = -mainAngle;
+    this.roofGroup.add(nRakeE);
+
+    // ==========================================
+    // 2. AANBOUWDAK (Benedenverdieping zuid: hal, garderobe, living, voordeur)
+    // ==========================================
+    // Afmetingen: x: -8.2 tot 7.2 (nok bij x = -0.5), z: 1.5 tot 13.8
+    const frontLength = 12.3;
+    const frontZCenter = 7.65;
+    const frontEavesY = 3.35;
+    const frontRidgeY = 5.20;
+    const frontRidgeX = -0.5;
+    const frontHalfW = 7.7;
+    const frontDy = frontRidgeY - frontEavesY; // 1.85m
+    const frontSlopeW = Math.hypot(frontHalfW, frontDy); // ~7.92m
+    const frontAngle = Math.atan2(frontDy, frontHalfW); // ~0.236 rad (~13.5°)
+
+    // 2a. Nokbalk aanbouwdak
+    const frontRidgeBeamGeo = new THREE.BoxGeometry(0.18, 0.20, frontLength);
+    const frontRidgeBeam = new THREE.Mesh(frontRidgeBeamGeo, beamMat);
+    frontRidgeBeam.position.set(frontRidgeX, frontRidgeY, frontZCenter);
+    frontRidgeBeam.castShadow = true;
+    this.roofGroup.add(frontRidgeBeam);
+
+    // 2b. Dakgoten aanbouwdak
+    const frontGutterGeo = new THREE.BoxGeometry(0.16, 0.14, frontLength + 0.3);
+    const frontGutterWest = new THREE.Mesh(frontGutterGeo, gutterMat);
+    frontGutterWest.position.set(-8.25, frontEavesY, frontZCenter);
+    this.roofGroup.add(frontGutterWest);
+
+    const frontGutterEast = new THREE.Mesh(frontGutterGeo, gutterMat);
+    frontGutterEast.position.set(7.25, frontEavesY, frontZCenter);
+    this.roofGroup.add(frontGutterEast);
+
+    // 2c. Transparant glazen dakvlak West
+    const frontGlassGeo = new THREE.PlaneGeometry(frontSlopeW, frontLength);
+    frontGlassGeo.rotateX(-Math.PI / 2);
+
+    const frontRoofWest = new THREE.Mesh(frontGlassGeo, glassMat);
+    frontRoofWest.position.set((frontRidgeX - 8.2) / 2, (frontRidgeY + frontEavesY) / 2, frontZCenter);
+    frontRoofWest.rotation.z = frontAngle;
+    this.roofGroup.add(frontRoofWest);
+
+    // 2d. Transparant glazen dakvlak Oost
+    const frontRoofEast = new THREE.Mesh(frontGlassGeo, glassMat);
+    frontRoofEast.position.set((frontRidgeX + 7.2) / 2, (frontRidgeY + frontEavesY) / 2, frontZCenter);
+    frontRoofEast.rotation.z = -frontAngle;
+    this.roofGroup.add(frontRoofEast);
+
+    // 2e. Dakspanten over het aanbouwdak (om de ~2.4m)
+    const fRafterGeo = new THREE.BoxGeometry(frontSlopeW, 0.08, 0.08);
+    fRafterGeo.rotateX(-Math.PI / 2);
+
+    for (let z = 1.6; z <= 13.81; z += 2.44) {
+      const rWest = new THREE.Mesh(fRafterGeo, beamMat);
+      rWest.position.set((frontRidgeX - 8.2) / 2, (frontRidgeY + frontEavesY) / 2, z);
+      rWest.rotation.z = frontAngle;
+      rWest.castShadow = true;
+      this.roofGroup.add(rWest);
+
+      const rEast = new THREE.Mesh(fRafterGeo, beamMat);
+      rEast.position.set((frontRidgeX + 7.2) / 2, (frontRidgeY + frontEavesY) / 2, z);
+      rEast.rotation.z = -frontAngle;
+      rEast.castShadow = true;
+      this.roofGroup.add(rEast);
+    }
+
+    // 2f. Zuidelijke topgevel (Voorgevel bij z = 13.8)
+    const southGableGeo = new THREE.BufferGeometry();
+    const sVertices = new Float32Array([
+      -8.2, frontEavesY, 13.8,
+      7.2, frontEavesY, 13.8,
+      frontRidgeX, frontRidgeY, 13.8
+    ]);
+    southGableGeo.setAttribute('position', new THREE.BufferAttribute(sVertices, 3));
+    southGableGeo.computeVertexNormals();
+    const southGableMesh = new THREE.Mesh(southGableGeo, glassMat);
+    this.roofGroup.add(southGableMesh);
+
+    // Schuin frame langs zuidelijke voorgevel
+    const sRakeGeo = new THREE.BoxGeometry(frontSlopeW, 0.12, 0.12);
+    sRakeGeo.rotateX(-Math.PI / 2);
+    const sRakeW = new THREE.Mesh(sRakeGeo, beamMat);
+    sRakeW.position.set((frontRidgeX - 8.2) / 2, (frontRidgeY + frontEavesY) / 2, 13.8);
+    sRakeW.rotation.z = frontAngle;
+    this.roofGroup.add(sRakeW);
+
+    const sRakeE = new THREE.Mesh(sRakeGeo, beamMat);
+    sRakeE.position.set((frontRidgeX + 7.2) / 2, (frontRidgeY + frontEavesY) / 2, 13.8);
+    sRakeE.rotation.z = -frontAngle;
+    this.roofGroup.add(sRakeE);
+
+    this.scene.add(this.roofGroup);
   }
 
   // --- BUITENOMGEVING, STRAAT & VOORTUIN ---
