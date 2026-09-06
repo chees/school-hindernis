@@ -57,30 +57,148 @@ export class InputControls {
     });
   }
 
+  isUIInteractive(target) {
+    if (!target) return false;
+    if (target.closest('button, input, select, textarea, a, label')) return true;
+    if (target.closest('.alarm-card, .victory-card, .gameover-card, .wardrobe-card')) return true;
+    if (target.closest('#joystick-zone')) return true;
+
+    const wakeup = document.getElementById('wakeup-modal');
+    if (wakeup && !wakeup.classList.contains('fade-out') && wakeup.style.display !== 'none') return true;
+    const wardrobe = document.getElementById('wardrobe-modal');
+    if (wardrobe && wardrobe.classList.contains('active')) return true;
+    const victory = document.getElementById('victory-modal');
+    if (victory && victory.classList.contains('active')) return true;
+    const gameover = document.getElementById('gameover-modal');
+    if (gameover && gameover.classList.contains('active')) return true;
+
+    return false;
+  }
+
+  releasePointerLock() {
+    this.isMouseDown = false;
+    if (document.pointerLockElement) {
+      try {
+        document.exitPointerLock();
+      } catch (err) {}
+    }
+    if (this.capturedPointerId !== null && this.canvas && this.canvas.releasePointerCapture) {
+      try {
+        this.canvas.releasePointerCapture(this.capturedPointerId);
+      } catch (err) {}
+      this.capturedPointerId = null;
+    }
+  }
+
   initMouse() {
-    window.addEventListener('mousedown', (e) => {
-      // Negeer clicks op interactieve knoppen of modals
-      if (e.target.closest('button') || e.target.closest('.alarm-card') || e.target.closest('.victory-card')) {
-        return;
-      }
-      if (e.button === 0) { // Linkermuisknop
-        this.isMouseDown = true;
-        this.lastMousePos = { x: e.clientX, y: e.clientY };
+    this.justLocked = false;
+    this.capturedPointerId = null;
+
+    document.addEventListener('pointerlockchange', () => {
+      const isLocked = document.pointerLockElement === this.canvas;
+      if (isLocked) {
+        this.justLocked = true;
+        if (!this.isMouseDown) {
+          try {
+            document.exitPointerLock();
+          } catch (err) {}
+        }
+      } else {
+        this.isMouseDown = false;
       }
     });
 
-    window.addEventListener('mousemove', (e) => {
-      if (this.isMouseDown) {
-        const dx = e.clientX - this.lastMousePos.x;
-        const dy = e.clientY - this.lastMousePos.y;
-        this.deltaYaw -= dx * 0.006;
-        this.deltaPitch += dy * 0.005;
-        this.lastMousePos = { x: e.clientX, y: e.clientY };
-      }
+    document.addEventListener('pointerlockerror', () => {
+      this.justLocked = false;
     });
 
-    window.addEventListener('mouseup', () => {
-      this.isMouseDown = false;
+    const onPointerDown = (e) => {
+      if (e.pointerType && e.pointerType !== 'mouse') return;
+      if (e.button !== 0) return;
+      if (this.isUIInteractive(e.target)) return;
+
+      this.isMouseDown = true;
+      this.lastMousePos = { x: e.clientX, y: e.clientY };
+
+      if (e.pointerId !== undefined && this.canvas && this.canvas.setPointerCapture) {
+        try {
+          this.canvas.setPointerCapture(e.pointerId);
+          this.capturedPointerId = e.pointerId;
+        } catch (err) {}
+      }
+
+      if (this.canvas && this.canvas.requestPointerLock) {
+        try {
+          const promise = this.canvas.requestPointerLock({ unadjustedMovement: true });
+          if (promise && promise.catch) {
+            promise.catch((err) => {
+              if (err && err.name === 'NotSupportedError') {
+                try {
+                  this.canvas.requestPointerLock();
+                } catch (e2) {}
+              }
+            });
+          }
+        } catch (err) {
+          try {
+            this.canvas.requestPointerLock();
+          } catch (e2) {}
+        }
+      }
+    };
+
+    const onPointerMove = (e) => {
+      if (e.pointerType && e.pointerType !== 'mouse') return;
+      if (!this.isMouseDown) return;
+
+      let dx = 0;
+      let dy = 0;
+
+      if (document.pointerLockElement === this.canvas) {
+        if (this.justLocked) {
+          this.justLocked = false;
+          return;
+        }
+        dx = e.movementX || 0;
+        dy = e.movementY || 0;
+      } else {
+        if (e.movementX !== undefined && Math.abs(e.movementX) < 250) {
+          dx = e.movementX;
+          dy = e.movementY;
+        } else {
+          dx = e.clientX - this.lastMousePos.x;
+          dy = e.clientY - this.lastMousePos.y;
+        }
+        this.lastMousePos = { x: e.clientX, y: e.clientY };
+      }
+
+      if (Math.abs(dx) > 300) dx = 0;
+      if (Math.abs(dy) > 300) dy = 0;
+
+      this.deltaYaw -= dx * 0.006;
+      this.deltaPitch += dy * 0.005;
+    };
+
+    const onPointerUp = (e) => {
+      if (e.pointerType && e.pointerType !== 'mouse') return;
+      if (e.button === 0) {
+        this.releasePointerLock();
+      }
+    };
+
+    if (window.PointerEvent) {
+      window.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    } else {
+      window.addEventListener('mousedown', onPointerDown);
+      window.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+    }
+
+    window.addEventListener('blur', () => {
+      this.releasePointerLock();
     });
   }
 

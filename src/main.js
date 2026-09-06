@@ -470,6 +470,7 @@ class Game {
   handleTimeOut() {
     if (this.gameState === 'LOST' || this.gameState === 'WON') return;
     this.gameState = 'LOST';
+    if (this.controls) this.controls.releasePointerLock();
     this.timeLeft = 0;
     this.updateTimerUI();
     sounds.playSchoolBell();
@@ -694,6 +695,7 @@ class Game {
   }
 
   restartGame() {
+    if (this.controls) this.controls.releasePointerLock();
     this.gameState = 'WAKING';
     this.victoryModal.classList.remove('active');
     this.wardrobeModal.classList.remove('active');
@@ -1178,6 +1180,7 @@ class Game {
     sounds.playWardrobeOpen();
 
     // Open Kleerkast Studio UI
+    if (this.controls) this.controls.releasePointerLock();
     this.gameState = 'CUSTOMIZING';
     this.wardrobeModal.classList.add('active');
     this.setObjective('🎨 Kies je outfit en pas je kleding aan op het weer!');
@@ -1392,6 +1395,7 @@ class Game {
   finishGame() {
     if (this.gameState === 'WON') return;
     this.gameState = 'WON';
+    if (this.controls) this.controls.releasePointerLock();
     this.elapsedTime = (performance.now() - this.startTime) / 1000;
     this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
     this.setObjective('🎉 Je bent helemaal klaar en net op tijd voor de les!');
