@@ -285,6 +285,41 @@ class Game {
       });
     });
 
+    // Draai knoppen om 3D personage rondom te inspecteren
+    const turnLeft = document.getElementById('btn-turn-left');
+    const turnFront = document.getElementById('btn-turn-front');
+    const turnBack = document.getElementById('btn-turn-back');
+    const turnRight = document.getElementById('btn-turn-right');
+
+    if (turnLeft) {
+      turnLeft.addEventListener('click', () => {
+        this.player.rotation += Math.PI / 4;
+        this.player.group.rotation.y = this.player.rotation;
+        sounds.playBlip();
+      });
+    }
+    if (turnFront) {
+      turnFront.addEventListener('click', () => {
+        this.player.rotation = Math.PI / 2;
+        this.player.group.rotation.y = this.player.rotation;
+        sounds.playBlip();
+      });
+    }
+    if (turnBack) {
+      turnBack.addEventListener('click', () => {
+        this.player.rotation = -Math.PI / 2;
+        this.player.group.rotation.y = this.player.rotation;
+        sounds.playBlip();
+      });
+    }
+    if (turnRight) {
+      turnRight.addEventListener('click', () => {
+        this.player.rotation -= Math.PI / 4;
+        this.player.group.rotation.y = this.player.rotation;
+        sounds.playBlip();
+      });
+    }
+
     // Aantrekken knop
     const wearBtn = document.getElementById('btn-wear-outfit');
     if (wearBtn) {
@@ -399,10 +434,29 @@ class Game {
     }
 
     if (this.gameState === 'CUSTOMIZING') {
-      // Close-up camera op de speler voor de kleerkast
-      const customCamPos = target.clone().add(new THREE.Vector3(2.2, 0.4, 0));
-      this.camera.position.lerp(customCamPos, dt * 5);
-      this.camera.lookAt(target);
+      // Draai-rotatie via touch swipe / muisdrag op het 3D scherm
+      const deltas = this.controls.consumeCameraDeltas();
+      if (Math.abs(deltas.yaw) > 0.001) {
+        this.player.rotation -= deltas.yaw * 1.5;
+        this.player.group.rotation.y = this.player.rotation;
+      }
+
+      const isMobile = window.innerWidth <= 768;
+      let customCamPos;
+      let customLookAt;
+
+      if (isMobile) {
+        // Mobiel: kleerkast studio staat onderaan, model gecentreerd in bovenste helft
+        customCamPos = target.clone().add(new THREE.Vector3(2.4, 0.4, 0));
+        customLookAt = target.clone().add(new THREE.Vector3(0, -0.25, 0));
+      } else {
+        // Desktop / Chromebook: studio rechts, model mooi gecentreerd links van het paneel
+        customCamPos = target.clone().add(new THREE.Vector3(2.4, 0.1, -0.85));
+        customLookAt = target.clone().add(new THREE.Vector3(0, -0.1, 0.4));
+      }
+
+      this.camera.position.lerp(customCamPos, dt * 6);
+      this.camera.lookAt(customLookAt);
       return;
     }
 
@@ -543,6 +597,9 @@ class Game {
     // Draai speler richting de camera/spiegel
     this.player.rotation = Math.PI / 2;
     this.player.group.rotation.y = this.player.rotation;
+
+    // Pas meteen de kledingpreview toe op het 3D model
+    this.player.applyClothingMaterials();
 
     // Kast deuren openen
     this.world.openWardrobe();

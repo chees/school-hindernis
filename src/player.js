@@ -243,10 +243,8 @@ export class Player {
     this.schoolPantsMat.color.set(this.customization.bottomColor);
     this.backpackMat.color.set(this.customization.backpackColor);
 
-    // Indien speler al is aangekleed, direct de juiste mouwen/pijpen toepassen
-    if (this.isDressed) {
-      this.applyClothingMaterials();
-    }
+    // Meteen de kleren en mouwen/pijpen live op het 3D model toepassen!
+    this.applyClothingMaterials();
   }
 
   applyClothingMaterials() {
