@@ -1348,13 +1348,17 @@ class Game {
 
     this.player.group.position.set(2.2, this.world.LOWER_Y, 77.0);
     this.player.position.copy(this.player.group.position);
-    this.player.rotation = 0;
-    this.player.group.rotation.y = 0;
+
+    // Kijk naar de schooldeuren in plaats van terug naar het huis
+    const angleToSchool = Math.atan2(0 - 2.2, 86.0 - 77.0);
+    this.player.rotation = angleToSchool;
+    this.player.group.rotation.y = angleToSchool;
     this.player.group.visible = true;
 
-    this.cameraYaw = 0;
+    this.cameraYaw = Math.PI + angleToSchool;
     this.cameraPitch = 0.35;
     this.currentCameraDistance = 4.2;
+    this.updateCamera(0.016);
 
     if (this.world.lockerMarker) this.world.lockerMarker.visible = true;
     if (this.world.lockerArrow) this.world.lockerArrow.visible = true;
