@@ -145,8 +145,17 @@ export class GameWorld {
       wardrobeWood: new THREE.MeshStandardMaterial({ color: 0x51351e, roughness: 0.4 }),
       wardrobeInside: new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.6 }),
       brass: new THREE.MeshStandardMaterial({ color: 0xe6b800, metalness: 0.7, roughness: 0.3 }),
-      metal: new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 }),
-      glass: new THREE.MeshStandardMaterial({ color: 0xccf2ff, transparent: true, opacity: 0.5, roughness: 0.1 }),
+      glass: new THREE.MeshStandardMaterial({
+        color: 0xbae6fd,
+        transparent: true,
+        opacity: 0.22,
+        roughness: 0.05,
+        metalness: 0.15,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      }),
+      windowFrame: new THREE.MeshStandardMaterial({ color: 0x242e38, roughness: 0.45 }),
+      windowSill: new THREE.MeshStandardMaterial({ color: 0x3d4852, roughness: 0.35 }),
       leafGreen: new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.6 }),
       potColor: new THREE.MeshStandardMaterial({ color: 0xd27d53, roughness: 0.7 }),
       alarmClock: new THREE.MeshStandardMaterial({ color: 0xe53935, roughness: 0.4 }),
@@ -290,8 +299,13 @@ export class GameWorld {
     this.addWall(-4.0, y + 0.4, -8.0, 2.8, 0.8, 0.2, this.materials.wallUpper);  // Onder raam (borstwering)
     this.addWall(-4.0, y + 2.75, -8.0, 2.8, 0.7, 0.2, this.materials.wallUpper); // Boven raam
 
-    // Linkerwand slaapkamer (West)
-    this.addWall(-8.0, y + 1.5, -3.25, 0.2, 3.1, 9.3, this.materials.wallUpper);
+    // Linkerwand slaapkamer (West, x = -8.0) met een zijraam voor natuurlijk avondlicht (z: -3.9 tot -2.1)
+    this.addWall(-8.0, y + 1.55, -5.9, 0.2, 3.1, 4.0, this.materials.wallUpper);  // Noordelijk muurdeel
+    this.addWall(-8.0, y + 1.55, -0.35, 0.2, 3.1, 3.5, this.materials.wallUpper); // Zuidelijk muurdeel
+    this.addWall(-8.0, y + 0.45, -3.0, 0.2, 0.9, 1.8, this.materials.wallUpper);  // Onder raam (borstwering)
+    this.addWall(-8.0, y + 2.7, -3.0, 0.2, 0.8, 1.8, this.materials.wallUpper);   // Boven raam
+    this.createWindow(-8.0, y + 1.6, -3.0, 1.8, 1.4, 'x'); // Slaapkamer westraam
+
     // Voorwand slaapkamer (Zuid)
     this.addWall(-4, y + 1.5, 1.5, 8.0, 3.1, 0.2, this.materials.wallUpper);
 
@@ -303,16 +317,19 @@ export class GameWorld {
     // Zuidelijk deel
     this.addWall(0, y + 1.5, 0.25, 0.2, 3.1, 2.3, this.materials.wallUpper);
 
-    // Noordwand overloop en gang (doorlopend gesloten van x: -8.0 tot 6.0 bij z = -8.0)
-    // Gang noordwand (x: 0 tot 2.2) met een mooi open raam
+    // Noordwand overloop en gang met open raam
     this.addWall(0.15, y + 1.55, -8.0, 0.3, 3.1, 0.2, this.materials.wallUpper); // Links van raam
     this.addWall(2.05, y + 1.55, -8.0, 0.3, 3.1, 0.2, this.materials.wallUpper); // Rechts van raam
     this.addWall(1.1, y + 0.45, -8.0, 1.6, 0.9, 0.2, this.materials.wallUpper);  // Onder raam
     this.addWall(1.1, y + 2.7, -8.0, 1.6, 0.8, 0.2, this.materials.wallUpper);   // Boven raam
-    this.createWindow(1.1, y + 1.6, -7.89, 1.6, 1.4);
+    this.createWindow(1.1, y + 1.6, -8.0, 1.6, 1.4, 'z');
 
-    // Noordwand badkamer / overloopdeel (x: 2.2 tot 6.0)
-    this.addWall(4.1, y + 1.5, -8.0, 3.8, 3.1, 0.2, this.materials.wallUpper);
+    // Noordwand badkamer (x: 2.2 tot 6.0) met raamopening boven het toilet (x: 2.9 tot 4.3)
+    this.addWall(2.55, y + 1.55, -8.0, 0.7, 3.1, 0.2, this.materials.wallUpper); // Links van badkamerraam
+    this.addWall(5.15, y + 1.55, -8.0, 1.7, 3.1, 0.2, this.materials.wallUpper); // Rechts van badkamerraam
+    this.addWall(3.6, y + 0.5, -8.0, 1.4, 1.0, 0.2, this.materials.wallUpper);   // Onder badkamerraam
+    this.addWall(3.6, y + 2.65, -8.0, 1.4, 0.9, 0.2, this.materials.wallUpper);  // Boven badkamerraam
+
     // Oostwand overloop
     this.addWall(6.0, y + 1.5, -4.25, 0.2, 3.1, 7.5, this.materials.wallUpper);
 
@@ -322,8 +339,8 @@ export class GameWorld {
     // Noordrand trapgat rechts van trap (x: 4.8 tot 6.0 bij z = -0.5)
     this.addBalustrade(5.4, y, -0.5, 1.2, 1.0, 0.08);
 
-    // Slaapkamerraam
-    this.createWindow(-4, y + 1.6, -7.89, 2.8, 1.6);
+    // Slaapkamer noordraam (met uitzicht over de achtertuin en lucht)
+    this.createWindow(-4, y + 1.6, -8.0, 2.8, 1.6, 'z');
 
     // Meubels
     this.createBed(-5.8, y, -5.5);
@@ -366,8 +383,8 @@ export class GameWorld {
     // Deurbordje "🚻 BADKAMER" boven de open ingang, gericht naar de gang en slaapkamer (-X)
     this.createBathroomSign(2.09, y + 2.35, -1.8);
 
-    // Badkamerraam (matglas) aan de noordwand
-    this.createWindow(3.6, y + 1.6, -7.89, 1.4, 1.2);
+    // Badkamerraam aan de noordwand met echt doorkijkglas boven het toilet
+    this.createWindow(3.6, y + 1.6, -8.0, 1.4, 1.2, 'z');
 
     // 3. HET TOILET (WC) - Ruim opgesteld aan de noordwand met een brede vrije looproute
     this.createToilet(3.6, y, -7.3);
@@ -842,13 +859,35 @@ export class GameWorld {
     this.scene.add(runner);
 
     // Muren beneden (hoogte 3.35m, stoppen netjes 5cm onder de slaapkamervloerplaat)
-    this.addWall(-0.5, y + 1.675, -4.0, 15.0, 3.35, 0.2, this.materials.wallLower);
-    // Zuidwand beneden met deuropening voor de voordeur (deurbreedte 1.6m van x = 0.7 tot 2.3)
-    this.addWall(-3.65, y + 1.675, 13.5, 8.7, 3.35, 0.2, this.materials.wallLower);
-    this.addWall(4.65, y + 1.675, 13.5, 4.7, 3.35, 0.2, this.materials.wallLower);
-    this.addWall(1.5, y + 2.975, 13.5, 1.6, 0.75, 0.2, this.materials.wallLower);
-    this.addWall(-8.0, y + 1.675, 4.75, 0.2, 3.35, 17.5, this.materials.wallLower);
-    this.addWall(7.0, y + 1.675, 4.75, 0.2, 3.35, 17.5, this.materials.wallLower);
+    // 1. Noordwand beneden (z = -4.0, x: -8.0 tot 7.0) met raamopening voor de keuken (x: -5.6 tot -4.0)
+    this.addWall(-6.8, y + 1.675, -4.0, 2.4, 3.35, 0.2, this.materials.wallLower);  // Links van keukenraam
+    this.addWall(-4.8, y + 0.65, -4.0, 1.6, 1.3, 0.2, this.materials.wallLower);   // Onder keukenraam
+    this.addWall(-4.8, y + 2.825, -4.0, 1.6, 1.05, 0.2, this.materials.wallLower); // Boven keukenraam
+    this.addWall(1.5, y + 1.675, -4.0, 11.0, 3.35, 0.2, this.materials.wallLower);  // Rechts van keukenraam tot oostwand
+
+    // 2. Zuidwand beneden met voordeur en groot panoramisch voorraam op de oprit/tuin
+    this.addWall(-3.65, y + 1.675, 13.5, 8.7, 3.35, 0.2, this.materials.wallLower); // Links van voordeur
+    this.addWall(1.5, y + 2.975, 13.5, 1.6, 0.75, 0.2, this.materials.wallLower);   // Boven voordeur
+    // Rechts van voordeur: voorraam (x: 3.45 tot 5.85) met direct zicht op de geparkeerde auto en oprit
+    this.addWall(2.875, y + 1.675, 13.5, 1.15, 3.35, 0.2, this.materials.wallLower); // Tussen deur en voorraam
+    this.addWall(4.65, y + 0.4, 13.5, 2.4, 0.8, 0.2, this.materials.wallLower);      // Onder voorraam
+    this.addWall(4.65, y + 2.875, 13.5, 2.4, 0.95, 0.2, this.materials.wallLower);   // Boven voorraam
+    this.addWall(6.425, y + 1.675, 13.5, 1.15, 3.35, 0.2, this.materials.wallLower); // Rechts van voorraam
+    this.createWindow(4.65, y + 1.6, 13.5, 2.4, 1.6, 'z'); // Zuidelijk voorraam beneden
+
+    // 3. Westwand beneden (x = -8.0, z: -4.0 tot 13.5) met zijraam bij de eethoek (z: 1.5 tot 3.3)
+    this.addWall(-8.0, y + 1.675, -1.25, 0.2, 3.35, 5.5, this.materials.wallLower); // Noordelijk muurdeel
+    this.addWall(-8.0, y + 0.45, 2.4, 0.2, 0.9, 1.8, this.materials.wallLower);     // Onder zijraam eethoek
+    this.addWall(-8.0, y + 2.825, 2.4, 0.2, 1.05, 1.8, this.materials.wallLower);   // Boven zijraam eethoek
+    this.addWall(-8.0, y + 1.675, 8.4, 0.2, 3.35, 10.2, this.materials.wallLower);  // Zuidelijk muurdeel
+    this.createWindow(-8.0, y + 1.6, 2.4, 1.8, 1.4, 'x'); // Westelijk zijraam eethoek
+
+    // 4. Oostwand beneden (x = 7.0, z: -4.0 tot 13.5) met groot ostraam in de living (z: 3.5 tot 5.7)
+    this.addWall(7.0, y + 1.675, -0.25, 0.2, 3.35, 7.5, this.materials.wallLower); // Noordelijk muurdeel
+    this.addWall(7.0, y + 0.4, 4.6, 0.2, 0.8, 2.2, this.materials.wallLower);      // Onder ostraam
+    this.addWall(7.0, y + 2.875, 4.6, 0.2, 0.95, 2.2, this.materials.wallLower);   // Boven ostraam
+    this.addWall(7.0, y + 1.675, 9.6, 0.2, 3.35, 7.8, this.materials.wallLower);   // Zuidelijk muurdeel
+    this.createWindow(7.0, y + 1.6, 4.6, 2.2, 1.6, 'x'); // Oostelijk zijraam living
 
     // Voordeur beneden met deurmat
     this.createFrontDoor(1.5, y, 13.39);
@@ -955,15 +994,15 @@ export class GameWorld {
 
     this.scene.add(fridgeGroup);
 
-    // 4. Bovenkastjes aan de noordmuur
-    const upperCabGeo = new THREE.BoxGeometry(2.0, 0.7, 0.35);
+    // 4. Bovenkastjes aan de noordmuur (naast de koelkast, links van het raam)
+    const upperCabGeo = new THREE.BoxGeometry(1.2, 0.7, 0.35);
     const upperCab = new THREE.Mesh(upperCabGeo, this.materials.kitchenCounter);
-    upperCab.position.set(-5.5, y + 2.1, -3.75);
+    upperCab.position.set(-6.1, y + 2.1, -3.75);
     upperCab.castShadow = true;
     this.scene.add(upperCab);
 
-    // 5. Keukenraam boven de spoelbak
-    this.createWindow(-4.8, y + 1.8, -3.89, 1.5, 0.9);
+    // 5. Keukenraam direct boven de spoelbak (met echt doorkijkglas naar de achtertuin)
+    this.createWindow(-4.8, y + 1.8, -4.0, 1.6, 1.0, 'z');
 
     // 6. Colliders voor de keuken
     // Koelkast collider
@@ -1273,16 +1312,82 @@ export class GameWorld {
     });
   }
 
-  createWindow(x, y, z, w, h) {
-    const frameGeo = new THREE.BoxGeometry(w, h, 0.08);
-    const frame = new THREE.Mesh(frameGeo, this.materials.bedFrame);
-    frame.position.set(x, y, z);
-    this.scene.add(frame);
+  createWindow(x, y, z, w, h, facing = 'z') {
+    const windowGroup = new THREE.Group();
+    windowGroup.position.set(x, y, z);
 
-    const glassGeo = new THREE.PlaneGeometry(w - 0.15, h - 0.15);
-    const glass = new THREE.Mesh(glassGeo, this.materials.glass);
-    glass.position.set(x, y, z + 0.042);
-    this.scene.add(glass);
+    const frameT = 0.07; // profieldikte kozijn
+    const frameD = 0.16; // diepte kozijn in de muur
+    const frameMat = this.materials.windowFrame;
+    const sillMat = this.materials.windowSill;
+    const glassMat = this.materials.glass;
+
+    // 1. Bovendorpel van het kozijn
+    const topGeo = new THREE.BoxGeometry(w, frameT, frameD);
+    const topMesh = new THREE.Mesh(topGeo, frameMat);
+    topMesh.position.set(0, h / 2 - frameT / 2, 0);
+    topMesh.castShadow = true;
+    windowGroup.add(topMesh);
+
+    // 2. Onderdorpel / Vensterbank (iets breder en dieper)
+    const sillGeo = new THREE.BoxGeometry(w + 0.08, frameT * 1.15, frameD + 0.08);
+    const sillMesh = new THREE.Mesh(sillGeo, sillMat);
+    sillMesh.position.set(0, -h / 2 + frameT / 2, 0);
+    sillMesh.castShadow = true;
+    windowGroup.add(sillMesh);
+
+    // 3. Linker en rechter zijstijlen
+    const sideH = h - frameT * 2;
+    const sideGeo = new THREE.BoxGeometry(frameT, sideH, frameD);
+    const leftMesh = new THREE.Mesh(sideGeo, frameMat);
+    leftMesh.position.set(-w / 2 + frameT / 2, 0, 0);
+    leftMesh.castShadow = true;
+    windowGroup.add(leftMesh);
+
+    const rightMesh = new THREE.Mesh(sideGeo, frameMat);
+    rightMesh.position.set(w / 2 - frameT / 2, 0, 0);
+    rightMesh.castShadow = true;
+    windowGroup.add(rightMesh);
+
+    // 4. Authentieke tussenroeden (muntins/transom) voor ramen vanaf 1.2m breed
+    if (w >= 1.2) {
+      const mullionGeo = new THREE.BoxGeometry(0.038, sideH, frameD * 0.6);
+      const mullion = new THREE.Mesh(mullionGeo, frameMat);
+      mullion.position.set(0, 0, 0);
+      windowGroup.add(mullion);
+    }
+    if (h >= 1.3) {
+      const transomGeo = new THREE.BoxGeometry(w - frameT * 2, 0.035, frameD * 0.6);
+      const transom = new THREE.Mesh(transomGeo, frameMat);
+      transom.position.set(0, 0.12, 0);
+      windowGroup.add(transom);
+    }
+
+    // 5. Dubbelzijdig kristalhelder vensterglas (volledig doorkijkbaar naar buiten)
+    const glassW = w - frameT * 2;
+    const glassH = h - frameT * 2;
+    const glassGeo = new THREE.PlaneGeometry(glassW, glassH);
+    const glass = new THREE.Mesh(glassGeo, glassMat);
+    glass.position.set(0, 0, 0);
+    windowGroup.add(glass);
+
+    // 6. Orientatie en Collider
+    if (facing === 'x') {
+      windowGroup.rotation.y = Math.PI / 2;
+      this.colliders.push({
+        minX: x - 0.15, maxX: x + 0.15,
+        minY: y - h / 2, maxY: y + h / 2,
+        minZ: z - w / 2, maxZ: z + w / 2
+      });
+    } else {
+      this.colliders.push({
+        minX: x - w / 2, maxX: x + w / 2,
+        minY: y - h / 2, maxY: y + h / 2,
+        minZ: z - 0.15, maxZ: z + 0.15
+      });
+    }
+
+    this.scene.add(windowGroup);
   }
 
   createFrontDoor(x, y, z) {
@@ -2023,9 +2128,32 @@ export class GameWorld {
     lawnRight.receiveShadow = true;
     this.scene.add(lawnRight);
 
-    // Houten tuinhekje langs perceelsgrenzen
+    // Zijtuinen langs het huis (zichtbaar door de west- en oostramen)
+    const sideLawnWestGeo = new THREE.PlaneGeometry(6.0, 21.5);
+    sideLawnWestGeo.rotateX(-Math.PI / 2);
+    const sideLawnWest = new THREE.Mesh(sideLawnWestGeo, this.materials.grass);
+    sideLawnWest.position.set(-11.0, y + 0.001, 2.75);
+    sideLawnWest.receiveShadow = true;
+    this.scene.add(sideLawnWest);
+
+    const sideLawnEastGeo = new THREE.PlaneGeometry(6.0, 21.5);
+    sideLawnEastGeo.rotateX(-Math.PI / 2);
+    const sideLawnEast = new THREE.Mesh(sideLawnEastGeo, this.materials.grass);
+    sideLawnEast.position.set(10.0, y + 0.001, 2.75);
+    sideLawnEast.receiveShadow = true;
+    this.scene.add(sideLawnEast);
+
+    // Bomen in de zijtuinen (zichtbaar vanuit slaapkamer, eethoek en living)
+    this.createTree(-11.0, y, 1.5);
+    this.createTree(-11.5, y, -4.5);
+    this.createTree(10.5, y, 4.0);
+    this.createTree(10.5, y, -3.5);
+
+    // Houten tuinhekjes langs de perceelsgrenzen
     this.addWall(-8.2, y + 0.45, 18.25, 0.15, 0.9, 9.5, this.materials.fenceWood);
     this.addWall(8.2, y + 0.45, 18.25, 0.15, 0.9, 9.5, this.materials.fenceWood);
+    this.addWall(-14.0, y + 0.45, 2.75, 0.15, 0.9, 21.5, this.materials.fenceWood);
+    this.addWall(13.0, y + 0.45, 2.75, 0.15, 0.9, 21.5, this.materials.fenceWood);
 
     // 2. De Straat naar School (z: 23.0 tot 78.0)
     const roadLength = 56.0;
