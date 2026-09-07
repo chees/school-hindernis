@@ -15,7 +15,7 @@ class Game {
     this.elapsedTime = 0;
     this.timerInterval = null;
     const testTimeParam = new URLSearchParams(window.location.search).get('time');
-    this.totalTime = testTimeParam ? parseFloat(testTimeParam) : 180; // 3 minuten (180s) tot schoolbel 08:30
+    this.totalTime = testTimeParam ? parseFloat(testTimeParam) : 300; // 5 minuten (300s) van 07:00 tot schoolbel 08:15
     this.timeLeft = this.totalTime;
 
     // Speurtocht toestand
@@ -484,6 +484,16 @@ class Game {
     }
   }
 
+  getInGameClock(elapsedRealSeconds) {
+    const clamped = Math.max(0, Math.min(this.totalTime, elapsedRealSeconds));
+    // 5 minuten in het echt = 75 minuten in het spel (van 07:00 tot 08:15)
+    // 75 min = 4500 seconden
+    const inGameSeconds = Math.floor(7 * 3600 + clamped * (4500 / this.totalTime));
+    const hours = Math.floor(inGameSeconds / 3600);
+    const minutes = Math.floor((inGameSeconds % 3600) / 60);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
   formatTime(seconds) {
     const clamped = Math.max(0, Math.ceil(seconds));
     const mins = Math.floor(clamped / 60);
@@ -493,8 +503,8 @@ class Game {
 
   updateTimerUI() {
     if (!this.timerText || !this.timerFill) return;
-    this.timerText.textContent = this.formatTime(this.timeLeft);
-    const pct = Math.max(0, Math.min(100, (this.timeLeft / this.totalTime) * 100));
+    this.timerText.textContent = this.getInGameClock(this.elapsedTime);
+    const pct = Math.max(0, Math.min(100, (this.elapsedTime / this.totalTime) * 100));
     this.timerFill.style.width = `${pct}%`;
 
     if (this.timerPill) {
@@ -514,6 +524,7 @@ class Game {
     if (this.gameState === 'LOST' || this.gameState === 'WON') return;
     this.gameState = 'LOST';
     if (this.controls) this.controls.releasePointerLock();
+    this.elapsedTime = this.totalTime;
     this.timeLeft = 0;
     this.updateTimerUI();
     sounds.playSchoolBell();
@@ -540,7 +551,7 @@ class Game {
     if (this.gameoverModal) {
       this.gameoverModal.classList.add('active');
     }
-    this.setObjective('🔔 TRRRING! De schoolbel rinkelt al... je bent te laat voor school!');
+    this.setObjective('🔔 TRRRING! Het is 08:15 en de schoolbel rinkelt al... je bent te laat voor school!');
   }
 
   setupCustomizerEvents() {
@@ -804,6 +815,7 @@ class Game {
     // Timer resetten
     this.timeLeft = this.totalTime;
     this.elapsedTime = 0;
+    this.startTime = 0;
     if (this.timerPill) this.timerPill.classList.remove('warning', 'critical');
     this.updateTimerUI();
 
@@ -1511,8 +1523,7 @@ class Game {
     this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
     this.setObjective('🎉 Je bent helemaal klaar en net op tijd voor de les!');
 
-    const seconds = this.elapsedTime.toFixed(1);
-    this.finalTimeEl.textContent = `${seconds}s`;
+    this.finalTimeEl.textContent = this.getInGameClock(this.elapsedTime);
     if (this.finalTimeLeftEl) {
       this.finalTimeLeftEl.textContent = this.formatTime(this.timeLeft);
     }
@@ -1577,7 +1588,7 @@ class Game {
     const dt = Math.min((time - this.lastTime) / 1000, 0.1);
     this.lastTime = time;
 
-    // Countdown timer voor schoolbel (08:30)
+    // Klok voor schoolbel (loopt op van 07:00 naar 08:15)
     if (this.gameState === 'PLAYING' || this.gameState === 'CUSTOMIZING' || this.gameState === 'DRIVING') {
       this.elapsedTime = (time - this.startTime) / 1000;
       this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);

@@ -18,13 +18,13 @@
       <!-- Statusbadges links: Timer, Weer, WC -->
       <div class="top-left-group">
         <!-- Tijd tot de schoolbel indicator -->
-        <div class="timer-pill" id="hud-timer-pill" title="Tijd tot de schoolbel (08:30)">
+        <div class="timer-pill" id="hud-timer-pill" title="Tijd tot de schoolbel (08:15)">
           <span id="hud-timer-icon">⏰</span>
           <div class="timer-content">
-            <span class="timer-label">Schoolbel over:</span>
-            <span id="hud-timer-text" class="timer-digits">03:00</span>
+            <span class="timer-label">Bel: 08:15</span>
+            <span id="hud-timer-text" class="timer-digits">07:00</span>
           </div>
-          <div class="timer-meter"><div id="hud-timer-fill" style="width: 100%;"></div></div>
+          <div class="timer-meter"><div id="hud-timer-fill" style="width: 0%;"></div></div>
         </div>
 
 
@@ -128,7 +128,7 @@
   <div id="wakeup-modal">
     <div class="alarm-card">
       <div style="font-size: 40px;">⏰</div>
-      <div class="alarm-time">07:15</div>
+      <div class="alarm-time">07:00</div>
       <h3>TIJD VOOR SCHOOL!</h3>
       <div class="wakeup-weather-hint" id="wakeup-weather-hint">
         🌤️ Vandaag: <strong id="wakeup-weather-summary">24°C Zonnig</strong>
@@ -137,7 +137,7 @@
         🚽 Ochtendroutine: <strong>Je moet nodig naar de wc!</strong>
       </div>
       <div class="wakeup-time-limit-hint" id="wakeup-time-limit-hint">
-        ⏰ Schoolbel: gaat om <strong>08:30</strong> (je hebt <strong>3 minuten</strong>)!
+        ⏰ Schoolbel: gaat om <strong>08:15</strong> (je hebt <strong>5 minuten</strong> in het echt)!
       </div>
       <p style="margin-top: 8px; color: #cbd5e1; font-size: 15px;">
         De schoolbel wacht niet. Word snel wakker, pak je schooltas, zoek je spullen en vertrek op tijd!
@@ -298,9 +298,9 @@
       </div>
 
       <div class="result-box stats-box">
-        <div class="result-box-title">⏱️ Eindtijd & Resterend</div>
+        <div class="result-box-title">⏱️ Schoolbel & Resterende Tijd</div>
         <div class="result-box-desc">
-          Tijd gespeeld: <span id="final-time">00:00</span> • Resterend: <span id="final-time-left">00:00</span>
+          Aankomsttijd: <span id="final-time">08:05</span> • Schoolbel: <strong>08:15</strong> (<span id="final-time-left">00:00</span> over)
         </div>
       </div>
       <div class="modal-btn-row">
@@ -315,7 +315,7 @@
       <div style="font-size: 56px;">🔔⏰🏃‍♂️</div>
       <h2>TRRRRRING! DE SCHOOLBEL GAAT!</h2>
       <p id="gameover-desc">
-        Oei! De 3 minuten zijn voorbij en de schoolbel rinkelt al! Je bent helaas te laat voor de les.
+        Oei! Het is 08:15 en de schoolbel rinkelt al! Je bent helaas te laat voor de les.
       </p>
       <div id="gameover-stats" class="gameover-stats-box">
         <!-- Voortgang tot aan de bel -->
