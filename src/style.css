@@ -121,12 +121,14 @@ html, body {
   justify-content: space-between;
   align-items: flex-end;
   padding: 24px;
+  z-index: 25;
 }
 
 #joystick-zone {
   width: 140px;
   height: 140px;
   pointer-events: auto;
+  z-index: 40;
   display: none;
   align-items: center;
   justify-content: center;
@@ -169,7 +171,7 @@ body.has-touch #joystick-zone {
   pointer-events: none;
 }
 
-/* Camera swipe zone on touch screens */
+/* Camera swipe zone on touch screens (achter de knoppen en joystick) */
 #camera-touch-zone {
   position: absolute;
   top: 88px;
@@ -178,7 +180,7 @@ body.has-touch #joystick-zone {
   height: calc(100% - 88px);
   pointer-events: auto;
   touch-action: none;
-  z-index: 5;
+  z-index: 1;
   display: none;
 }
 
@@ -198,12 +200,15 @@ body.has-touch #camera-touch-zone {
   flex-direction: column;
   gap: 16px;
   pointer-events: auto;
-  z-index: 2;
+  z-index: 40;
   margin-bottom: 12px;
   margin-right: 8px;
 }
 
 .touch-action-btn {
+  pointer-events: auto;
+  z-index: 40;
+  touch-action: manipulation;
   width: 68px;
   height: 68px;
   border-radius: 50%;

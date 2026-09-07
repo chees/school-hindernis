@@ -271,6 +271,7 @@ export class InputControls {
     const cameraZone = document.getElementById('camera-touch-zone');
     if (cameraZone) {
       cameraZone.addEventListener('touchstart', (e) => {
+        if (this.isUIInteractive(e.target)) return;
         const touch = e.changedTouches[0];
         if (this.cameraTouchId === null) {
           this.cameraTouchId = touch.identifier;
@@ -282,25 +283,46 @@ export class InputControls {
     // Touch & Click actieknoppen (werkt voor zowel muis als aanraking)
     const jumpBtn = document.getElementById('btn-jump');
     if (jumpBtn) {
+      let lastJumpTime = 0;
+      const triggerJump = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        this.jumpRequested = true;
+      };
+
       jumpBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        this.jumpRequested = true;
+        lastJumpTime = Date.now();
+        triggerJump(e);
       }, { passive: false });
+
       jumpBtn.addEventListener('click', (e) => {
-        this.jumpRequested = true;
+        if (Date.now() - lastJumpTime < 400) return;
+        triggerJump(e);
       });
     }
 
     const actionBtn = document.getElementById('btn-action');
     if (actionBtn) {
+      let lastActionTime = 0;
+      const triggerAction = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (actionBtn.disabled) return;
+        this.interactRequested = true;
+      };
+
       actionBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (actionBtn.disabled) return;
-        this.interactRequested = true;
+        lastActionTime = Date.now();
+        triggerAction(e);
       }, { passive: false });
+
       actionBtn.addEventListener('click', (e) => {
-        if (actionBtn.disabled) return;
-        this.interactRequested = true;
+        if (Date.now() - lastActionTime < 400) return;
+        triggerAction(e);
       });
     }
   }
