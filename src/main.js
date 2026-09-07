@@ -205,21 +205,53 @@ class Game {
       retryGameoverBtn.addEventListener('click', () => this.restartGame());
     }
 
+    // Hulpfunctie om HUD knoppen zowel op aanraking als muisklik direct te laten reageren
+    const bindHudButton = (btn, action) => {
+      if (!btn) return;
+      let lastTouchTime = 0;
+      btn.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        lastTouchTime = Date.now();
+        action();
+      }, { passive: false });
+      btn.addEventListener('click', (e) => {
+        if (Date.now() - lastTouchTime < 450) return;
+        action();
+      });
+    };
+
     // Bovenbalk knoppen
     const muteBtn = document.getElementById('btn-mute');
-    muteBtn.addEventListener('click', () => {
+    bindHudButton(muteBtn, () => {
       const isMuted = sounds.toggleMute();
       muteBtn.textContent = isMuted ? '🔇' : '🔊';
     });
 
-    document.getElementById('btn-restart').addEventListener('click', () => this.restartGame());
+    const restartBtn = document.getElementById('btn-restart');
+    bindHudButton(restartBtn, () => {
+      this.restartGame();
+    });
 
     const fsBtn = document.getElementById('btn-fullscreen');
-    fsBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
+    bindHudButton(fsBtn, () => {
+      const doc = document;
+      const docEl = document.documentElement;
+      const requestFs = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+      const exitFs = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+      const isFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+      if (!isFs) {
+        if (requestFs) {
+          requestFs.call(docEl).catch(() => {});
+        } else {
+          // iOS Safari fallback
+          window.scrollTo(0, 1);
+        }
       } else {
-        document.exitFullscreen().catch(() => {});
+        if (exitFs) {
+          exitFs.call(doc).catch(() => {});
+        }
       }
     });
 
@@ -1208,6 +1240,10 @@ class Game {
         this.showPickupToast(it.icon, `${it.name} gepakt! (${this.speurtochtCountFound}/${this.speurtochtTotal})`);
         if (this.speurtochtCountFound === this.speurtochtTotal) {
           sounds.playItemComplete();
+          // Checklist verdwijnt volledig zodra alles gevonden is (na korte toast-tijd van 1.2s)
+          setTimeout(() => {
+            if (this.speurtochtHud) this.speurtochtHud.classList.remove('visible');
+          }, 1200);
           if (this.player.isDressed) {
             if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
             if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;

@@ -1384,35 +1384,57 @@ export class GameWorld {
       minZ: 12.35, maxZ: 12.85
     });
 
-    // F. Grote Kamerplant (Monstera in terracotta pot)
+    // F. Grote Kamerplant (Monstera in terracotta pot - z-fighting vrij)
     const plantGroup = new THREE.Group();
-    plantGroup.position.set(-7.3, y, 9.2);
+    plantGroup.position.set(-7.15, y, 9.2);
 
     const potGeo = new THREE.CylinderGeometry(0.32, 0.22, 0.55, 16);
     const pot = new THREE.Mesh(potGeo, this.materials.potColor);
-    pot.position.set(0, 0.275, 0);
+    // Verhoog met 6mm zodat de onderkant (y = 0.006) niet coplanair is met de vloer (y = 0)
+    pot.position.set(0, 0.281, 0);
     pot.castShadow = true;
     plantGroup.add(pot);
 
-    const soilGeo = new THREE.CylinderGeometry(0.30, 0.30, 0.04, 16);
+    // Grond binnenin de pot (ruim onder de bovenrand verzonken)
+    const soilGeo = new THREE.CylinderGeometry(0.28, 0.25, 0.04, 16);
     const soil = new THREE.Mesh(soilGeo, new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 }));
-    soil.position.set(0, 0.53, 0);
+    soil.position.set(0, 0.48, 0);
     plantGroup.add(soil);
 
-    for (let i = 0; i < 8; i++) {
-      const leafGeo = new THREE.SphereGeometry(0.28, 8, 8);
-      leafGeo.scale(1.2, 0.15, 2.0);
+    // 7 bladeren op unieke hoogtes en hoeken met eigen stengels om z-fighting te elimineren
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.6 });
+    const leafAngles = [0.15, 1.05, 1.95, 2.85, 3.75, 4.65, 5.55];
+    for (let i = 0; i < leafAngles.length; i++) {
+      const angle = leafAngles[i];
+      const leafStem = new THREE.Group();
+      const stemHeight = 0.49 + (i % 3) * 0.06;
+      leafStem.position.set(0, stemHeight, 0);
+      leafStem.rotation.y = angle;
+
+      // Sierlijk gebogen stengel
+      const stemGeo = new THREE.CylinderGeometry(0.012, 0.016, 0.30, 6);
+      stemGeo.translate(0, 0.15, 0);
+      const stem = new THREE.Mesh(stemGeo, stemMat);
+      stem.rotation.z = 0.38 + (i % 2) * 0.10;
+      stem.castShadow = true;
+      leafStem.add(stem);
+
+      // Blad aan het uiteinde, verspreid naar buiten
+      const leafGeo = new THREE.SphereGeometry(0.18, 8, 8);
+      leafGeo.scale(1.0, 0.12, 1.7);
       const leaf = new THREE.Mesh(leafGeo, this.materials.leafGreen);
-      leaf.position.set(0, 0.65, 0);
-      leaf.rotation.y = (i * Math.PI) / 4 + 0.2;
-      leaf.rotation.x = 0.42 + (i % 2) * 0.1;
+      const reach = 0.32;
+      leaf.position.set(Math.sin(stem.rotation.z) * reach, Math.cos(stem.rotation.z) * reach + 0.05, 0.08);
+      leaf.rotation.x = 0.35 + (i % 2) * 0.12;
       leaf.castShadow = true;
-      plantGroup.add(leaf);
+      leafStem.add(leaf);
+
+      plantGroup.add(leafStem);
     }
     this.scene.add(plantGroup);
 
     this.colliders.push({
-      minX: -7.65, maxX: -6.95,
+      minX: -7.50, maxX: -6.80,
       minY: y, maxY: y + 1.2,
       minZ: 8.85, maxZ: 9.55
     });
@@ -2837,18 +2859,32 @@ export class GameWorld {
 
     const potGeo = new THREE.CylinderGeometry(0.35, 0.25, 0.6, 16);
     const pot = new THREE.Mesh(potGeo, this.materials.potColor);
-    pot.position.set(0, 0.3, 0);
+    pot.position.set(0, 0.306, 0); // 6mm boven vloer om coplanair z-fighting te vermijden
     pot.castShadow = true;
     plant.add(pot);
 
-    for (let i = 0; i < 6; i++) {
-      const leafGeo = new THREE.SphereGeometry(0.35, 8, 8);
-      leafGeo.scale(1, 0.2, 1.8);
+    const soilGeo = new THREE.CylinderGeometry(0.31, 0.28, 0.04, 16);
+    const soil = new THREE.Mesh(soilGeo, new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 }));
+    soil.position.set(0, 0.52, 0);
+    plant.add(soil);
+
+    const leafAngles2 = [0.2, 1.25, 2.3, 3.35, 4.4, 5.45];
+    for (let i = 0; i < leafAngles2.length; i++) {
+      const angle = leafAngles2[i];
+      const leafStem = new THREE.Group();
+      const stemHeight = 0.53 + (i % 3) * 0.05;
+      leafStem.position.set(0, stemHeight, 0);
+      leafStem.rotation.y = angle;
+
+      const leafGeo = new THREE.SphereGeometry(0.20, 8, 8);
+      leafGeo.scale(1, 0.14, 1.8);
       const leaf = new THREE.Mesh(leafGeo, this.materials.leafGreen);
-      leaf.position.set(0, 0.65, 0);
-      leaf.rotation.y = (i * Math.PI) / 3;
-      leaf.rotation.x = 0.4;
-      plant.add(leaf);
+      leaf.position.set(0, 0.22, 0.22);
+      leaf.rotation.x = 0.42;
+      leaf.castShadow = true;
+      leafStem.add(leaf);
+
+      plant.add(leafStem);
     }
     this.scene.add(plant);
 
