@@ -644,6 +644,60 @@ class Game {
       });
     }
 
+    // Touch swipe & muis slepen op het scherm buiten het paneel om het personage vrij te draaien
+    let wardrobeTouchId = null;
+    let wardrobeTouchLastX = 0;
+    this.wardrobeModal.addEventListener('touchstart', (e) => {
+      if (e.target === this.wardrobeModal) {
+        const touch = e.changedTouches[0];
+        wardrobeTouchId = touch.identifier;
+        wardrobeTouchLastX = touch.clientX;
+      }
+    }, { passive: true });
+
+    this.wardrobeModal.addEventListener('touchmove', (e) => {
+      if (wardrobeTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === wardrobeTouchId) {
+          const dx = touch.clientX - wardrobeTouchLastX;
+          wardrobeTouchLastX = touch.clientX;
+          this.player.rotation -= dx * 0.012;
+          this.player.group.rotation.y = this.player.rotation;
+        }
+      }
+    }, { passive: true });
+
+    const finishWardrobeTouch = (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === wardrobeTouchId) {
+          wardrobeTouchId = null;
+        }
+      }
+    };
+    this.wardrobeModal.addEventListener('touchend', finishWardrobeTouch);
+    this.wardrobeModal.addEventListener('touchcancel', finishWardrobeTouch);
+
+    let wardrobeMouseDown = false;
+    let wardrobeMouseLastX = 0;
+    this.wardrobeModal.addEventListener('mousedown', (e) => {
+      if (e.target === this.wardrobeModal) {
+        wardrobeMouseDown = true;
+        wardrobeMouseLastX = e.clientX;
+      }
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (wardrobeMouseDown && this.gameState === 'CUSTOMIZING') {
+        const dx = e.clientX - wardrobeMouseLastX;
+        wardrobeMouseLastX = e.clientX;
+        this.player.rotation -= dx * 0.012;
+        this.player.group.rotation.y = this.player.rotation;
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      wardrobeMouseDown = false;
+    });
+
     // Aantrekken knop
     const wearBtn = document.getElementById('btn-wear-outfit');
     if (wearBtn) {
@@ -699,6 +753,7 @@ class Game {
     this.gameState = 'WAKING';
     this.victoryModal.classList.remove('active');
     this.wardrobeModal.classList.remove('active');
+    document.body.classList.remove('wardrobe-open');
     if (this.gameoverModal) this.gameoverModal.classList.remove('active');
     this.wakeupModal.classList.remove('fade-out');
     this.wakeupModal.style.display = '';
@@ -819,16 +874,18 @@ class Game {
         this.player.group.rotation.y = this.player.rotation;
       }
 
-      const isMobile = window.innerWidth <= 768;
+      const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight >= window.innerWidth;
       let customCamPos;
       let customLookAt;
 
-      if (isMobile) {
-        // Mobiel: kleerkast studio staat onderaan, model gecentreerd in bovenste helft
-        customCamPos = target.clone().add(new THREE.Vector3(2.4, 0.4, 0));
-        customLookAt = target.clone().add(new THREE.Vector3(0, -0.25, 0));
+      if (isMobilePortrait) {
+        // Mobiel portret: studio kaart staat onderaan (max-height ~46vh).
+        // Richt de camera omlaag naar de vloer zodat het 3D model
+        // volledig (van schoenen tot kapsel en rugtas) gecentreerd in de bovenste helft verschijnt.
+        customCamPos = target.clone().add(new THREE.Vector3(2.85, 0.05, 0));
+        customLookAt = target.clone().add(new THREE.Vector3(0, -1.45, 0));
       } else {
-        // Desktop / Chromebook: studio rechts, model mooi gecentreerd links van het paneel
+        // Desktop / Landscape: studio kaart rechts, model mooi gecentreerd links van het paneel
         customCamPos = target.clone().add(new THREE.Vector3(2.4, 0.1, -0.85));
         customLookAt = target.clone().add(new THREE.Vector3(0, -0.1, 0.4));
       }
@@ -1183,11 +1240,13 @@ class Game {
     if (this.controls) this.controls.releasePointerLock();
     this.gameState = 'CUSTOMIZING';
     this.wardrobeModal.classList.add('active');
+    document.body.classList.add('wardrobe-open');
     this.setObjective('🎨 Kies je outfit en pas je kleding aan op het weer!');
   }
 
   finalizeOutfit() {
     this.wardrobeModal.classList.remove('active');
+    document.body.classList.remove('wardrobe-open');
 
     // Kleren aantrekken & feest
     this.player.wearSchoolClothes();
