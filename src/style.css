@@ -1436,8 +1436,8 @@ body:has(#wardrobe-modal.active) #touch-controls {
   .wardrobe-card {
     max-width: 100%;
     width: 100%;
-    max-height: 46vh;
-    padding: 12px 14px max(14px, env(safe-area-inset-bottom, 14px)) 14px;
+    max-height: 44vh;
+    padding: 10px 14px max(12px, env(safe-area-inset-bottom, 12px)) 14px;
     border-radius: 20px 20px 0 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;

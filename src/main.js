@@ -922,15 +922,16 @@ class Game {
       let customLookAt;
 
       if (isMobilePortrait) {
-        // Mobiel portret: studio kaart staat onderaan (max-height ~46vh).
-        // Richt de camera omlaag naar de vloer zodat het 3D model
-        // volledig (van schoenen tot kapsel en rugtas) gecentreerd in de bovenste helft verschijnt.
-        customCamPos = target.clone().add(new THREE.Vector3(2.85, 0.05, 0));
-        customLookAt = target.clone().add(new THREE.Vector3(0, -1.45, 0));
+        // Mobiel portret: studio kaart staat onderaan (max-height 44vh).
+        // Afstand 3.5m met lookAt op de vloer (target.y - 1.25) zorgt ervoor dat
+        // zelfs het hoogste kapsel (stekels/pet) ruim 12% onder de bovenrand blijft
+        // en de schoenen ruim boven het kledingpaneel staan.
+        customCamPos = target.clone().add(new THREE.Vector3(3.5, 0.0, 0));
+        customLookAt = target.clone().add(new THREE.Vector3(0, -1.25, 0));
       } else {
-        // Desktop / Landscape: studio kaart rechts, model mooi gecentreerd links van het paneel
-        customCamPos = target.clone().add(new THREE.Vector3(2.4, 0.1, -0.85));
-        customLookAt = target.clone().add(new THREE.Vector3(0, -0.1, 0.4));
+        // Desktop / Landscape: studio kaart rechts, model mooi links gecentreerd
+        customCamPos = target.clone().add(new THREE.Vector3(2.6, 0.05, -0.85));
+        customLookAt = target.clone().add(new THREE.Vector3(0, -0.2, 0.4));
       }
 
       this.camera.position.lerp(customCamPos, dt * 6);
