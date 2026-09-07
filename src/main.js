@@ -168,6 +168,14 @@ class Game {
 
     this.speurtochtHud = document.getElementById('speurtocht-hud');
     this.speurtochtCount = document.getElementById('speurtocht-count');
+    if (this.speurtochtHud) {
+      const header = this.speurtochtHud.querySelector('.speurtocht-badge-main');
+      if (header) {
+        header.addEventListener('click', () => {
+          this.speurtochtHud.classList.toggle('collapsed');
+        });
+      }
+    }
     this.pickupToast = document.getElementById('pickup-toast');
     this.pickupToastIcon = document.getElementById('pickup-toast-icon');
     this.pickupToastText = document.getElementById('pickup-toast-text');
@@ -357,6 +365,9 @@ class Game {
   }
 
   updateSpeurtochtUI() {
+    if (this.speurtochtHud && this.speurtochtCountFound > 0) {
+      this.speurtochtHud.classList.remove('collapsed');
+    }
     if (this.speurtochtCount) {
       this.speurtochtCount.textContent = `${this.speurtochtCountFound}/${this.speurtochtTotal}`;
     }
