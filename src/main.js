@@ -1807,24 +1807,30 @@ class Game {
         if (pPos.z >= 105.0) {
           // 1. Touw grijpen als de speler springt of dichtbij een knoop is
           if (!this.player.isRopeSwinging && this.player.ropeCooldown <= 0 && this.world && this.world.gymRopes) {
-            const handsPos = new THREE.Vector3(pPos.x, pPos.y + 0.9, pPos.z);
-            for (let i = 0; i < this.world.gymRopes.length; i++) {
-              const rope = this.world.gymRopes[i];
-              // BELANGRIJK: Pak NOOIT hetzelfde touw waarvan je zojuist bent afgesprongen!
-              if (rope === this.player.lastGrabbedRope) continue;
+            // Als de speler op de mat loopt (en niet springt), grijp het touw niet zomaar vast
+            const onMat = this.player.isGrounded && pPos.y <= this.world.LOWER_Y + 0.45;
+            if (!onMat) {
+              const handsPos = new THREE.Vector3(pPos.x, pPos.y + 0.9, pPos.z);
+              for (let i = 0; i < this.world.gymRopes.length; i++) {
+                const rope = this.world.gymRopes[i];
+                // BELANGRIJK: Pak NOOIT hetzelfde touw waarvan je zojuist bent afgesprongen!
+                if (rope === this.player.lastGrabbedRope) continue;
 
-              if (handsPos.distanceTo(rope.knotPos) < 2.1) {
-                this.player.grabRope(rope);
-                sounds.playRopeGrab();
-                sounds.playRopeSwing();
-                this.showPickupToast('🪢', `Touw ${i + 1}/3 gepakt! Spring op het juiste moment naar het volgende touw!`);
-                break;
+                if (handsPos.distanceTo(rope.knotPos) < 2.1) {
+                  this.player.grabRope(rope);
+                  sounds.playRopeGrab();
+                  sounds.playRopeSwing();
+                  this.showPickupToast('🪢', `Touw ${i + 1}/3 gepakt! Spring op het juiste moment naar het volgende touw!`);
+                  break;
+                }
               }
             }
           }
 
-          // 2. Landing op de finish turnkast (z: 126.0 tot 128.5)
-          if (pPos.z >= 126.0 && pPos.z <= 128.5 && Math.abs(pPos.x) <= 1.25 && pPos.y >= this.world.LOWER_Y + 1.15) {
+          // 2. Landing op de finish turnkast (pas confetti als je ECHT geland bent op het bovendek van de bok!)
+          if (!this.player.isRopeSwinging && this.player.isGrounded &&
+              pPos.z >= 126.3 && pPos.z <= 128.1 && Math.abs(pPos.x) <= 1.1 &&
+              pPos.y >= this.world.LOWER_Y + 1.15) {
             if (!this.world.gymCompleted) {
               this.handleGymCompleted();
             }

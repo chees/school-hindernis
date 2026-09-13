@@ -833,13 +833,13 @@ export class Player {
 
       // Finish turnkast staat op z = 127.2. Als de speler voorwaarts zwaait en binnen bereik is:
       if (distToFinish <= 7.2 && dz > 0.1) {
-        const T = Math.max(0.38, Math.min(0.55, distToFinish / 8.5));
+        const T = Math.max(0.40, Math.min(0.60, distToFinish / 8.0));
         const vx = (finishPos.x - this.position.x) / T;
         const vz = (finishPos.z - this.position.z) / T;
         const vy = (finishPos.y - this.position.y - 0.5 * this.gravity * T * T) / T;
 
         this.velocity.set(vx, vy, vz);
-        this.ropeCooldown = 0.4;
+        this.ropeCooldown = 2.0; // Ruime cooldown: je springt naar de finishbok, niet terug naar een touw!
         return { type: 'ROPE_JUMP_FINISH' };
       }
     }
@@ -847,8 +847,8 @@ export class Player {
     // 3. Reguliere afzet als het volgende touw te ver weg is (bijv. achterwaarts slingeren)
     this.velocity.x = 0;
     this.velocity.y = Math.max(4.2, vel.y + 3.8);
-    this.velocity.z = Math.max(4.6, vel.z + 5.2);
-    this.ropeCooldown = 0.35;
+    this.velocity.z = Math.max(3.0, vel.z + 4.0);
+    this.ropeCooldown = 1.5;
     return 'ROPE_RELEASE';
   }
 
@@ -1019,6 +1019,29 @@ export class Player {
       const legKick = Math.sin(performance.now() * 0.014) * 0.2;
       this.leftLegPivot.rotation.x = 0.4 + legKick;
       this.rightLegPivot.rotation.x = 0.4 - legKick;
+    }
+
+    // Horizontale ballistische snelheid (bijv. sprong vanaf een klimtouw)
+    if (Math.abs(this.velocity.x) > 0.001 || Math.abs(this.velocity.z) > 0.001) {
+      const vxMove = this.velocity.x * dt;
+      const vzMove = this.velocity.z * dt;
+      const nextVx = this.position.x + vxMove;
+      const nextVz = this.position.z + vzMove;
+
+      if (!this.world.checkCollision(nextVx, this.position.z, this.radius, this.position.y)) {
+        this.position.x = nextVx;
+      }
+      if (!this.world.checkCollision(this.position.x, nextVz, this.radius, this.position.y)) {
+        this.position.z = nextVz;
+      }
+
+      // Bij landing op een vaste ondergrond remt de horizontale impuls snel af
+      if (this.isGrounded) {
+        this.velocity.x *= Math.max(0, 1 - dt * 10);
+        this.velocity.z *= Math.max(0, 1 - dt * 10);
+        if (Math.abs(this.velocity.x) < 0.01) this.velocity.x = 0;
+        if (Math.abs(this.velocity.z) < 0.01) this.velocity.z = 0;
+      }
     }
 
     if (camera) {
