@@ -825,30 +825,34 @@ export class Player {
       }
     }
 
-    // 2. Als de speler op het laatste touw (touw 3) zit: spring naar de finish turnkast!
+    // 2. Als de speler op het laatste touw (touw 3) zit:
     if (currentIdx === ropes.length - 1 && ropes.length > 0) {
       const finishPos = new THREE.Vector3(0, (this.world?.LOWER_Y || 0) + 1.28, 127.2);
       const distToFinish = this.position.distanceTo(finishPos);
       const dz = finishPos.z - this.position.z;
 
-      // Finish turnkast staat op z = 127.2. Als de speler voorwaarts zwaait en binnen bereik is:
-      if (distToFinish <= 7.2 && dz > 0.1) {
-        const T = Math.max(0.40, Math.min(0.60, distToFinish / 8.0));
+      // Alleen als de speler ECHT in de buurt is van de 3e kast én voorwaarts beweegt:
+      // De finish turnkast staat op z = 127.2 (voorkant op 126.38).
+      // Touw 3 zwaait tot z ≈ 126.56. Bij distToFinish <= 2.2 is de speler binnen ~2 meter van het midden van de bok.
+      const isNearFinishBox = distToFinish <= 2.2 && dz > 0.1 && vel.z > -0.2;
+
+      if (isNearFinishBox) {
+        const T = Math.max(0.35, Math.min(0.50, distToFinish / 6.0));
         const vx = (finishPos.x - this.position.x) / T;
         const vz = (finishPos.z - this.position.z) / T;
         const vy = (finishPos.y - this.position.y - 0.5 * this.gravity * T * T) / T;
 
         this.velocity.set(vx, vy, vz);
-        this.ropeCooldown = 2.0; // Ruime cooldown: je springt naar de finishbok, niet terug naar een touw!
+        this.ropeCooldown = 2.0; // Ruime cooldown: je landt op de finishbok, niet terug naar het touw
         return { type: 'ROPE_JUMP_FINISH' };
       }
     }
 
-    // 3. Reguliere afzet als het volgende touw te ver weg is (bijv. achterwaarts slingeren)
+    // 3. Reguliere natuurlijke afzet als de speler niet in de buurt van het doel is (valt dan bijv. op de mat)
     this.velocity.x = 0;
-    this.velocity.y = Math.max(4.2, vel.y + 3.8);
-    this.velocity.z = Math.max(3.0, vel.z + 4.0);
-    this.ropeCooldown = 1.5;
+    this.velocity.y = Math.max(2.8, vel.y + 3.2);
+    this.velocity.z = vel.z + (vel.z >= 0 ? 1.5 : -0.8);
+    this.ropeCooldown = 1.0;
     return 'ROPE_RELEASE';
   }
 
