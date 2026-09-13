@@ -16,6 +16,7 @@ export class GameWorld {
     this.gymFinishArrow = null;
     this.deskMarker = null;
     this.deskArrow = null;
+    this.schoolClockHands = null;
 
     // Verdiepingshoogtes
     this.UPPER_Y = 3.6;
@@ -3117,7 +3118,11 @@ export class GameWorld {
     return false;
   }
 
-  update(dt, elapsed) {
+  update(dt, elapsed, inGameSeconds) {
+    if (inGameSeconds !== undefined) {
+      this.updateSchoolClock(inGameSeconds);
+    }
+
     for (const anim of this.animatedObjects) {
       anim.update(dt, elapsed);
     }
@@ -3866,19 +3871,11 @@ export class GameWorld {
     canopy.position.set(0, y + 3.3, schoolZ - 1.1);
     this.scene.add(canopy);
 
-    // Schoolnaambord: "BASISSCHOOL DE WISSEL"
-    const signBoardGeo = new THREE.BoxGeometry(3.6, 0.65, 0.08);
-    const signBoardMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 });
-    const signBoard = new THREE.Mesh(signBoardGeo, signBoardMat);
-    signBoard.position.set(0, y + 4.0, schoolZ - 0.18);
-    this.scene.add(signBoard);
+    // Schoolnaambord: "BASISSCHOOL DE HINDERNIS"
+    this.createSchoolFacadeSign(0, y + 4.15, schoolZ - 0.18);
 
-    // Schoolklok boven ingang
-    const clockGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.08, 24);
-    clockGeo.rotateX(Math.PI / 2);
-    const clockFace = new THREE.Mesh(clockGeo, this.materials.porcelain);
-    clockFace.position.set(0, y + 5.0, schoolZ - 0.17);
-    this.scene.add(clockFace);
+    // Werkende schoolklok boven de entree
+    this.createSchoolExteriorClock(0, y + 5.35, schoolZ - 0.18);
 
     // 3. Schoolgang Binnen (z: 86.0 tot 105.0, x: -6.0 tot 6.0)
     const hallwayLength = 19.0;
@@ -3907,17 +3904,24 @@ export class GameWorld {
     // Deel 3: z: 99.2 tot 105.0
     this.addWall(6.0, y + 2.0, 102.1, 0.2, 4.0, 5.8, this.materials.schoolWallInterior);
 
-    // Naamborden boven klaslokaaldoorgangen
-    const sign3Geo = new THREE.BoxGeometry(0.12, 0.38, 1.8);
-    const sign3 = new THREE.Mesh(sign3Geo, this.materials.schoolDoorMat);
-    sign3.position.set(5.9, y + 2.95, 90.0);
-    this.scene.add(sign3);
+    // Mooie, herkenbare naamborden boven klaslokaaldoorgangen
+    this.createClassroomSign(5.92, y + 3.10, 90.0, {
+      roomCode: 'GROEP 3',
+      roomName: 'Creatief & Schilderen',
+      subtitle: '🎨 Tekenen • Schilderen • Blokkenhoek',
+      badgeBg: '#ea580c',
+      borderColor: '#f59e0b',
+      themeBg: '#0f172a'
+    });
 
-    const sign4Geo = new THREE.BoxGeometry(0.12, 0.38, 1.8);
-    const sign4Mat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 });
-    const sign4 = new THREE.Mesh(sign4Geo, sign4Mat);
-    sign4.position.set(5.9, y + 2.95, 98.0);
-    this.scene.add(sign4);
+    this.createClassroomSign(5.92, y + 3.10, 98.0, {
+      roomCode: 'GROEP 4',
+      roomName: 'Jouw Eigen Klas! ✨',
+      subtitle: '📚 Rekenen • Lezen • Taal • Wereld',
+      badgeBg: '#0284c7',
+      borderColor: '#38bdf8',
+      themeBg: '#0f172a'
+    });
 
     // Achterwand van de gang (z = 105.0) met grote dubbele doorgang naar de GYMZAAL (x: -2.0 tot 2.0)
     // Linkerpaneel (x: -6.0 tot -2.0)
@@ -3928,11 +3932,7 @@ export class GameWorld {
     this.addWall(0, y + 3.6, 105.0, 4.0, 0.8, 0.2, this.materials.schoolWallInterior);
 
     // Groot bord boven entree naar de gymzaal: "🏀 GYMZAAL • APENKOOI 🤸"
-    const gymSignGeo = new THREE.BoxGeometry(3.6, 0.55, 0.12);
-    const gymSignMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.35 });
-    const gymSign = new THREE.Mesh(gymSignGeo, gymSignMat);
-    gymSign.position.set(0, y + 3.55, 104.9);
-    this.scene.add(gymSign);
+    this.createGymEntranceSign(0, y + 3.55, 104.88);
 
     // Plafond schoolgang
     const ceilingGeo = new THREE.BoxGeometry(12.0, 0.2, hallwayLength);
@@ -4820,6 +4820,541 @@ export class GameWorld {
     // Activeer jouw bureau marker in Groep 4!
     if (this.deskMarker) this.deskMarker.visible = true;
     if (this.deskArrow) this.deskArrow.visible = true;
+  }
+
+  // --- SCHOOLNAAMBORD BUITENGEVEL ---
+  createSchoolFacadeSign(x, y, z) {
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const w = 4.6;
+    const h = 0.82;
+    const d = 0.08;
+
+    // 1. Stevige donkere achterplaat met subtiele omlijsting
+    const backGeo = new THREE.BoxGeometry(w, h, d);
+    const backMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+    const back = new THREE.Mesh(backGeo, backMat);
+    back.castShadow = true;
+    group.add(back);
+
+    // 2. Gouden sierlijst rondom het bord
+    const frameGeo = new THREE.BoxGeometry(w + 0.08, h + 0.08, d * 0.7);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.35, metalness: 0.4 });
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    frame.position.set(0, 0, 0.01);
+    group.add(frame);
+
+    // 3. Wandbevestigingsbeugels (links & rechts)
+    for (const bx of [-w / 2 + 0.25, w / 2 - 0.25]) {
+      const mountGeo = new THREE.BoxGeometry(0.08, h + 0.2, 0.12);
+      const mount = new THREE.Mesh(mountGeo, this.materials.metal);
+      mount.position.set(bx, 0, 0.02);
+      group.add(mount);
+    }
+
+    // 4. Canvas voor haarscherpe en prachtige opdruk
+    const canvasW = 1840;
+    const canvasH = 328;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+
+    // Horizontaal spiegelen omdat de plane 180 graden gedraaid naar -Z kijkt
+    ctx.translate(canvasW, 0);
+    ctx.scale(-1, 1);
+
+    // Donkerblauwe / koninklijke achtergrond met lichte verticale gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, canvasH);
+    grad.addColorStop(0, '#0f2744');
+    grad.addColorStop(0.5, '#163b65');
+    grad.addColorStop(1, '#0c1b30');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    // Gouden buitenrand
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(8, 8, canvasW - 16, canvasH - 16);
+
+    // Dunne witte binnenrand
+    ctx.strokeStyle = '#ffffff55';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 20, canvasW - 40, canvasH - 40);
+
+    // Decoratieve hoekornamenten
+    ctx.fillStyle = '#fbbf24';
+    for (const [cx, cy] of [[24, 24], [canvasW - 24, 24], [24, canvasH - 24], [canvasW - 24, canvasH - 24]]) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Hoofdtitel: BASISSCHOOL DE HINDERNIS
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 74px "Trebuchet MS", "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🏫  BASISSCHOOL DE HINDERNIS  🏫', canvasW / 2, 115);
+
+    // Gouden scheidingslijn
+    ctx.shadowColor = 'transparent';
+    const lineGrad = ctx.createLinearGradient(canvasW * 0.15, 0, canvasW * 0.85, 0);
+    lineGrad.addColorStop(0, 'rgba(245, 158, 11, 0)');
+    lineGrad.addColorStop(0.2, '#fbbf24');
+    lineGrad.addColorStop(0.8, '#fbbf24');
+    lineGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+    ctx.fillStyle = lineGrad;
+    ctx.fillRect(canvasW * 0.15, 185, canvasW * 0.70, 3);
+
+    // Ondertitel
+    ctx.fillStyle = '#fef08a';
+    ctx.font = '600 36px "Segoe UI", sans-serif';
+    ctx.fillText('✨  ONTDEKKEN  •  LEREN  •  SAMEN SPELEN  ✨', canvasW / 2, 245);
+
+    // 5. Plane met CanvasTexture
+    const signTex = new THREE.CanvasTexture(canvas);
+    signTex.colorSpace = THREE.SRGBColorSpace;
+    const signGeo = new THREE.PlaneGeometry(w - 0.04, h - 0.04);
+    const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({
+      map: signTex,
+      side: THREE.DoubleSide
+    }));
+    signMesh.position.set(0, 0, -d / 2 - 0.005);
+    signMesh.rotation.y = Math.PI; // Kijkt richting -Z (buiten naar de speler/straat)
+    group.add(signMesh);
+
+    this.scene.add(group);
+  }
+
+  // --- WERKENDE 3D BUITENKLOK OP DE SCHOOLGEVEL ---
+  createSchoolExteriorClock(x, y, z) {
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const radius = 0.65;
+    const depth = 0.12;
+
+    // 1. Zware donkere metalen klokkast
+    const caseGeo = new THREE.CylinderGeometry(radius + 0.06, radius + 0.08, depth, 36);
+    caseGeo.rotateX(Math.PI / 2);
+    const caseMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.5,
+      metalness: 0.6
+    });
+    const clockCase = new THREE.Mesh(caseGeo, caseMat);
+    clockCase.castShadow = true;
+    group.add(clockCase);
+
+    // 2. Sierlijke gouden buitenrand (bezel)
+    const bezelGeo = new THREE.TorusGeometry(radius + 0.04, 0.035, 16, 48);
+    const bezelMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.3,
+      metalness: 0.75
+    });
+    const bezel = new THREE.Mesh(bezelGeo, bezelMat);
+    bezel.position.set(0, 0, -depth / 2);
+    group.add(bezel);
+
+    // 3. Wijzerplaat canvas (1024x1024 voor maximale scherpte)
+    const canvasSize = 1024;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const ctx = canvas.getContext('2d');
+
+    // Horizontaal spiegelen wegens rotation.y = Math.PI (naar -Z gericht)
+    ctx.translate(canvasSize, 0);
+    ctx.scale(-1, 1);
+
+    const center = canvasSize / 2; // 512
+    const dialR = canvasSize / 2 - 24; // 488
+
+    // Wit/ivoor parchment achtergrond met subtiele schaduwrand
+    const dialGrad = ctx.createRadialGradient(center, center, dialR * 0.1, center, center, dialR);
+    dialGrad.addColorStop(0, '#ffffff');
+    dialGrad.addColorStop(0.85, '#fafaf9');
+    dialGrad.addColorStop(1, '#e2e8f0');
+    ctx.fillStyle = dialGrad;
+    ctx.beginPath();
+    ctx.arc(center, center, dialR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Buitenste cirkelranden
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(center, center, dialR - 6, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(center, center, dialR - 16, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Spoorweg/minuten track cirkel
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(center, center, dialR - 75, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 60 Tick marks rondom de wijzerplaat
+    for (let i = 0; i < 60; i++) {
+      const angle = (i * Math.PI * 2) / 60 - Math.PI / 2;
+      const isHour = i % 5 === 0;
+      const rOuter = dialR - 22;
+      const rInner = isHour ? dialR - 74 : dialR - 44;
+
+      ctx.strokeStyle = isHour ? '#0f172a' : '#64748b';
+      ctx.lineWidth = isHour ? 10 : 4;
+      ctx.beginPath();
+      ctx.moveTo(center + Math.cos(angle) * rInner, center + Math.sin(angle) * rInner);
+      ctx.lineTo(center + Math.cos(angle) * rOuter, center + Math.sin(angle) * rOuter);
+      ctx.stroke();
+    }
+
+    // 12 Uurcijfers (1 t/m 12)
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 76px "Georgia", "Times New Roman", serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const numRadius = dialR - 128; // ~360px
+    for (let h = 1; h <= 12; h++) {
+      const angle = (h * Math.PI * 2) / 12 - Math.PI / 2;
+      const nx = center + Math.cos(angle) * numRadius;
+      const ny = center + Math.sin(angle) * numRadius + 3;
+      ctx.fillText(String(h), nx, ny);
+    }
+
+    // Schoolnaam op de wijzerplaat
+    ctx.fillStyle = '#1e3a8a';
+    ctx.font = 'bold 30px "Trebuchet MS", sans-serif';
+    ctx.fillText('DE HINDERNIS', center, center - 110);
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 20px sans-serif';
+    ctx.fillText('SCHOOLTIJD', center, center + 120);
+
+    // 4. Wijzerplaat mesh
+    const dialTex = new THREE.CanvasTexture(canvas);
+    dialTex.colorSpace = THREE.SRGBColorSpace;
+    const dialGeo = new THREE.CircleGeometry(radius, 48);
+    const dialMesh = new THREE.Mesh(dialGeo, new THREE.MeshBasicMaterial({
+      map: dialTex,
+      side: THREE.DoubleSide
+    }));
+    dialMesh.position.set(0, 0, -depth / 2 - 0.005);
+    dialMesh.rotation.y = Math.PI; // Kijkt richting -Z
+    group.add(dialMesh);
+
+    // 5. 3D Fysieke Wijzers (Uren, Minuten, Seconden)
+    const handZBase = -depth / 2 - 0.015;
+    const handMatDark = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.3,
+      metalness: 0.8
+    });
+    const handMatRed = new THREE.MeshStandardMaterial({
+      color: 0xdc2626,
+      roughness: 0.2,
+      metalness: 0.4
+    });
+
+    // Urenwijzer (robuust, lengte ~0.36m)
+    const hourPivot = new THREE.Group();
+    hourPivot.position.set(0, 0, handZBase);
+    const hourArmGeo = new THREE.BoxGeometry(0.045, 0.34, 0.012);
+    hourArmGeo.translate(0, 0.17, 0);
+    const hourArm = new THREE.Mesh(hourArmGeo, handMatDark);
+    hourPivot.add(hourArm);
+    const hourTipGeo = new THREE.ConeGeometry(0.04, 0.10, 4);
+    hourTipGeo.translate(0, 0.39, 0);
+    const hourTip = new THREE.Mesh(hourTipGeo, handMatDark);
+    hourPivot.add(hourTip);
+    const hourTailGeo = new THREE.BoxGeometry(0.05, 0.10, 0.012);
+    hourTailGeo.translate(0, -0.05, 0);
+    const hourTail = new THREE.Mesh(hourTailGeo, handMatDark);
+    hourPivot.add(hourTail);
+    group.add(hourPivot);
+
+    // Minutenwijzer (slanker en langer, lengte ~0.50m)
+    const minutePivot = new THREE.Group();
+    minutePivot.position.set(0, 0, handZBase - 0.012);
+    const minuteArmGeo = new THREE.BoxGeometry(0.035, 0.48, 0.012);
+    minuteArmGeo.translate(0, 0.24, 0);
+    const minuteArm = new THREE.Mesh(minuteArmGeo, handMatDark);
+    minutePivot.add(minuteArm);
+    const minuteTipGeo = new THREE.ConeGeometry(0.032, 0.09, 4);
+    minuteTipGeo.translate(0, 0.525, 0);
+    const minuteTip = new THREE.Mesh(minuteTipGeo, handMatDark);
+    minutePivot.add(minuteTip);
+    const minuteTailGeo = new THREE.BoxGeometry(0.04, 0.12, 0.012);
+    minuteTailGeo.translate(0, -0.06, 0);
+    const minuteTail = new THREE.Mesh(minuteTailGeo, handMatDark);
+    minutePivot.add(minuteTail);
+    group.add(minutePivot);
+
+    // Secondenwijzer (rode naald met contragewicht)
+    const secondPivot = new THREE.Group();
+    secondPivot.position.set(0, 0, handZBase - 0.024);
+    const secondNeedleGeo = new THREE.BoxGeometry(0.014, 0.56, 0.008);
+    secondNeedleGeo.translate(0, 0.22, 0);
+    const secondNeedle = new THREE.Mesh(secondNeedleGeo, handMatRed);
+    secondPivot.add(secondNeedle);
+    const secondCounterGeo = new THREE.CylinderGeometry(0.032, 0.032, 0.01, 16);
+    secondCounterGeo.rotateX(Math.PI / 2);
+    secondCounterGeo.translate(0, -0.12, 0);
+    const secondCounter = new THREE.Mesh(secondCounterGeo, handMatRed);
+    secondPivot.add(secondCounter);
+    group.add(secondPivot);
+
+    // Centrale gouden dop / as-bout
+    const pinGeo = new THREE.CylinderGeometry(0.048, 0.048, 0.03, 24);
+    pinGeo.rotateX(Math.PI / 2);
+    const pinMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.9,
+      roughness: 0.2
+    });
+    const pin = new THREE.Mesh(pinGeo, pinMat);
+    pin.position.set(0, 0, handZBase - 0.032);
+    group.add(pin);
+
+    // Glazen bolle afdekking
+    const glassGeo = new THREE.CircleGeometry(radius + 0.01, 36);
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.18,
+      roughness: 0.05,
+      metalness: 0.1
+    });
+    const glass = new THREE.Mesh(glassGeo, glassMat);
+    glass.position.set(0, 0, handZBase - 0.036);
+    glass.rotation.y = Math.PI;
+    group.add(glass);
+
+    this.schoolClockHands = { hourPivot, minutePivot, secondPivot };
+    this.scene.add(group);
+  }
+
+  updateSchoolClock(inGameSeconds) {
+    if (!this.schoolClockHands) return;
+    const hours = (inGameSeconds / 3600) % 12;
+    const minutes = (inGameSeconds % 3600) / 60;
+    const seconds = inGameSeconds % 60;
+
+    this.schoolClockHands.hourPivot.rotation.z = -hours * (Math.PI * 2 / 12);
+    this.schoolClockHands.minutePivot.rotation.z = -minutes * (Math.PI * 2 / 60);
+    this.schoolClockHands.secondPivot.rotation.z = -seconds * (Math.PI * 2 / 60);
+  }
+
+  // --- NAAMBORDEN VOOR KLASLOKALEN (GROEP 3 & GROEP 4) ---
+  createClassroomSign(x, y, z, options = {}) {
+    const {
+      roomCode = 'GROEP 3',
+      roomName = 'Creatief',
+      subtitle = 'Tekenen & Schilderen',
+      badgeBg = '#ea580c',
+      borderColor = '#f59e0b',
+      themeBg = '#0f172a'
+    } = options;
+
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const lengthZ = 2.2;
+    const heightY = 0.52;
+    const thickX = 0.08;
+
+    // 1. Zwarte/antraciet houten achterplaat
+    const backGeo = new THREE.BoxGeometry(thickX, heightY, lengthZ);
+    const backMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+    const back = new THREE.Mesh(backGeo, backMat);
+    back.castShadow = true;
+    group.add(back);
+
+    // 2. Bevestigingslatjes aan de muur
+    for (const dz of [-lengthZ / 2 + 0.2, lengthZ / 2 - 0.2]) {
+      const bracketGeo = new THREE.BoxGeometry(thickX + 0.03, heightY + 0.1, 0.08);
+      const bracket = new THREE.Mesh(bracketGeo, this.materials.metal);
+      bracket.position.set(0.01, 0, dz);
+      group.add(bracket);
+    }
+
+    // 3. Canvas voor het lokaalbord
+    const canvasW = 1100;
+    const canvasH = 260;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+
+    // Niet horizontaal spiegelen: met rotation.y = -Math.PI/2 leest text netjes van links (-Z) naar rechts (+Z)
+    // Donkere stijlvolle achtergrond
+    const bgGrad = ctx.createLinearGradient(0, 0, canvasW, 0);
+    bgGrad.addColorStop(0, themeBg);
+    bgGrad.addColorStop(1, '#020617');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    // Buitenste gouden rand
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 8;
+    ctx.strokeRect(6, 6, canvasW - 12, canvasH - 12);
+
+    // Witte dunne binnenbelijning
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(16, 16, canvasW - 32, canvasH - 32);
+
+    // Badge links met lokaalcode (bijv. "GROEP 3" of "GROEP 4")
+    const badgeW = 340;
+    const badgeH = 170;
+    const badgeX = 36;
+    const badgeY = (canvasH - badgeH) / 2;
+
+    ctx.fillStyle = badgeBg;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 16);
+    } else {
+      ctx.rect(badgeX, badgeY, badgeW, badgeH);
+    }
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff88';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 54px "Trebuchet MS", "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 8;
+    ctx.fillText(roomCode, badgeX + badgeW / 2, badgeY + badgeH / 2);
+
+    // Rechter tekstgedeelte: lokaalnaam en subtitel
+    ctx.textAlign = 'left';
+    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 3;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 46px "Segoe UI", sans-serif';
+    ctx.fillText(roomName, badgeX + badgeW + 40, 95);
+
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = borderColor;
+    ctx.font = '600 28px "Segoe UI", sans-serif';
+    ctx.fillText(subtitle, badgeX + badgeW + 40, 165);
+
+    // 4. Mesh met bord-canvas
+    const signTex = new THREE.CanvasTexture(canvas);
+    signTex.colorSpace = THREE.SRGBColorSpace;
+    const signGeo = new THREE.PlaneGeometry(lengthZ - 0.04, heightY - 0.04);
+    const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({
+      map: signTex,
+      side: THREE.DoubleSide
+    }));
+    signMesh.position.set(-thickX / 2 - 0.005, 0, 0);
+    signMesh.rotation.y = -Math.PI / 2; // Kijkt richting de gang (-X)
+    group.add(signMesh);
+
+    this.scene.add(group);
+  }
+
+  // --- GROOT NAAMBORD GYMZAAL APENKOOI ---
+  createGymEntranceSign(x, y, z) {
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const w = 4.2;
+    const h = 0.72;
+    const d = 0.10;
+
+    // 1. Robuuste gym-houten achterplaat
+    const backGeo = new THREE.BoxGeometry(w, h, d);
+    const back = new THREE.Mesh(backGeo, this.materials.gymWood);
+    back.castShadow = true;
+    group.add(back);
+
+    // 2. Metalen hoekbeslag
+    for (const sx of [-1, 1]) {
+      for (const sy of [-1, 1]) {
+        const cornerGeo = new THREE.BoxGeometry(0.24, 0.24, d + 0.02);
+        const corner = new THREE.Mesh(cornerGeo, this.materials.metal);
+        corner.position.set(sx * (w / 2 - 0.12), sy * (h / 2 - 0.12), 0);
+        group.add(corner);
+      }
+    }
+
+    // 3. Canvas voor gymzaal bord
+    const canvasW = 1680;
+    const canvasH = 288;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+
+    // Horizontaal spiegelen wegens rotation.y = Math.PI (kijkt richting -Z)
+    ctx.translate(canvasW, 0);
+    ctx.scale(-1, 1);
+
+    // Sportieve gradient achtergrond
+    const grad = ctx.createLinearGradient(0, 0, 0, canvasH);
+    grad.addColorStop(0, '#78350f');
+    grad.addColorStop(0.5, '#b45309');
+    grad.addColorStop(1, '#451a03');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    // Sportieve randen
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(8, 8, canvasW - 16, canvasH - 16);
+
+    ctx.strokeStyle = '#fef08a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(20, 20, canvasW - 40, canvasH - 40);
+
+    // Hoofdtitel
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 70px "Trebuchet MS", "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🏀  GYMZAAL  •  APENKOOI  🤸', canvasW / 2, 100);
+
+    // Ondertitel
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 32px "Segoe UI", sans-serif';
+    ctx.fillText('•  KLIMMEN  •  TOUWSLINGEREN  •  TURNEN  •', canvasW / 2, 200);
+
+    // 4. Mesh
+    const signTex = new THREE.CanvasTexture(canvas);
+    signTex.colorSpace = THREE.SRGBColorSpace;
+    const signGeo = new THREE.PlaneGeometry(w - 0.06, h - 0.06);
+    const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({
+      map: signTex,
+      side: THREE.DoubleSide
+    }));
+    signMesh.position.set(0, 0, -d / 2 - 0.005);
+    signMesh.rotation.y = Math.PI; // Kijkt richting -Z (naar de gang)
+    group.add(signMesh);
+
+    this.scene.add(group);
   }
 }
 

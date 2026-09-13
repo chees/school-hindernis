@@ -89,6 +89,7 @@ class Game {
 
   initGameObjects() {
     this.world = new GameWorld(this.scene);
+    this.world.updateSchoolClock(7 * 3600);
     this.skybox = new SkyboxManager(this.scene, this.world);
     this.skybox.setWeather(weather.getWeather());
     this.player = new Player(this.scene, this.world);
@@ -1854,7 +1855,9 @@ class Game {
       this.skybox.update(dt, this.camera.position);
     }
 
-    this.world.update(dt, time / 1000);
+    const clampedTime = Math.max(0, Math.min(this.totalTime, this.elapsedTime));
+    const inGameSeconds = 7 * 3600 + clampedTime * (4500 / this.totalTime);
+    this.world.update(dt, time / 1000, inGameSeconds);
     this.updateConfetti(dt);
     this.checkObjectives();
 
