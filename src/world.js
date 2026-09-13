@@ -3865,17 +3865,36 @@ export class GameWorld {
     winRight.position.set(6.5, y + 3.2, schoolZ - 0.16);
     this.scene.add(winRight);
 
-    // Entree overkapping & Naambord
-    const canopyGeo = new THREE.BoxGeometry(4.2, 0.2, 2.2);
+    // Verhoogde geveltop / klokgevel in het midden boven de entree (x: -3.2 tot 3.2, y: 6.0 tot 7.6)
+    this.addWall(0, y + 6.8, schoolZ, 6.4, 1.6, 0.3, this.materials.schoolBrick);
+
+    // Decoratieve natuurstenen kroonlijst bovenop de klokgevel
+    const corniceGeo = new THREE.BoxGeometry(6.6, 0.22, 0.45);
+    const cornice = new THREE.Mesh(corniceGeo, this.materials.schoolDoorMat);
+    cornice.position.set(0, y + 7.65, schoolZ - 0.05);
+    this.scene.add(cornice);
+
+    // Entree overkapping (afdakje) - compact zodat het zicht naar het naambord en de klok 100% vrij is
+    const canopyGeo = new THREE.BoxGeometry(4.4, 0.16, 1.45);
     const canopy = new THREE.Mesh(canopyGeo, this.materials.schoolDoorMat);
-    canopy.position.set(0, y + 3.3, schoolZ - 1.1);
+    canopy.position.set(0, y + 3.18, schoolZ - 0.725);
+    canopy.castShadow = true;
     this.scene.add(canopy);
 
-    // Schoolnaambord: "BASISSCHOOL DE HINDERNIS"
-    this.createSchoolFacadeSign(0, y + 4.15, schoolZ - 0.18);
+    // Twee stalen trekstangen voor het afdakje
+    for (const sx of [-1.85, 1.85]) {
+      const rodGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.5, 8);
+      rodGeo.rotateX(0.78);
+      const rod = new THREE.Mesh(rodGeo, this.materials.metal);
+      rod.position.set(sx, y + 3.52, schoolZ - 0.725);
+      this.scene.add(rod);
+    }
 
-    // Werkende schoolklok boven de entree
-    this.createSchoolExteriorClock(0, y + 5.35, schoolZ - 0.18);
+    // Schoolnaambord: "BASISSCHOOL DE HINDERNIS" (ruim boven het afdakje, volledig vrij zicht)
+    this.createSchoolFacadeSign(0, y + 4.95, schoolZ - 0.18);
+
+    // Werkende schoolklok in het midden van de verhoogde geveltop
+    this.createSchoolExteriorClock(0, y + 6.45, schoolZ - 0.18);
 
     // 3. Schoolgang Binnen (z: 86.0 tot 105.0, x: -6.0 tot 6.0)
     const hallwayLength = 19.0;
@@ -4831,39 +4850,28 @@ export class GameWorld {
     const h = 0.82;
     const d = 0.08;
 
-    // 1. Stevige donkere achterplaat met subtiele omlijsting
+    // 1. Stevige donkere achterplaat
     const backGeo = new THREE.BoxGeometry(w, h, d);
     const backMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
     const back = new THREE.Mesh(backGeo, backMat);
     back.castShadow = true;
     group.add(back);
 
-    // 2. Gouden sierlijst rondom het bord
-    const frameGeo = new THREE.BoxGeometry(w + 0.08, h + 0.08, d * 0.7);
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.35, metalness: 0.4 });
-    const frame = new THREE.Mesh(frameGeo, frameMat);
-    frame.position.set(0, 0, 0.01);
-    group.add(frame);
-
-    // 3. Wandbevestigingsbeugels (links & rechts)
-    for (const bx of [-w / 2 + 0.25, w / 2 - 0.25]) {
-      const mountGeo = new THREE.BoxGeometry(0.08, h + 0.2, 0.12);
+    // 2. Wandbevestigingsbeugels (strikt ACHTER de plaat in de muur geplaatst)
+    for (const bx of [-w / 2 + 0.35, w / 2 - 0.35]) {
+      const mountGeo = new THREE.BoxGeometry(0.14, h + 0.12, 0.12);
       const mount = new THREE.Mesh(mountGeo, this.materials.metal);
-      mount.position.set(bx, 0, 0.02);
+      mount.position.set(bx, 0, d / 2 + 0.05);
       group.add(mount);
     }
 
-    // 4. Canvas voor haarscherpe en prachtige opdruk
+    // 3. Canvas voor haarscherpe en prachtige opdruk (normaal getekend, niet gespiegeld)
     const canvasW = 1840;
     const canvasH = 328;
     const canvas = document.createElement('canvas');
     canvas.width = canvasW;
     canvas.height = canvasH;
     const ctx = canvas.getContext('2d');
-
-    // Horizontaal spiegelen omdat de plane 180 graden gedraaid naar -Z kijkt
-    ctx.translate(canvasW, 0);
-    ctx.scale(-1, 1);
 
     // Donkerblauwe / koninklijke achtergrond met lichte verticale gradient
     const grad = ctx.createLinearGradient(0, 0, 0, canvasH);
@@ -4916,15 +4924,18 @@ export class GameWorld {
     ctx.font = '600 36px "Segoe UI", sans-serif';
     ctx.fillText('✨  ONTDEKKEN  •  LEREN  •  SAMEN SPELEN  ✨', canvasW / 2, 245);
 
-    // 5. Plane met CanvasTexture
+    // 4. Plane met CanvasTexture (met duidelijke diepte-offset en polygonOffset tegen z-fighting)
     const signTex = new THREE.CanvasTexture(canvas);
     signTex.colorSpace = THREE.SRGBColorSpace;
-    const signGeo = new THREE.PlaneGeometry(w - 0.04, h - 0.04);
+    const signGeo = new THREE.PlaneGeometry(w - 0.08, h - 0.08);
     const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({
       map: signTex,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     }));
-    signMesh.position.set(0, 0, -d / 2 - 0.005);
+    signMesh.position.set(0, 0, -d / 2 - 0.008);
     signMesh.rotation.y = Math.PI; // Kijkt richting -Z (buiten naar de speler/straat)
     group.add(signMesh);
 
@@ -4962,16 +4973,12 @@ export class GameWorld {
     bezel.position.set(0, 0, -depth / 2);
     group.add(bezel);
 
-    // 3. Wijzerplaat canvas (1024x1024 voor maximale scherpte)
+    // 3. Wijzerplaat canvas (1024x1024 voor maximale scherpte - normaal getekend)
     const canvasSize = 1024;
     const canvas = document.createElement('canvas');
     canvas.width = canvasSize;
     canvas.height = canvasSize;
     const ctx = canvas.getContext('2d');
-
-    // Horizontaal spiegelen wegens rotation.y = Math.PI (naar -Z gericht)
-    ctx.translate(canvasSize, 0);
-    ctx.scale(-1, 1);
 
     const center = canvasSize / 2; // 512
     const dialR = canvasSize / 2 - 24; // 488
@@ -5044,15 +5051,18 @@ export class GameWorld {
     ctx.font = '600 20px sans-serif';
     ctx.fillText('SCHOOLTIJD', center, center + 120);
 
-    // 4. Wijzerplaat mesh
+    // 4. Wijzerplaat mesh (met duidelijke offset en polygonOffset tegen z-fighting)
     const dialTex = new THREE.CanvasTexture(canvas);
     dialTex.colorSpace = THREE.SRGBColorSpace;
     const dialGeo = new THREE.CircleGeometry(radius, 48);
     const dialMesh = new THREE.Mesh(dialGeo, new THREE.MeshBasicMaterial({
       map: dialTex,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     }));
-    dialMesh.position.set(0, 0, -depth / 2 - 0.005);
+    dialMesh.position.set(0, 0, -depth / 2 - 0.008);
     dialMesh.rotation.y = Math.PI; // Kijkt richting -Z
     group.add(dialMesh);
 
@@ -5183,11 +5193,11 @@ export class GameWorld {
     back.castShadow = true;
     group.add(back);
 
-    // 2. Bevestigingslatjes aan de muur
-    for (const dz of [-lengthZ / 2 + 0.2, lengthZ / 2 - 0.2]) {
-      const bracketGeo = new THREE.BoxGeometry(thickX + 0.03, heightY + 0.1, 0.08);
+    // 2. Bevestigingssteunen aan de muur (strikt ACHTER de plaat tegen de wand)
+    for (const dz of [-lengthZ / 2 + 0.3, lengthZ / 2 - 0.3]) {
+      const bracketGeo = new THREE.BoxGeometry(0.06, 0.12, 0.16);
       const bracket = new THREE.Mesh(bracketGeo, this.materials.metal);
-      bracket.position.set(0.01, 0, dz);
+      bracket.position.set(thickX / 2 + 0.03, 0, dz);
       group.add(bracket);
     }
 
@@ -5257,15 +5267,18 @@ export class GameWorld {
     ctx.font = '600 28px "Segoe UI", sans-serif';
     ctx.fillText(subtitle, badgeX + badgeW + 40, 165);
 
-    // 4. Mesh met bord-canvas
+    // 4. Mesh met bord-canvas (met duidelijke offset en polygonOffset tegen z-fighting)
     const signTex = new THREE.CanvasTexture(canvas);
     signTex.colorSpace = THREE.SRGBColorSpace;
-    const signGeo = new THREE.PlaneGeometry(lengthZ - 0.04, heightY - 0.04);
+    const signGeo = new THREE.PlaneGeometry(lengthZ - 0.08, heightY - 0.08);
     const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({
       map: signTex,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     }));
-    signMesh.position.set(-thickX / 2 - 0.005, 0, 0);
+    signMesh.position.set(-thickX / 2 - 0.008, 0, 0);
     signMesh.rotation.y = -Math.PI / 2; // Kijkt richting de gang (-X)
     group.add(signMesh);
 
@@ -5279,7 +5292,7 @@ export class GameWorld {
 
     const w = 4.2;
     const h = 0.72;
-    const d = 0.10;
+    const d = 0.08;
 
     // 1. Robuuste gym-houten achterplaat
     const backGeo = new THREE.BoxGeometry(w, h, d);
@@ -5287,27 +5300,31 @@ export class GameWorld {
     back.castShadow = true;
     group.add(back);
 
-    // 2. Metalen hoekbeslag
+    // 2. Bevestigingssteunen in de achterwand (strikt ACHTER de plaat)
+    for (const bx of [-w / 2 + 0.35, w / 2 - 0.35]) {
+      const mountGeo = new THREE.BoxGeometry(0.12, h + 0.12, 0.10);
+      const mount = new THREE.Mesh(mountGeo, this.materials.metal);
+      mount.position.set(bx, 0, d / 2 + 0.05);
+      group.add(mount);
+    }
+
+    // 3. Sierlijk metalen hoekbeslag op de houten omlijsting (buiten het canvas vlak)
     for (const sx of [-1, 1]) {
       for (const sy of [-1, 1]) {
-        const cornerGeo = new THREE.BoxGeometry(0.24, 0.24, d + 0.02);
+        const cornerGeo = new THREE.BoxGeometry(0.14, 0.14, 0.01);
         const corner = new THREE.Mesh(cornerGeo, this.materials.metal);
-        corner.position.set(sx * (w / 2 - 0.12), sy * (h / 2 - 0.12), 0);
+        corner.position.set(sx * (w / 2 - 0.08), sy * (h / 2 - 0.08), -d / 2 - 0.004);
         group.add(corner);
       }
     }
 
-    // 3. Canvas voor gymzaal bord
+    // 4. Canvas voor gymzaal bord (normaal getekend, niet gespiegeld)
     const canvasW = 1680;
     const canvasH = 288;
     const canvas = document.createElement('canvas');
     canvas.width = canvasW;
     canvas.height = canvasH;
     const ctx = canvas.getContext('2d');
-
-    // Horizontaal spiegelen wegens rotation.y = Math.PI (kijkt richting -Z)
-    ctx.translate(canvasW, 0);
-    ctx.scale(-1, 1);
 
     // Sportieve gradient achtergrond
     const grad = ctx.createLinearGradient(0, 0, 0, canvasH);
@@ -5342,15 +5359,18 @@ export class GameWorld {
     ctx.font = 'bold 32px "Segoe UI", sans-serif';
     ctx.fillText('•  KLIMMEN  •  TOUWSLINGEREN  •  TURNEN  •', canvasW / 2, 200);
 
-    // 4. Mesh
+    // 5. Mesh met CanvasTexture (met duidelijke offset en polygonOffset tegen z-fighting)
     const signTex = new THREE.CanvasTexture(canvas);
     signTex.colorSpace = THREE.SRGBColorSpace;
-    const signGeo = new THREE.PlaneGeometry(w - 0.06, h - 0.06);
+    const signGeo = new THREE.PlaneGeometry(w - 0.36, h - 0.16);
     const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({
       map: signTex,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     }));
-    signMesh.position.set(0, 0, -d / 2 - 0.005);
+    signMesh.position.set(0, 0, -d / 2 - 0.008);
     signMesh.rotation.y = Math.PI; // Kijkt richting -Z (naar de gang)
     group.add(signMesh);
 
