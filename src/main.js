@@ -281,45 +281,25 @@ class Game {
     if (urlParams.get('autostart') === '1' || urlParams.has('autostart')) {
       this.wakeupModal.style.display = 'none';
       this.handleWakeup();
-    }
-    if (urlParams.get('bag') === '1' || urlParams.has('bag')) {
-      this.wakeupModal.style.display = 'none';
+    } else if (urlParams.get('bag') === '1' || urlParams.has('bag')) {
+      this.setupShortcutPlayerState();
       this.player.position.set(-6.6 + 0.6, this.world.UPPER_Y, -1.0 + 0.6);
       this.player.group.position.copy(this.player.position);
-      this.gameState = 'PLAYING';
-      this.player.state = 'ACTIVE';
-      this.player.bodyGroup.rotation.x = 0;
-      this.player.bodyGroup.rotation.z = 0;
-      sounds.stopAlarm();
-      this.world.interactiveObjects.alarmRinging = false;
-    }
-    if (urlParams.get('speurtocht') === '1' || urlParams.has('speurtocht')) {
-      this.wakeupModal.style.display = 'none';
+      this.setObjective('🎒 Pak je schooltas op je bureau!');
+    } else if (urlParams.get('speurtocht') === '1' || urlParams.has('speurtocht')) {
+      this.setupShortcutPlayerState();
       this.player.position.set(-6.6 + 0.6, this.world.UPPER_Y, -1.0 + 0.6);
       this.player.group.position.copy(this.player.position);
-      this.gameState = 'PLAYING';
-      this.player.state = 'ACTIVE';
-      this.player.bodyGroup.rotation.x = 0;
-      this.player.bodyGroup.rotation.z = 0;
-      sounds.stopAlarm();
-      this.world.interactiveObjects.alarmRinging = false;
       this.hasBag = true;
       this.world.pickUpSchoolBag();
       this.player.equipBackpack();
       if (this.speurtochtHud) this.speurtochtHud.classList.add('visible');
-    }
-    if (urlParams.get('door') === '1' || urlParams.has('door')) {
-      this.wakeupModal.style.display = 'none';
-      this.player.position.set(1.5, this.world.LOWER_Y, 11.5);
-      this.player.group.position.copy(this.player.position);
-      this.gameState = 'PLAYING';
-      this.player.state = 'ACTIVE';
-      this.player.bodyGroup.rotation.x = 0;
-      this.player.bodyGroup.rotation.z = 0;
-      sounds.stopAlarm();
-      this.world.interactiveObjects.alarmRinging = false;
+      this.setObjective('🎒 Zoek al je 5 schoolspullen in huis!');
+    } else if (urlParams.get('door') === '1' || urlParams.has('door')) {
+      this.setupShortcutPlayerState();
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
+      this.player.standUp();
       this.hasBag = true;
       this.world.pickUpSchoolBag();
       this.player.equipBackpack();
@@ -332,83 +312,104 @@ class Game {
       if (this.speurtochtHud) this.speurtochtHud.classList.add('visible');
       if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
       if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;
-    }
-    if (urlParams.get('wardrobe') === '1' || urlParams.has('wardrobe')) {
-      this.wakeupModal.style.display = 'none';
+      this.player.position.set(1.5, this.world.LOWER_Y, 11.5);
+      this.player.group.position.copy(this.player.position);
+      this.player.rotation = 0;
+      this.player.group.rotation.y = 0;
+      this.cameraYaw = Math.PI;
+      this.cameraPitch = 0.25;
+      this.updateCamera(0.016);
+      this.setObjective('🚪 Alles compleet en aangekleed! Ga door de voordeur naar buiten!');
+    } else if (urlParams.get('wardrobe') === '1' || urlParams.has('wardrobe')) {
+      this.setupShortcutPlayerState();
       this.player.position.set(-7.35 + 1.6, this.world.LOWER_Y, 7.5);
       this.player.group.position.copy(this.player.position);
-      this.gameState = 'PLAYING';
       this.handleWardrobeReached();
-    }
-    if (urlParams.get('victory') === '1' || urlParams.has('victory')) {
-      this.wakeupModal.style.display = 'none';
+    } else if (urlParams.get('victory') === '1' || urlParams.has('victory')) {
+      this.setupShortcutPlayerState();
       this.player.position.set(1.5, this.world.LOWER_Y, 12.0);
       this.player.group.position.copy(this.player.position);
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
+      this.player.standUp();
       this.hasBag = true;
       this.player.equipBackpack();
       this.handleLockerReached();
-    }
-
-    if (isCar) {
-      this.wakeupModal.style.display = 'none';
+    } else if (isCar) {
+      this.setupShortcutPlayerState();
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
+      this.player.standUp();
       this.hasBag = true;
       this.world.pickUpSchoolBag();
       this.player.equipBackpack();
       this.speurtochtCountFound = 5;
-      this.handleFrontDoorReached();
+      this.world.openFrontDoor();
       this.player.position.set(1.5, this.world.LOWER_Y, 17.5);
       this.player.group.position.copy(this.player.position);
-      this.gameState = 'PLAYING';
+      this.player.rotation = 0;
+      this.player.group.rotation.y = 0;
+      this.cameraYaw = Math.PI;
+      this.cameraPitch = 0.25;
+      this.updateCamera(0.016);
+      if (this.world.carMarker) this.world.carMarker.visible = true;
+      if (this.world.carArrow) this.world.carArrow.visible = true;
+      this.setObjective('🚗 Loop naar de auto op de oprijlaan en stap in!');
     } else if (isDrive) {
-      this.wakeupModal.style.display = 'none';
+      this.setupShortcutPlayerState();
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
+      this.player.standUp();
       this.hasBag = true;
       this.world.pickUpSchoolBag();
       this.player.equipBackpack();
       this.speurtochtCountFound = 5;
-      this.handleFrontDoorReached();
+      this.world.openFrontDoor();
       this.boardCar();
       this.world.carGroup.position.set(0, this.world.LOWER_Y, 26.0);
+      this.setObjective('🚗 Rijd voorzichtig naar school!');
     } else if (isGym) {
-      this.wakeupModal.style.display = 'none';
+      this.setupShortcutPlayerState();
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
+      this.hasBag = true;
+      this.world.pickUpSchoolBag();
       this.speurtochtCountFound = 5;
-      this.handleFrontDoorReached();
+      this.world.openFrontDoor();
       this.carBoarded = true;
-      this.arriveAtSchool();
+      this.world.carGroup.position.set(0.5, this.world.LOWER_Y, 76.5);
       this.handleLockerReached();
+      this.player.standUp();
       this.player.position.set(0, this.world.LOWER_Y + 1.25, 109.5);
       this.player.group.position.copy(this.player.position);
       this.player.rotation = 0;
       this.player.group.rotation.y = 0;
       this.cameraYaw = Math.PI;
       this.cameraPitch = 0.25;
+      this.updateCamera(0.016);
       this.setObjective('🤸 Slinger met de 3 touwen over de grote valmat naar de overkant!');
-      this.gameState = 'PLAYING';
     } else if (isSchool) {
-      this.wakeupModal.style.display = 'none';
+      this.setupShortcutPlayerState();
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
+      this.player.standUp();
       this.hasBag = true;
       this.world.pickUpSchoolBag();
       this.player.equipBackpack();
       this.speurtochtCountFound = 5;
-      this.handleFrontDoorReached();
+      this.world.openFrontDoor();
       this.carBoarded = true;
+      this.world.carGroup.position.set(0.5, this.world.LOWER_Y, 76.5);
       this.arriveAtSchool();
+      this.player.standUp();
       this.player.position.set(0, this.world.LOWER_Y, 88.0);
       this.player.group.position.copy(this.player.position);
       this.player.rotation = 0;
       this.player.group.rotation.y = 0;
       this.cameraYaw = Math.PI;
       this.cameraPitch = 0.25;
-      this.gameState = 'PLAYING';
+      this.updateCamera(0.016);
+      this.setObjective('🏫 Je bent op school! Loop naar binnen naar kluisje #7!');
     }
 
     if ((this.gameState === 'PLAYING' || this.gameState === 'DRIVING') && this.startTime === 0) {
@@ -416,6 +417,16 @@ class Game {
       this.timeLeft = this.totalTime;
       this.updateTimerUI();
     }
+  }
+
+  setupShortcutPlayerState() {
+    this.wakeupModal.style.display = 'none';
+    this.gameState = 'PLAYING';
+    sounds.stopAlarm();
+    this.world.stopAlarmClock();
+    this.world.uncoverBed();
+    this.player.standUp();
+    this.updateToiletUI();
   }
 
   showPickupToast(icon, text) {

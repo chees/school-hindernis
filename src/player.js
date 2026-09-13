@@ -713,6 +713,24 @@ export class Player {
     }
   }
 
+  standUp() {
+    this.state = 'ACTIVE';
+    this.bodyGroup.rotation.set(0, 0, 0);
+    this.leftArmPivot.rotation.set(0, 0, 0);
+    this.rightArmPivot.rotation.set(0, 0, 0);
+    this.leftLegPivot.rotation.set(0, 0, 0);
+    this.rightLegPivot.rotation.set(0, 0, 0);
+    this.velocity.set(0, 0, 0);
+    this.isGrounded = true;
+    this.isBedBouncing = false;
+    this.isRopeSwinging = false;
+    this.grabbedRope = null;
+    this.toiletNeed = 0;
+    if (this.thoughtBubbleGroup) {
+      this.thoughtBubbleGroup.visible = false;
+    }
+  }
+
   wakeUp(onComplete) {
     if (this.state !== 'SLEEPING') return;
     this.state = 'WAKING';
