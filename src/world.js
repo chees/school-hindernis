@@ -5163,9 +5163,9 @@ export class GameWorld {
     const minutes = (inGameSeconds % 3600) / 60;
     const seconds = inGameSeconds % 60;
 
-    this.schoolClockHands.hourPivot.rotation.z = -hours * (Math.PI * 2 / 12);
-    this.schoolClockHands.minutePivot.rotation.z = -minutes * (Math.PI * 2 / 60);
-    this.schoolClockHands.secondPivot.rotation.z = -seconds * (Math.PI * 2 / 60);
+    this.schoolClockHands.hourPivot.rotation.z = hours * (Math.PI * 2 / 12);
+    this.schoolClockHands.minutePivot.rotation.z = minutes * (Math.PI * 2 / 60);
+    this.schoolClockHands.secondPivot.rotation.z = seconds * (Math.PI * 2 / 60);
   }
 
   // --- NAAMBORDEN VOOR KLASLOKALEN (GROEP 3 & GROEP 4) ---

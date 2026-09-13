@@ -30,7 +30,7 @@ Dit document bevat permanente kwaliteitscontroles en richtlijnen voor 3D modelin
   - Controleer altijd of tekst en cijfers vanuit het spelersperspectief correct van links naar rechts leesbaar zijn.
 - **Klokken & Wijzers**:
   - Cijfer 12 staat bovenaan, 3 rechts (+X), 6 onderaan (-Y) en 9 links (-X).
-  - Rotatie met de klok mee vanaf 12 uur naar 3 uur is een **negatieve** rotatie om de Z-as (`rotation.z = -angle`).
+  - Rotatie van de wijzers synchroon met de wijzerplaat (bijv. op de gevel) is een positieve Z-rotatie (`rotation.z = angle`), zodat urenwijzer om 07:00 exact naar cijfer 7 wijst.
 
 ---
 
