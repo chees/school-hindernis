@@ -1823,15 +1823,15 @@ class Game {
             }
           }
 
-          // 2. Landing op de finish turnkast (z: 127.8 tot 130.8)
-          if (pPos.z >= 127.8 && pPos.z <= 130.8 && Math.abs(pPos.x) <= 1.25 && pPos.y >= this.world.LOWER_Y + 1.15) {
+          // 2. Landing op de finish turnkast (z: 126.0 tot 128.5)
+          if (pPos.z >= 126.0 && pPos.z <= 128.5 && Math.abs(pPos.x) <= 1.25 && pPos.y >= this.world.LOWER_Y + 1.15) {
             if (!this.world.gymCompleted) {
               this.handleGymCompleted();
             }
           }
 
           // 3. Zachte landing op de dikke valmat
-          if (!this.player.isRopeSwinging && pPos.z >= 110.8 && pPos.z <= 127.6 && Math.abs(pPos.x) <= 3.0) {
+          if (!this.player.isRopeSwinging && pPos.z >= 110.8 && pPos.z <= 126.3 && Math.abs(pPos.x) <= 3.0) {
             if (pPos.y <= this.world.LOWER_Y + 0.42) {
               this.player.lastGrabbedRope = null; // Reset touw-geheugen bij landing op de mat
               if (Math.abs(this.player.velocity.y) > 2.0) {

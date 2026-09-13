@@ -3016,38 +3016,37 @@ export class GameWorld {
 
     // Gymzaal platforms, valmat en oploopbankjes
     if (z >= 105.0 && z <= 136.0) {
-      // 1. Start turnkast platform (z: 108.65 tot 110.35, x: -1.15 tot 1.15)
-      if (x >= -1.15 && x <= 1.15 && z >= 108.65 && z <= 110.35) {
-        if (currentY === null || currentY >= this.LOWER_Y + 0.5) {
+      // 1. Oploop-bankje naar start turnkast (z: 106.2 tot 108.7, x: -0.48 tot 0.48)
+      if (Math.abs(x) <= 0.48 && z >= 106.2 && z <= 108.7) {
+        const rampProgress = Math.max(0, Math.min(1, (z - 106.3) / 2.4));
+        return this.LOWER_Y + rampProgress * 1.25;
+      }
+
+      // Start turnkast platform (z: 108.68 tot 110.35, x: -1.15 tot 1.15)
+      if (Math.abs(x) <= 1.15 && z >= 108.68 && z <= 110.35) {
+        if (currentY === null || currentY >= this.LOWER_Y + 0.5 || Math.abs(x) <= 0.48) {
           return this.LOWER_Y + 1.25;
         }
       }
-      // Oploop-bankje naar start turnkast (z: 106.3 tot 108.7, x: -0.45 tot 0.45)
-      if (x >= -0.45 && x <= 0.45 && z >= 106.3 && z < 108.7) {
-        const rampProgress = (z - 106.3) / 2.4;
-        const rampY = this.LOWER_Y + rampProgress * 1.25;
-        if (currentY === null || currentY >= rampY - 0.45) {
-          return rampY;
-        }
+
+      // 2. Afloop-bankje vanaf finish turnkast (z: 128.0 tot 130.5, x: -0.48 tot 0.48)
+      if (Math.abs(x) <= 0.48 && z >= 128.0 && z <= 130.5) {
+        const rampProgress = Math.max(0, Math.min(1, (130.4 - z) / 2.4));
+        return this.LOWER_Y + rampProgress * 1.25;
       }
-      // 2. Finish platform turnkast (z: 128.15 tot 129.85, x: -1.15 tot 1.15)
-      if (x >= -1.15 && x <= 1.15 && z >= 128.15 && z <= 129.85) {
-        if (currentY === null || currentY >= this.LOWER_Y + 0.5) {
+
+      // Finish platform turnkast (z: 126.38 tot 128.05, x: -1.15 tot 1.15)
+      if (Math.abs(x) <= 1.15 && z >= 126.38 && z <= 128.05) {
+        if (currentY === null || currentY >= this.LOWER_Y + 0.5 || Math.abs(x) <= 0.48) {
           return this.LOWER_Y + 1.25;
         }
       }
-      // Afloop-bankje vanaf finish turnkast (z: 129.8 tot 132.2, x: -0.45 tot 0.45)
-      if (x >= -0.45 && x <= 0.45 && z > 129.8 && z <= 132.2) {
-        const rampProgress = (132.2 - z) / 2.4;
-        const rampY = this.LOWER_Y + rampProgress * 1.25;
-        if (currentY === null || currentY >= rampY - 0.45) {
-          return rampY;
-        }
-      }
-      // 3. Dikke blauwe gymvalmat (z: 110.6 tot 127.8, x: -3.0 tot 3.0)
-      if (x >= -3.0 && x <= 3.0 && z >= 110.6 && z <= 127.8) {
+
+      // 3. Dikke blauwe gymvalmat (z: 110.8 tot 126.3, x: -3.0 tot 3.0)
+      if (Math.abs(x) <= 3.0 && z >= 110.8 && z <= 126.3) {
         return this.LOWER_Y + 0.35;
       }
+
       // 4. Gymbanken langs de zijkanten (hoogte 0.45m)
       if ((x <= -5.8 && x >= -7.2) || (x >= 5.8 && x <= 7.2)) {
         if (z >= 112.0 && z <= 126.0) {
@@ -3104,6 +3103,22 @@ export class GameWorld {
 
     for (const box of this.colliders) {
       if (box.enabled === false) continue;
+
+      // Als dit een turnkast is met een oploop- of afloophelling:
+      // Laat de speler ongehinderd door over de centrale helling/loper lopen
+      if (box.isVaultingBox) {
+        if (box.rampSide === 'south' && Math.abs(newX - box.x) <= 0.55 && newZ <= box.z + 0.1) {
+          if (playerY >= box.minY + 0.25 || playerFeet >= box.maxY - 0.40) {
+            continue;
+          }
+        }
+        if (box.rampSide === 'north' && Math.abs(newX - box.x) <= 0.55 && newZ >= box.z - 0.1) {
+          if (playerY >= box.minY + 0.25 || playerFeet >= box.maxY - 0.40) {
+            continue;
+          }
+        }
+      }
+
       if (playerFeet <= box.maxY && playerHead >= box.minY) {
         if (
           newX + radius > box.minX &&
@@ -4605,7 +4620,7 @@ export class GameWorld {
 
     // === HET APENKOOI-PARCOURS: TURNKAST START, DIKKE VALMAT, TURNKAST FINISH ===
     // A. Start Turnkast (hoogte 1.25m)
-    this.createVaultingBox(0, y, 109.5);
+    this.createVaultingBox(0, y, 109.5, 'south');
 
     // Oploop-bankje (helling) naar de start turnkast (z: 106.3 tot 108.7, midden op 107.5)
     this.createRampBench(0, y, 107.5, true);
@@ -4615,39 +4630,45 @@ export class GameWorld {
     startRingGeo.rotateX(-Math.PI / 2);
     this.gymStartMarker = new THREE.Mesh(startRingGeo, new THREE.MeshBasicMaterial({
       color: 0x10b981,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     }));
     this.gymStartMarker.position.set(0, y + 1.26, 109.5);
     this.scene.add(this.gymStartMarker);
 
-    // B. Grote Dikke Blauwe Gymvalmat (16.8m lang, 6.0m breed, 0.35m dik)
-    const matGeo = new THREE.BoxGeometry(6.0, 0.35, 16.8);
+    // B. Grote Dikke Blauwe Gymvalmat (15.5m lang, 6.0m breed, 0.35m dik, z: 110.8 tot 126.3)
+    const matGeo = new THREE.BoxGeometry(6.0, 0.35, 15.5);
     const matMesh = new THREE.Mesh(matGeo, this.materials.gymBlueMat);
-    matMesh.position.set(0, y + 0.175, 119.2);
+    matMesh.position.set(0, y + 0.175, 118.55);
     matMesh.receiveShadow = true;
     this.scene.add(matMesh);
     this.gymMatMesh = matMesh;
 
     // Rode versterkingsbanden en handgrepen langs de rand van de valmat
-    const borderGeo = new THREE.BoxGeometry(6.1, 0.08, 16.9);
+    const borderGeo = new THREE.BoxGeometry(6.1, 0.08, 15.6);
     const borderMesh = new THREE.Mesh(borderGeo, new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.6 }));
-    borderMesh.position.set(0, y + 0.32, 119.2);
+    borderMesh.position.set(0, y + 0.32, 118.55);
     this.scene.add(borderMesh);
 
-    // C. Finish Turnkast (hoogte 1.25m)
-    this.createVaultingBox(0, y, 129.0);
+    // C. Finish Turnkast (hoogte 1.25m, naar voren verplaatst naar z = 127.2 zodat de sprong vanaf het laatste touw goed te halen is)
+    this.createVaultingBox(0, y, 127.2, 'north');
 
-    // Afloop-bankje (helling) aan de finish turnkast (z: 129.8 tot 132.2, midden op 131.0)
-    this.createRampBench(0, y, 131.0, false);
+    // Afloop-bankje (helling) aan de finish turnkast (z: 128.0 tot 130.4, midden op 129.2)
+    this.createRampBench(0, y, 129.2, false);
 
     // Gouden finishmarker ring bovenop de finish turnkast
     const finishRingGeo = new THREE.RingGeometry(0.5, 0.75, 32);
     finishRingGeo.rotateX(-Math.PI / 2);
     this.gymFinishMarker = new THREE.Mesh(finishRingGeo, new THREE.MeshBasicMaterial({
       color: 0xf59e0b,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
     }));
-    this.gymFinishMarker.position.set(0, y + 1.26, 129.0);
+    this.gymFinishMarker.position.set(0, y + 1.26, 127.2);
     this.scene.add(this.gymFinishMarker);
 
     // Zwevende pijl boven finishplatform
@@ -4658,19 +4679,19 @@ export class GameWorld {
       emissive: 0xd97706,
       emissiveIntensity: 0.95
     }));
-    this.gymFinishArrow.position.set(0, y + 2.5, 129.0);
+    this.gymFinishArrow.position.set(0, y + 2.5, 127.2);
     this.scene.add(this.gymFinishArrow);
 
     // Interactief finish object
     this.interactiveObjects.gymFinish = {
-      position: new THREE.Vector3(0, y + 1.25, 129.0),
+      position: new THREE.Vector3(0, y + 1.25, 127.2),
       radius: 2.0,
       completed: false,
       onInteract: () => this.completeGym()
     };
   }
 
-  createVaultingBox(x, y, z) {
+  createVaultingBox(x, y, z, rampSide = null) {
     const boxGroup = new THREE.Group();
     boxGroup.position.set(x, y, z);
 
@@ -4693,7 +4714,11 @@ export class GameWorld {
     this.colliders.push({
       minX: x - 1.1, maxX: x + 1.1,
       minY: y, maxY: y + 1.25,
-      minZ: z - 0.82, maxZ: z + 0.82
+      minZ: z - 0.82, maxZ: z + 0.82,
+      isVaultingBox: true,
+      rampSide: rampSide,
+      x: x,
+      z: z
     });
   }
 

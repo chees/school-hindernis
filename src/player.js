@@ -827,12 +827,13 @@ export class Player {
 
     // 2. Als de speler op het laatste touw (touw 3) zit: spring naar de finish turnkast!
     if (currentIdx === ropes.length - 1 && ropes.length > 0) {
-      const finishPos = new THREE.Vector3(0, (this.world?.LOWER_Y || 0) + 1.28, 129.0);
+      const finishPos = new THREE.Vector3(0, (this.world?.LOWER_Y || 0) + 1.28, 127.2);
       const distToFinish = this.position.distanceTo(finishPos);
       const dz = finishPos.z - this.position.z;
 
-      if (distToFinish <= 6.2 && dz > 0.3) {
-        const T = Math.max(0.35, Math.min(0.50, distToFinish / 9.0));
+      // Finish turnkast staat op z = 127.2. Als de speler voorwaarts zwaait en binnen bereik is:
+      if (distToFinish <= 7.2 && dz > 0.1) {
+        const T = Math.max(0.38, Math.min(0.55, distToFinish / 8.5));
         const vx = (finishPos.x - this.position.x) / T;
         const vz = (finishPos.z - this.position.z) / T;
         const vy = (finishPos.y - this.position.y - 0.5 * this.gravity * T * T) / T;
