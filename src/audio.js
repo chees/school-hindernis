@@ -808,6 +808,140 @@ class SoundEffects {
     boxOsc.start(now + 0.02);
     boxOsc.stop(now + 0.45);
   }
+
+  // Klimtouw grijpen (korte vezel-grip & spanning)
+  playRopeGrab() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.08);
+
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.09);
+
+    // Korte frictie-ruis voor het grijpen van gevlochten touw
+    const bufferSize = this.ctx.sampleRate * 0.06;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.25));
+    }
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 850;
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.18, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.ctx.destination);
+    noise.start(now);
+  }
+
+  // Slinger-whoosh door de lucht
+  playRopeSwing() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.linearRampToValueAtTime(340, now + 0.15);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.35);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.35);
+  }
+
+  // Zachte ploflanding op de dikke blauwe gymvalmat
+  playMatBounce() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(110, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.22);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
+
+  // Juichende kinderen & applaus in de gymzaal
+  playKidsCheer() {
+    if (this.muted || !this.ctx) return;
+    this.init();
+
+    const now = this.ctx.currentTime;
+
+    // 1. Feestelijk juichakkoord (C - E - G - C)
+    const freqs = [523.25, 659.25, 783.99, 1046.5];
+    freqs.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+      osc.frequency.linearRampToValueAtTime(freq * 1.08, now + idx * 0.08 + 0.4);
+
+      gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+      gain.gain.linearRampToValueAtTime(0.15, now + idx * 0.08 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.65);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.08);
+      osc.stop(now + idx * 0.08 + 0.7);
+    });
+
+    // 2. Synthetisch handgeklap (reeks korte snelle tikjes)
+    for (let c = 0; c < 12; c++) {
+      const clapTime = now + 0.15 + c * 0.07 + (Math.random() * 0.03);
+      const clapOsc = this.ctx.createOscillator();
+      const clapGain = this.ctx.createGain();
+      clapOsc.type = 'bandpass';
+      clapOsc.frequency.setValueAtTime(1100 + Math.random() * 600, clapTime);
+
+      clapGain.gain.setValueAtTime(0.12, clapTime);
+      clapGain.gain.exponentialRampToValueAtTime(0.001, clapTime + 0.04);
+
+      clapOsc.connect(clapGain);
+      clapGain.connect(this.ctx.destination);
+      clapOsc.start(clapTime);
+      clapOsc.stop(clapTime + 0.045);
+    }
+  }
 }
 
 export const sounds = new SoundEffects();
+

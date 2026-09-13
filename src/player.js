@@ -39,6 +39,12 @@ export class Player {
     this.isBedBouncing = false;
     this.bedBouncePoseTimer = 0;
 
+    // Gymzaal & Klimtouw toestand
+    this.isRopeSwinging = false;
+    this.grabbedRope = null;
+    this.ropeCooldown = 0;
+    this.isSittingAtDesk = false;
+
     this.group = new THREE.Group();
     this.buildCharacter();
     this.createThoughtBubble();
@@ -752,8 +758,56 @@ export class Player {
     this.isGrounded = false;
   }
 
+  grabRope(rope) {
+    if (this.isRopeSwinging || this.ropeCooldown > 0) return false;
+    this.isRopeSwinging = true;
+    this.grabbedRope = rope;
+    this.velocity.set(0, 0, 0);
+    this.isGrounded = false;
+    this.isBedBouncing = false;
+    return true;
+  }
+
+  releaseRope() {
+    if (!this.isRopeSwinging || !this.grabbedRope) return false;
+    const vel = this.grabbedRope.getLinearVelocity();
+    this.isRopeSwinging = false;
+    this.grabbedRope = null;
+    this.ropeCooldown = 0.35;
+    this.isGrounded = false;
+
+    // Afzetimpuls: behoud van slingersnelheid + sterke voorwaartse boost richting volgend touw
+    this.velocity.x = 0;
+    this.velocity.y = Math.max(3.8, vel.y + 3.4);
+    this.velocity.z = Math.max(3.6, vel.z + 4.4);
+    this.group.rotation.x = 0;
+    return 'ROPE_RELEASE';
+  }
+
+  sitAtDesk(chairPos) {
+    this.isSittingAtDesk = true;
+    this.isRopeSwinging = false;
+    this.grabbedRope = null;
+    this.position.copy(chairPos);
+    this.rotation = Math.PI / 2; // Kijkt naar het bord (oosten)
+    this.group.position.copy(this.position);
+    this.group.rotation.y = this.rotation;
+    this.group.rotation.x = 0;
+
+    // Zithouding
+    this.leftLegPivot.rotation.x = -1.45;
+    this.rightLegPivot.rotation.x = -1.45;
+    this.leftArmPivot.rotation.x = -0.7;
+    this.rightArmPivot.rotation.x = -0.7;
+  }
+
   jump() {
     if (this.state !== 'ACTIVE') return false;
+
+    // Als de speler aan het klimtouw hangt: laat los en spring voorwaarts!
+    if (this.isRopeSwinging && this.grabbedRope) {
+      return this.releaseRope();
+    }
 
     // Check of speler op het bed staat of vlak erboven
     const onBed = this.world && this.world.isOnBed(this.position.x, this.position.z, this.position.y);
@@ -774,6 +828,50 @@ export class Player {
 
   update(dt, inputVector, cameraAngle, soundManager, camera) {
     if (this.state !== 'ACTIVE') return;
+
+    if (this.ropeCooldown > 0) {
+      this.ropeCooldown = Math.max(0, this.ropeCooldown - dt);
+    }
+
+    if (this.isSittingAtDesk) {
+      if (camera) {
+        this.updateThoughtBubble(camera);
+      }
+      return;
+    }
+
+    // --- KLIMTOUW SLINGER-FYSIKA ---
+    if (this.isRopeSwinging && this.grabbedRope) {
+      const knot = this.grabbedRope.knotPos;
+      // Handen grijpen de knoop: speler hangt net onder de knoop
+      this.position.set(knot.x, knot.y - 0.92, knot.z);
+      this.rotation = 0; // Kijkt vooruit richting finish (+Z)
+
+      this.group.position.copy(this.position);
+      this.group.rotation.y = 0;
+      this.group.rotation.x = -this.grabbedRope.angle * 0.75;
+
+      // Armen omhoog geheven om het touw vast te grijpen
+      this.leftArmPivot.rotation.x = -2.85;
+      this.rightArmPivot.rotation.x = -2.85;
+      this.leftArmPivot.rotation.z = -0.16;
+      this.rightArmPivot.rotation.z = 0.16;
+
+      // Benen opgetrokken
+      this.leftLegPivot.rotation.x = 0.55;
+      this.rightLegPivot.rotation.x = 0.55;
+      this.leftLegPivot.rotation.z = 0;
+      this.rightLegPivot.rotation.z = 0;
+
+      if (camera) {
+        this.updateThoughtBubble(camera);
+        this.updateWheeeBubble(camera, dt);
+      }
+      return;
+    }
+
+    // Reset kanteling als speler niet meer aan een touw hangt
+    this.group.rotation.x = 0;
 
     const isMoving = inputVector.lengthSq() > 0.01;
 

@@ -8,6 +8,14 @@ export class GameWorld {
     this.interactiveObjects = {};
     this.animatedObjects = [];
     this.speurtochtItems = {};
+    this.gymRopes = [];
+    this.kidNPCs = [];
+    this.gymCompleted = false;
+    this.gymStartMarker = null;
+    this.gymFinishMarker = null;
+    this.gymFinishArrow = null;
+    this.deskMarker = null;
+    this.deskArrow = null;
 
     // Verdiepingshoogtes
     this.UPPER_Y = 3.6;
@@ -229,6 +237,25 @@ export class GameWorld {
       lockerGreen: new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.3, roughness: 0.4 }),
       lockerPink: new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.3, roughness: 0.4 }),
       lockerInside: new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.5, roughness: 0.5 }),
+
+      // Gymzaal & Klaslokalen materialen
+      gymFloor: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.32 }),
+      gymLineWhite: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      gymLineYellow: new THREE.MeshBasicMaterial({ color: 0xfacc15 }),
+      gymLineRed: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
+      gymWall: new THREE.MeshStandardMaterial({ color: 0xfef9c3, roughness: 0.6 }),
+      gymBlueMat: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.55 }),
+      gymWood: new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 }),
+      gymLeather: new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.8 }),
+      gymRope: new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.9 }),
+      gymRopeWrap: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 }),
+      blackboardMat: new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.7 }),
+      classroomFloor: new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.4 }),
+      craftFloor: new THREE.MeshStandardMaterial({ color: 0xdcfce7, roughness: 0.4 }),
+      deskWood: new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.4 }),
+      deskFrame: new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.4 }),
+      chairPlastic: new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 }),
+      chairWood: new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.5 }),
 
       // Woonkamer & Eethoek materialen
       sofaFabric: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 }), // Stijlvol warm leisteen/antraciet textiel
@@ -2986,6 +3013,50 @@ export class GameWorld {
       }
     }
 
+    // Gymzaal platforms, valmat en oploopbankjes
+    if (z >= 105.0 && z <= 136.0) {
+      // 1. Start turnkast platform (z: 108.6 tot 110.5, x: -1.2 tot 1.2)
+      if (x >= -1.2 && x <= 1.2 && z >= 108.6 && z <= 110.5) {
+        if (currentY === null || currentY >= this.LOWER_Y + 0.5) {
+          return this.LOWER_Y + 1.25;
+        }
+      }
+      // Oploop-bankje naar start turnkast (z: 106.8 tot 108.6, x: -0.65 tot 0.65)
+      if (x >= -0.65 && x <= 0.65 && z >= 106.8 && z < 108.6) {
+        const rampProgress = (z - 106.8) / 1.8;
+        const rampY = this.LOWER_Y + 0.2 + rampProgress * 1.05;
+        if (currentY === null || currentY >= rampY - 0.4) {
+          return rampY;
+        }
+      }
+      // 2. Finish platform turnkast (z: 128.0 tot 129.8, x: -1.2 tot 1.2)
+      if (x >= -1.2 && x <= 1.2 && z >= 128.0 && z <= 129.8) {
+        if (currentY === null || currentY >= this.LOWER_Y + 0.5) {
+          return this.LOWER_Y + 1.25;
+        }
+      }
+      // Afloop-bankje vanaf finish turnkast (z: 129.8 tot 131.6, x: -0.65 tot 0.65)
+      if (x >= -0.65 && x <= 0.65 && z > 129.8 && z <= 131.6) {
+        const rampProgress = (131.6 - z) / 1.8;
+        const rampY = this.LOWER_Y + 0.2 + rampProgress * 1.05;
+        if (currentY === null || currentY >= rampY - 0.4) {
+          return rampY;
+        }
+      }
+      // 3. Dikke blauwe gymvalmat (z: 110.6 tot 127.8, x: -3.0 tot 3.0)
+      if (x >= -3.0 && x <= 3.0 && z >= 110.6 && z <= 127.8) {
+        return this.LOWER_Y + 0.35;
+      }
+      // 4. Gymbanken langs de zijkanten (hoogte 0.45m)
+      if ((x <= -5.8 && x >= -7.2) || (x >= 5.8 && x <= 7.2)) {
+        if (z >= 112.0 && z <= 126.0) {
+          if (currentY === null || currentY >= this.LOWER_Y + 0.25) {
+            return this.LOWER_Y + 0.45;
+          }
+        }
+      }
+    }
+
     return this.LOWER_Y;
   }
 
@@ -3140,6 +3211,32 @@ export class GameWorld {
     if (this.lockerArrow && this.lockerArrow.visible) {
       this.lockerArrow.position.y = this.LOWER_Y + 2.0 + Math.sin(elapsed * 4.5) * 0.14;
       this.lockerArrow.rotation.y += dt * 2.0;
+    }
+
+    // Klimtouwen in de gymzaal updaten
+    if (this.gymRopes) {
+      for (const rope of this.gymRopes) {
+        rope.update(elapsed);
+      }
+    }
+
+    // Toekijkende kinderen in de gymzaal updaten
+    if (this.kidNPCs) {
+      for (const kid of this.kidNPCs) {
+        kid.update(dt, elapsed, this.gymCompleted);
+      }
+    }
+
+    // Zwevende pijl boven de finish turnkast
+    if (this.gymFinishArrow && this.gymFinishArrow.visible) {
+      this.gymFinishArrow.position.y = this.LOWER_Y + 2.5 + Math.sin(elapsed * 4.5) * 0.14;
+      this.gymFinishArrow.rotation.y += dt * 2.0;
+    }
+
+    // Zwevende pijl boven jouw schoolbankje
+    if (this.deskArrow && this.deskArrow.visible) {
+      this.deskArrow.position.y = this.LOWER_Y + 1.8 + Math.sin(elapsed * 4.5) * 0.14;
+      this.deskArrow.rotation.y += dt * 2.0;
     }
   }
 
@@ -3795,12 +3892,47 @@ export class GameWorld {
     this.scene.add(hallFloor);
 
     // Binnenwanden van de schoolgang
-    // Linkerwand (x = -6.0)
+    // Linkerwand (x = -6.0) met kluisjeswand
     this.addWall(-6.0, y + 2.0, hallwayZCenter, 0.2, 4.0, hallwayLength, this.materials.schoolWallInterior);
-    // Rechterwand (x = 6.0)
-    this.addWall(6.0, y + 2.0, hallwayZCenter, 0.2, 4.0, hallwayLength, this.materials.schoolWallInterior);
-    // Achterwand (z = 105.0)
-    this.addWall(0, y + 2.0, 105.0, 12.0, 4.0, 0.2, this.materials.schoolWallInterior);
+
+    // Rechterwand (x = 6.0) met doorgangen naar Groep 3 (z: 88.8 - 91.2) en Groep 4 (z: 96.8 - 99.2)
+    // Deel 1: z: 86.0 tot 88.8
+    this.addWall(6.0, y + 2.0, 87.4, 0.2, 4.0, 2.8, this.materials.schoolWallInterior);
+    // Boven doorgang Groep 3 (z: 88.8 tot 91.2, y: 2.8 tot 4.0)
+    this.addWall(6.0, y + 3.4, 90.0, 0.2, 1.2, 2.4, this.materials.schoolWallInterior);
+    // Deel 2: z: 91.2 tot 96.8
+    this.addWall(6.0, y + 2.0, 94.0, 0.2, 4.0, 5.6, this.materials.schoolWallInterior);
+    // Boven doorgang Groep 4 (z: 96.8 tot 99.2, y: 2.8 tot 4.0)
+    this.addWall(6.0, y + 3.4, 98.0, 0.2, 1.2, 2.4, this.materials.schoolWallInterior);
+    // Deel 3: z: 99.2 tot 105.0
+    this.addWall(6.0, y + 2.0, 102.1, 0.2, 4.0, 5.8, this.materials.schoolWallInterior);
+
+    // Naamborden boven klaslokaaldoorgangen
+    const sign3Geo = new THREE.BoxGeometry(0.12, 0.38, 1.8);
+    const sign3 = new THREE.Mesh(sign3Geo, this.materials.schoolDoorMat);
+    sign3.position.set(5.9, y + 2.95, 90.0);
+    this.scene.add(sign3);
+
+    const sign4Geo = new THREE.BoxGeometry(0.12, 0.38, 1.8);
+    const sign4Mat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 });
+    const sign4 = new THREE.Mesh(sign4Geo, sign4Mat);
+    sign4.position.set(5.9, y + 2.95, 98.0);
+    this.scene.add(sign4);
+
+    // Achterwand van de gang (z = 105.0) met grote dubbele doorgang naar de GYMZAAL (x: -2.0 tot 2.0)
+    // Linkerpaneel (x: -6.0 tot -2.0)
+    this.addWall(-4.0, y + 2.0, 105.0, 4.0, 4.0, 0.2, this.materials.schoolWallInterior);
+    // Rechterpaneel (x: 2.0 tot 6.0)
+    this.addWall(4.0, y + 2.0, 105.0, 4.0, 4.0, 0.2, this.materials.schoolWallInterior);
+    // Boven gymdoorgang (x: -2.0 tot 2.0, y: 3.2 tot 4.0)
+    this.addWall(0, y + 3.6, 105.0, 4.0, 0.8, 0.2, this.materials.schoolWallInterior);
+
+    // Groot bord boven entree naar de gymzaal: "🏀 GYMZAAL • APENKOOI 🤸"
+    const gymSignGeo = new THREE.BoxGeometry(3.6, 0.55, 0.12);
+    const gymSignMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.35 });
+    const gymSign = new THREE.Mesh(gymSignGeo, gymSignMat);
+    gymSign.position.set(0, y + 3.55, 104.9);
+    this.scene.add(gymSign);
 
     // Plafond schoolgang
     const ceilingGeo = new THREE.BoxGeometry(12.0, 0.2, hallwayLength);
@@ -3818,21 +3950,15 @@ export class GameWorld {
     hallLight2.position.set(0, y + 3.4, 99.0);
     this.scene.add(hallLight2);
 
-    // Klaslokaaldeuren op de rechterwand (x = 5.9)
-    const classDoors = [
-      { z: 90.0, label: 'Groep 3' },
-      { z: 95.0, label: 'Groep 4' },
-      { z: 100.0, label: 'Groep 5' }
-    ];
-    for (const cd of classDoors) {
-      const cDoorGeo = new THREE.BoxGeometry(0.08, 2.4, 1.3);
-      const cDoor = new THREE.Mesh(cDoorGeo, this.materials.schoolDoorMat);
-      cDoor.position.set(5.88, y + 1.2, cd.z);
-      this.scene.add(cDoor);
-    }
-
     // 4. De Kluisjeswand (Kluisjes) op de linkerwand (x = -5.7, z: 92.0 tot 96.0)
     this.createLockersBank(-5.7, y, 94.0);
+
+    // 5. De Lokalen en Gymzaal aanmaken
+    this.createClassroomGroep3(y);
+    this.createClassroomGroep4(y);
+    this.createGymHall(y);
+    this.createGymRopes(y);
+    this.createKidNPCs(y);
   }
 
   createLockersBank(x, y, z) {
@@ -3975,4 +4101,821 @@ export class GameWorld {
     if (this.lockerArrow) this.lockerArrow.visible = false;
     if (this.lockerMarker) this.lockerMarker.visible = false;
   }
+
+  // --- LOKAAL 1: GROEP 3 (KNUTSEL- EN TEKENLOKAAL) ---
+  createClassroomGroep3(y) {
+    const roomW = 9.8;
+    const roomL = 7.8;
+    const centerX = 6.0 + roomW / 2; // 10.9
+    const centerZ = 86.1 + roomL / 2; // 90.0
+
+    // Vloer (vrolijk linoleum knutselgroen)
+    const floorGeo = new THREE.BoxGeometry(roomW, 0.2, roomL);
+    const floor = new THREE.Mesh(floorGeo, this.materials.craftFloor);
+    floor.position.set(centerX, y - 0.1, centerZ);
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    // Muren
+    // Noordmuur (z = 86.1)
+    this.addWall(centerX, y + 2.0, 86.1, roomW, 4.0, 0.2, this.materials.schoolWallInterior);
+    // Oostmuur (buitenmuur x = 15.8)
+    this.addWall(6.0 + roomW, y + 2.0, centerZ, 0.2, 4.0, roomL, this.materials.schoolWallInterior);
+    // Zuidmuur (scheidingswand met Groep 4, z = 94.0)
+    this.addWall(centerX, y + 2.0, 94.0, roomW, 4.0, 0.2, this.materials.schoolWallInterior);
+
+    // Plafond
+    const ceilingGeo = new THREE.BoxGeometry(roomW, 0.2, roomL);
+    const ceiling = new THREE.Mesh(ceilingGeo, this.materials.wallUpper);
+    ceiling.position.set(centerX, y + 4.0, centerZ);
+    this.scene.add(ceiling);
+    this.cameraOccluders.push(ceiling);
+
+    // Verlichting
+    const light = new THREE.PointLight(0xfef08a, 0.85, 12);
+    light.position.set(centerX, y + 3.4, centerZ);
+    this.scene.add(light);
+
+    // Grote knutseltafel 1 (z = 88.8)
+    this.createCraftTable(centerX, y, 88.8);
+    // Grote knutseltafel 2 (z = 91.6)
+    this.createCraftTable(centerX, y, 91.6);
+
+    // Schildersezels met kinder-kunstwerken aan de oostwand
+    this.createEasel(14.5, y, 88.2, -Math.PI / 2, 0xef4444);
+    this.createEasel(14.5, y, 91.8, -Math.PI / 2, 0x3b82f6);
+
+    // Prikbord vol tekeningen aan de oostwand
+    const boardGeo = new THREE.BoxGeometry(0.08, 1.6, 3.2);
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.9 });
+    const board = new THREE.Mesh(boardGeo, boardMat);
+    board.position.set(15.7, y + 2.0, 90.0);
+    this.scene.add(board);
+
+    // Kleurige kunstwerkjes op het prikbord
+    const artColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0xa855f7];
+    for (let i = 0; i < 4; i++) {
+      const artGeo = new THREE.PlaneGeometry(0.65, 0.55);
+      artGeo.rotateY(-Math.PI / 2);
+      const art = new THREE.Mesh(artGeo, new THREE.MeshBasicMaterial({ color: artColors[i % artColors.length] }));
+      art.position.set(15.65, y + 1.7 + (i % 2) * 0.6, 88.9 + Math.floor(i / 2) * 1.5);
+      this.scene.add(art);
+    }
+  }
+
+  createCraftTable(x, y, z) {
+    // Tafelblad
+    const topGeo = new THREE.BoxGeometry(3.6, 0.12, 1.6);
+    const top = new THREE.Mesh(topGeo, this.materials.deskWood);
+    top.position.set(x, y + 0.72, z);
+    top.castShadow = true;
+    this.scene.add(top);
+
+    // Poten
+    for (const dx of [-1.6, 1.6]) {
+      for (const dz of [-0.65, 0.65]) {
+        const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.72, 8);
+        const leg = new THREE.Mesh(legGeo, this.materials.deskFrame);
+        leg.position.set(x + dx, y + 0.36, z + dz);
+        this.scene.add(leg);
+      }
+    }
+
+    // Verfpotjes en kwasten op tafel
+    const colors = [0xef4444, 0x3b82f6, 0x10b981, 0xfacc15];
+    for (let i = 0; i < colors.length; i++) {
+      const potGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.14, 10);
+      const potMat = new THREE.MeshStandardMaterial({ color: colors[i], roughness: 0.3 });
+      const pot = new THREE.Mesh(potGeo, potMat);
+      pot.position.set(x - 0.9 + i * 0.6, y + 0.85, z);
+      this.scene.add(pot);
+    }
+
+    // 4 Stoeltjes om de tafel
+    this.createChair(x - 1.0, y, z - 1.1, 0, 0x0284c7);
+    this.createChair(x + 1.0, y, z - 1.1, 0, 0xef4444);
+    this.createChair(x - 1.0, y, z + 1.1, Math.PI, 0x10b981);
+    this.createChair(x + 1.0, y, z + 1.1, Math.PI, 0xf59e0b);
+
+    // Collider voor tafel
+    this.colliders.push({
+      minX: x - 1.85, maxX: x + 1.85,
+      minY: y, maxY: y + 0.85,
+      minZ: z - 0.85, maxZ: z + 0.85
+    });
+  }
+
+  createEasel(x, y, z, rotY, canvasColor) {
+    const easelGroup = new THREE.Group();
+    easelGroup.position.set(x, y, z);
+    easelGroup.rotation.y = rotY;
+
+    // Driepoot van hout
+    const legGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.8, 6);
+    const leg1 = new THREE.Mesh(legGeo, this.materials.chairWood);
+    leg1.position.set(-0.35, 0.9, 0.1);
+    leg1.rotation.z = -0.15;
+    easelGroup.add(leg1);
+
+    const leg2 = new THREE.Mesh(legGeo, this.materials.chairWood);
+    leg2.position.set(0.35, 0.9, 0.1);
+    leg2.rotation.z = 0.15;
+    easelGroup.add(leg2);
+
+    const leg3 = new THREE.Mesh(legGeo, this.materials.chairWood);
+    leg3.position.set(0, 0.9, -0.45);
+    leg3.rotation.x = -0.22;
+    easelGroup.add(leg3);
+
+    // Doek / Canvas met schilderij
+    const canvasGeo = new THREE.BoxGeometry(0.85, 0.7, 0.04);
+    const canvasMat = new THREE.MeshStandardMaterial({ color: canvasColor, roughness: 0.6 });
+    const canvas = new THREE.Mesh(canvasGeo, canvasMat);
+    canvas.position.set(0, 1.15, 0.05);
+    canvas.rotation.x = 0.12;
+    easelGroup.add(canvas);
+
+    this.scene.add(easelGroup);
+  }
+
+  createChair(x, y, z, rotY, color) {
+    const chairGroup = new THREE.Group();
+    chairGroup.position.set(x, y, z);
+    chairGroup.rotation.y = rotY;
+
+    const seatMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+
+    // Zitting
+    const seatGeo = new THREE.BoxGeometry(0.42, 0.06, 0.42);
+    const seat = new THREE.Mesh(seatGeo, seatMat);
+    seat.position.set(0, 0.45, 0);
+    chairGroup.add(seat);
+
+    // Rugleuning
+    const backGeo = new THREE.BoxGeometry(0.42, 0.35, 0.04);
+    const back = new THREE.Mesh(backGeo, seatMat);
+    back.position.set(0, 0.72, -0.19);
+    chairGroup.add(back);
+
+    // Poten
+    for (const dx of [-0.18, 0.18]) {
+      for (const dz of [-0.18, 0.18]) {
+        const legGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.45, 6);
+        const leg = new THREE.Mesh(legGeo, this.materials.deskFrame);
+        leg.position.set(dx, 0.225, dz);
+        chairGroup.add(leg);
+      }
+    }
+
+    this.scene.add(chairGroup);
+  }
+
+  // --- LOKAAL 2: GROEP 4 (JOUW EIGEN KLASLOKAAL) ---
+  createClassroomGroep4(y) {
+    const roomW = 9.8;
+    const roomL = 10.3;
+    const centerX = 6.0 + roomW / 2; // 10.9
+    const centerZ = 94.1 + roomL / 2; // 99.25
+
+    // Vloer (warme houten parketvloer)
+    const floorGeo = new THREE.BoxGeometry(roomW, 0.2, roomL);
+    const floor = new THREE.Mesh(floorGeo, this.materials.classroomFloor);
+    floor.position.set(centerX, y - 0.1, centerZ);
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    // Muren
+    // Oostmuur (x = 15.8)
+    this.addWall(6.0 + roomW, y + 2.0, centerZ, 0.2, 4.0, roomL, this.materials.schoolWallInterior);
+    // Zuidmuur (z = 104.4)
+    this.addWall(centerX, y + 2.0, 94.1 + roomL, roomW, 4.0, 0.2, this.materials.schoolWallInterior);
+
+    // Plafond
+    const ceilingGeo = new THREE.BoxGeometry(roomW, 0.2, roomL);
+    const ceiling = new THREE.Mesh(ceilingGeo, this.materials.wallUpper);
+    ceiling.position.set(centerX, y + 4.0, centerZ);
+    this.scene.add(ceiling);
+    this.cameraOccluders.push(ceiling);
+
+    // Verlichting
+    const light = new THREE.PointLight(0xfff7ed, 0.95, 14);
+    light.position.set(centerX, y + 3.4, centerZ);
+    this.scene.add(light);
+
+    // Krijtbord aan de oostwand: "Welkom in Groep 4! ✨"
+    const boardFrameGeo = new THREE.BoxGeometry(0.12, 2.0, 4.8);
+    const boardFrame = new THREE.Mesh(boardFrameGeo, this.materials.chairWood);
+    boardFrame.position.set(15.7, y + 2.1, 99.2);
+    this.scene.add(boardFrame);
+
+    const boardSlateGeo = new THREE.BoxGeometry(0.14, 1.8, 4.5);
+    const boardSlate = new THREE.Mesh(boardSlateGeo, this.materials.blackboardMat);
+    boardSlate.position.set(15.68, y + 2.1, 99.2);
+    this.scene.add(boardSlate);
+
+    // Krijt richel onder het bord
+    const chalkLedgeGeo = new THREE.BoxGeometry(0.24, 0.06, 4.6);
+    const chalkLedge = new THREE.Mesh(chalkLedgeGeo, this.materials.chairWood);
+    chalkLedge.position.set(15.65, y + 1.15, 99.2);
+    this.scene.add(chalkLedge);
+
+    // Lessenaar / Bureau van de Meester/Juf (x = 13.5, z = 96.0)
+    const teacherDeskGeo = new THREE.BoxGeometry(2.0, 0.76, 1.0);
+    const teacherDesk = new THREE.Mesh(teacherDeskGeo, this.materials.deskWood);
+    teacherDesk.position.set(13.5, y + 0.38, 96.0);
+    this.scene.add(teacherDesk);
+    this.colliders.push({ minX: 12.4, maxX: 14.6, minY: y, maxY: y + 0.8, minZ: 95.4, maxZ: 96.6 });
+
+    // Laptop & Wereldbol op meesterbureau
+    const globeGeo = new THREE.SphereGeometry(0.16, 12, 12);
+    const globeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
+    const globe = new THREE.Mesh(globeGeo, globeMat);
+    globe.position.set(14.0, y + 0.95, 96.0);
+    this.scene.add(globe);
+
+    // Stoel meester
+    this.createChair(13.5, y, 95.2, 0, 0x1e293b);
+
+    // Rijen dubbele schoolbanken voor de leerlingen
+    // Rij 1: Jouw bankje (x = 9.5, z = 97.4) en buurbankje (x = 9.5, z = 101.5)
+    this.createStudentDesk(9.5, y, 101.5, false);
+    // Rij 2: achterste bankjes
+    this.createStudentDesk(7.5, y, 97.4, false);
+    this.createStudentDesk(7.5, y, 101.5, false);
+
+    // === HET BANKJE VAN DE SPELER (JOUW BANKJE!) ===
+    this.createStudentDesk(9.5, y, 97.4, true);
+
+    // Boekenkast aan de zuidmuur (z = 104.2)
+    const bookCaseGeo = new THREE.BoxGeometry(3.0, 2.2, 0.6);
+    const bookCase = new THREE.Mesh(bookCaseGeo, this.materials.chairWood);
+    bookCase.position.set(11.0, y + 1.1, 104.1);
+    this.scene.add(bookCase);
+    this.colliders.push({ minX: 9.4, maxX: 12.6, minY: y, maxY: y + 2.2, minZ: 103.7, maxZ: 104.4 });
+  }
+
+  createStudentDesk(x, y, z, isPlayerDesk = false) {
+    const deskGroup = new THREE.Group();
+    deskGroup.position.set(x, y, z);
+
+    // Houten dubbel bureaublad
+    const topGeo = new THREE.BoxGeometry(1.4, 0.08, 0.75);
+    const top = new THREE.Mesh(topGeo, this.materials.deskWood);
+    top.position.set(0, 0.72, 0);
+    top.castShadow = true;
+    deskGroup.add(top);
+
+    // Metalen onderstel / poten
+    for (const dx of [-0.62, 0.62]) {
+      for (const dz of [-0.3, 0.3]) {
+        const legGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.72, 8);
+        const leg = new THREE.Mesh(legGeo, this.materials.deskFrame);
+        leg.position.set(dx, 0.36, dz);
+        deskGroup.add(leg);
+      }
+    }
+
+    // Twee stoeltjes achter het bankje (naar oosten gericht richting krijtbord)
+    this.createChair(x - 0.65, y, z - 0.22, Math.PI / 2, 0x0284c7);
+    this.createChair(x - 0.65, y, z + 0.22, Math.PI / 2, 0x0284c7);
+
+    // Schrijfschrift en etui op tafel
+    const bookGeo = new THREE.BoxGeometry(0.24, 0.03, 0.32);
+    const bookMat = new THREE.MeshStandardMaterial({ color: isPlayerDesk ? 0xf59e0b : 0xef4444, roughness: 0.5 });
+    const book = new THREE.Mesh(bookGeo, bookMat);
+    book.position.set(-0.15, 0.78, 0.15);
+    deskGroup.add(book);
+
+    if (isPlayerDesk) {
+      // Gouden naambordje "JOUW PLEKJE"
+      const nameplateGeo = new THREE.BoxGeometry(0.32, 0.08, 0.08);
+      const nameplate = new THREE.Mesh(nameplateGeo, this.materials.itemGold);
+      nameplate.position.set(0.15, 0.8, -0.15);
+      deskGroup.add(nameplate);
+
+      // Vloermarker (gouden ring)
+      const ringGeo = new THREE.RingGeometry(0.45, 0.7, 32);
+      ringGeo.rotateX(-Math.PI / 2);
+      this.deskMarker = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        side: THREE.DoubleSide
+      }));
+      this.deskMarker.position.set(x - 0.65, y + 0.01, z);
+      this.deskMarker.visible = false;
+      this.scene.add(this.deskMarker);
+
+      // Zwevende pijl boven jouw plekje
+      const arrowGeo = new THREE.ConeGeometry(0.22, 0.44, 16);
+      arrowGeo.rotateX(Math.PI);
+      this.deskArrow = new THREE.Mesh(arrowGeo, new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.8
+      }));
+      this.deskArrow.position.set(x - 0.65, y + 1.8, z);
+      this.deskArrow.visible = false;
+      this.scene.add(this.deskArrow);
+
+      // Interactief doel: plaatsnemen aan je schoolbankje
+      this.interactiveObjects.playerDesk = {
+        position: new THREE.Vector3(x - 0.65, y, z),
+        radius: 2.0,
+        completed: false,
+        onInteract: () => {}
+      };
+    }
+
+    this.scene.add(deskGroup);
+
+    this.colliders.push({
+      minX: x - 0.75, maxX: x + 0.75,
+      minY: y, maxY: y + 0.8,
+      minZ: z - 0.45, maxZ: z + 0.45
+    });
+  }
+
+  // --- HET SPORTPARCOURS: DE GYMZAAL ---
+  createGymHall(y) {
+    const gymW = 20.0;
+    const gymL = 31.0;
+    const gymH = 6.6;
+    const centerX = 0.0;
+    const centerZ = 120.5;
+
+    // 1. Houten sportvloer met glanzend gym-parket
+    const floorGeo = new THREE.BoxGeometry(gymW, 0.2, gymL);
+    const floor = new THREE.Mesh(floorGeo, this.materials.gymFloor);
+    floor.position.set(centerX, y - 0.1, centerZ);
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    // Belijning op de sportvloer
+    const lineMat = this.materials.gymLineWhite;
+    // Buitenlijnen
+    const courtBorder = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.PlaneGeometry(16.0, 26.0)),
+      new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 })
+    );
+    courtBorder.rotation.x = -Math.PI / 2;
+    courtBorder.position.set(centerX, y + 0.01, centerZ);
+    this.scene.add(courtBorder);
+
+    // Middenlijn & Middenstip
+    const centerCircle = new THREE.Mesh(
+      new THREE.RingGeometry(1.6, 1.7, 32),
+      new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide })
+    );
+    centerCircle.rotation.x = -Math.PI / 2;
+    centerCircle.position.set(centerX, y + 0.012, centerZ);
+    this.scene.add(centerCircle);
+
+    // 2. Wanden van de gymzaal
+    // Noordmuur (z = 105.0): wand met doorgang vanuit de schoolgang
+    this.addWall(-6.0, y + 3.3, 105.0, 8.0, gymH, 0.3, this.materials.gymWall);
+    this.addWall(6.0, y + 3.3, 105.0, 8.0, gymH, 0.3, this.materials.gymWall);
+    this.addWall(0, y + 4.9, 105.0, 4.0, gymH - 3.2, 0.3, this.materials.gymWall);
+
+    // Zuidmuur (z = 136.0, achterwand gymzaal)
+    this.addWall(centerX, y + 3.3, 136.0, gymW, gymH, 0.3, this.materials.gymWall);
+
+    // Westmuur (x = -10.0)
+    this.addWall(-10.0, y + 3.3, centerZ, 0.3, gymH, gymL, this.materials.gymWall);
+
+    // Oostmuur (x = 10.0)
+    this.addWall(10.0, y + 3.3, centerZ, 0.3, gymH, gymL, this.materials.gymWall);
+
+    // 3. Wandrekken (Klimrekken) tegen de westmuur
+    this.createRibstalls(-9.82, y, 114.0);
+    this.createRibstalls(-9.82, y, 124.0);
+
+    // 4. Basketbalbord aan de zuidmuur
+    const hoopBoardGeo = new THREE.BoxGeometry(1.8, 1.1, 0.06);
+    const hoopBoardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+    const hoopBoard = new THREE.Mesh(hoopBoardGeo, hoopBoardMat);
+    hoopBoard.position.set(0, y + 3.6, 135.8);
+    this.scene.add(hoopBoard);
+
+    const hoopRingGeo = new THREE.TorusGeometry(0.32, 0.025, 8, 20);
+    hoopRingGeo.rotateX(Math.PI / 2);
+    const hoopRingMat = new THREE.MeshStandardMaterial({ color: 0xea580c, metalness: 0.6 });
+    const hoopRing = new THREE.Mesh(hoopRingGeo, hoopRingMat);
+    hoopRing.position.set(0, y + 3.2, 135.4);
+    this.scene.add(hoopRing);
+
+    // 5. Plafond en stalen dakspanten
+    const ceilingGeo = new THREE.BoxGeometry(gymW, 0.2, gymL);
+    const ceiling = new THREE.Mesh(ceilingGeo, this.materials.wallUpper);
+    ceiling.position.set(centerX, y + gymH, centerZ);
+    this.scene.add(ceiling);
+    this.cameraOccluders.push(ceiling);
+
+    // Stalen dakspanten waar de touwen aan hangen
+    const beamMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+    for (const bz of [110.0, 117.0, 124.0, 131.0]) {
+      const beamGeo = new THREE.BoxGeometry(gymW - 0.4, 0.4, 0.3);
+      const beam = new THREE.Mesh(beamGeo, beamMat);
+      beam.position.set(0, y + gymH - 0.25, bz);
+      this.scene.add(beam);
+    }
+
+    // Verlichting in de gymzaal (krachtige sporthal floodlights)
+    for (const lx of [-5.0, 5.0]) {
+      for (const lz of [113.0, 127.0]) {
+        const gymLight = new THREE.PointLight(0xfffbeb, 0.9, 20);
+        gymLight.position.set(lx, y + gymH - 1.0, lz);
+        this.scene.add(gymLight);
+      }
+    }
+
+    // 6. Gymbanken langs de zijkanten (voor het toekijkend publiek)
+    for (const bz of [113.5, 118.0, 122.5]) {
+      this.createGymBench(-6.2, y, bz);
+    }
+    for (const bz of [114.5, 120.0]) {
+      this.createGymBench(6.2, y, bz);
+    }
+
+    // === HET APENKOOI-PARCOURS: TURNKAST START, DIKKE VALMAT, TURNKAST FINISH ===
+    // A. Start Turnkast (hoogte 1.25m)
+    this.createVaultingBox(0, y, 109.5);
+
+    // Oploop-bankje (helling) naar de start turnkast
+    this.createRampBench(0, y, 107.7, true);
+
+    // Groene startmarker bovenop de start turnkast
+    const startRingGeo = new THREE.RingGeometry(0.4, 0.65, 32);
+    startRingGeo.rotateX(-Math.PI / 2);
+    this.gymStartMarker = new THREE.Mesh(startRingGeo, new THREE.MeshBasicMaterial({
+      color: 0x10b981,
+      side: THREE.DoubleSide
+    }));
+    this.gymStartMarker.position.set(0, y + 1.26, 109.5);
+    this.scene.add(this.gymStartMarker);
+
+    // B. Grote Dikke Blauwe Gymvalmat (16.8m lang, 6.0m breed, 0.35m dik)
+    const matGeo = new THREE.BoxGeometry(6.0, 0.35, 16.8);
+    const matMesh = new THREE.Mesh(matGeo, this.materials.gymBlueMat);
+    matMesh.position.set(0, y + 0.175, 119.2);
+    matMesh.receiveShadow = true;
+    this.scene.add(matMesh);
+    this.gymMatMesh = matMesh;
+
+    // Rode versterkingsbanden en handgrepen langs de rand van de valmat
+    const borderGeo = new THREE.BoxGeometry(6.1, 0.08, 16.9);
+    const borderMesh = new THREE.Mesh(borderGeo, new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.6 }));
+    borderMesh.position.set(0, y + 0.32, 119.2);
+    this.scene.add(borderMesh);
+
+    // C. Finish Turnkast (hoogte 1.25m)
+    this.createVaultingBox(0, y, 129.0);
+
+    // Afloop-bankje (helling) aan de finish turnkast
+    this.createRampBench(0, y, 130.7, false);
+
+    // Gouden finishmarker ring bovenop de finish turnkast
+    const finishRingGeo = new THREE.RingGeometry(0.5, 0.75, 32);
+    finishRingGeo.rotateX(-Math.PI / 2);
+    this.gymFinishMarker = new THREE.Mesh(finishRingGeo, new THREE.MeshBasicMaterial({
+      color: 0xf59e0b,
+      side: THREE.DoubleSide
+    }));
+    this.gymFinishMarker.position.set(0, y + 1.26, 129.0);
+    this.scene.add(this.gymFinishMarker);
+
+    // Zwevende pijl boven finishplatform
+    const arrowGeo = new THREE.ConeGeometry(0.26, 0.52, 16);
+    arrowGeo.rotateX(Math.PI);
+    this.gymFinishArrow = new THREE.Mesh(arrowGeo, new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.95
+    }));
+    this.gymFinishArrow.position.set(0, y + 2.5, 129.0);
+    this.scene.add(this.gymFinishArrow);
+
+    // Interactief finish object
+    this.interactiveObjects.gymFinish = {
+      position: new THREE.Vector3(0, y + 1.25, 129.0),
+      radius: 2.0,
+      completed: false,
+      onInteract: () => this.completeGym()
+    };
+  }
+
+  createVaultingBox(x, y, z) {
+    const boxGroup = new THREE.Group();
+    boxGroup.position.set(x, y, z);
+
+    // Houten tapse romp (3 secties)
+    const bodyGeo = new THREE.BoxGeometry(2.1, 1.05, 1.55);
+    const body = new THREE.Mesh(bodyGeo, this.materials.gymWood);
+    body.position.set(0, 0.525, 0);
+    body.castShadow = true;
+    boxGroup.add(body);
+
+    // Leren gewatteerd dekzeil bovenop
+    const leatherGeo = new THREE.BoxGeometry(2.2, 0.2, 1.65);
+    const leather = new THREE.Mesh(leatherGeo, this.materials.gymLeather);
+    leather.position.set(0, 1.15, 0);
+    leather.castShadow = true;
+    boxGroup.add(leather);
+
+    this.scene.add(boxGroup);
+
+    this.colliders.push({
+      minX: x - 1.1, maxX: x + 1.1,
+      minY: y, maxY: y + 1.25,
+      minZ: z - 0.82, maxZ: z + 0.82
+    });
+  }
+
+  createRampBench(x, y, z, isAscending) {
+    // Schuin oplopende turnbank
+    const rampGroup = new THREE.Group();
+    rampGroup.position.set(x, y, z);
+
+    const length = 1.8;
+    const benchGeo = new THREE.BoxGeometry(0.65, 0.12, length);
+    const bench = new THREE.Mesh(benchGeo, this.materials.gymWood);
+
+    // Kantelhoek voor een soepele oploop (~30 graden)
+    const slope = Math.atan2(1.05, length);
+    bench.rotation.x = isAscending ? slope : -slope;
+    bench.position.set(0, 0.65, 0);
+    bench.castShadow = true;
+    rampGroup.add(bench);
+
+    this.scene.add(rampGroup);
+  }
+
+  createGymBench(x, y, z) {
+    const benchGroup = new THREE.Group();
+    benchGroup.position.set(x, y, z);
+
+    // Houten zitting
+    const seatGeo = new THREE.BoxGeometry(0.7, 0.08, 3.2);
+    const seat = new THREE.Mesh(seatGeo, this.materials.gymWood);
+    seat.position.set(0, 0.42, 0);
+    seat.castShadow = true;
+    benchGroup.add(seat);
+
+    // Metalen poten
+    for (const dz of [-1.2, 0, 1.2]) {
+      const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.42, 8);
+      const leg = new THREE.Mesh(legGeo, this.materials.deskFrame);
+      leg.position.set(0, 0.21, dz);
+      benchGroup.add(leg);
+    }
+
+    this.scene.add(benchGroup);
+
+    this.colliders.push({
+      minX: x - 0.4, maxX: x + 0.4,
+      minY: y, maxY: y + 0.46,
+      minZ: z - 1.6, maxZ: z + 1.6
+    });
+  }
+
+  createRibstalls(x, y, z) {
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const w = 4.0;
+    const h = 4.2;
+
+    // Staanders
+    for (const dz of [-w / 2, 0, w / 2]) {
+      const postGeo = new THREE.BoxGeometry(0.08, h, 0.14);
+      const post = new THREE.Mesh(postGeo, this.materials.gymWood);
+      post.position.set(0, h / 2, dz);
+      group.add(post);
+    }
+
+    // Horizontale houten sporten
+    const rungs = 14;
+    for (let i = 0; i < rungs; i++) {
+      const rungY = 0.35 + i * 0.27;
+      const rungGeo = new THREE.CylinderGeometry(0.03, 0.03, w, 8);
+      rungGeo.rotateX(Math.PI / 2);
+      const rung = new THREE.Mesh(rungGeo, this.materials.gymWood);
+      rung.position.set(0.02, rungY, 0);
+      group.add(rung);
+    }
+
+    this.scene.add(group);
+  }
+
+  // --- 3 SLINGERENDE KLIMTOUWEN ---
+  createGymRopes(y) {
+    const ceilingY = y + 6.2;
+    const ropeLength = 4.0;
+
+    // Touw 1 (z = 114.5)
+    const rope1 = new GymRope(this.scene, 0, ceilingY, 114.5, ropeLength, 0.40, 1.7, 0.0, this.materials);
+    // Touw 2 (z = 119.5)
+    const rope2 = new GymRope(this.scene, 0, ceilingY, 119.5, ropeLength, 0.40, 1.7, 1.1, this.materials);
+    // Touw 3 (z = 124.5)
+    const rope3 = new GymRope(this.scene, 0, ceilingY, 124.5, ropeLength, 0.40, 1.7, 2.2, this.materials);
+
+    this.gymRopes = [rope1, rope2, rope3];
+  }
+
+  // --- TOEKIKKENDE KINDEREN (NPCS) ---
+  createKidNPCs(y) {
+    const lookCenter = new THREE.Vector3(0, y + 1.25, 119.0);
+
+    const kid1 = new KidNPC(this.scene, -6.2, y + 0.45, 114.0, 'BOY', 0xef4444, 0x1c1917, 'SHORT', lookCenter);
+    const kid2 = new KidNPC(this.scene, -6.2, y + 0.45, 118.5, 'GIRL', 0xfacc15, 0xfde047, 'PONY', lookCenter);
+    const kid3 = new KidNPC(this.scene, -6.2, y + 0.45, 123.0, 'BOY', 0x10b981, 0x78350f, 'SPIKY', lookCenter);
+    const kid4 = new KidNPC(this.scene, 6.2, y + 0.45, 115.0, 'GIRL', 0xa855f7, 0x451a03, 'PONY', lookCenter);
+    const kid5 = new KidNPC(this.scene, 6.2, y + 0.45, 121.0, 'BOY', 0x06b6d4, 0xb45309, 'SHORT', lookCenter);
+
+    this.kidNPCs = [kid1, kid2, kid3, kid4, kid5];
+  }
+
+  completeGym() {
+    if (this.gymCompleted) return;
+    this.gymCompleted = true;
+    if (this.gymFinishMarker) this.gymFinishMarker.visible = false;
+    if (this.gymFinishArrow) this.gymFinishArrow.visible = false;
+
+    // Activeer jouw bureau marker in Groep 4!
+    if (this.deskMarker) this.deskMarker.visible = true;
+    if (this.deskArrow) this.deskArrow.visible = true;
+  }
 }
+
+// --- KLASSE VOOR SLINGEREND KLIMTOUW ---
+export class GymRope {
+  constructor(scene, pivotX, pivotY, pivotZ, length, amplitude, frequency, phase, materials) {
+    this.pivot = new THREE.Vector3(pivotX, pivotY, pivotZ);
+    this.length = length;
+    this.amplitude = amplitude;
+    this.frequency = frequency;
+    this.phase = phase;
+    this.angle = 0;
+    this.angularVelocity = 0;
+    this.knotPos = new THREE.Vector3();
+
+    this.group = new THREE.Group();
+    this.group.position.copy(this.pivot);
+
+    // Bevestigingsbeugel aan het plafond
+    const mountGeo = new THREE.BoxGeometry(0.35, 0.12, 0.35);
+    const mount = new THREE.Mesh(mountGeo, materials.metal);
+    this.group.add(mount);
+
+    // Gevlochten sisal klimtouw
+    const ropeGeo = new THREE.CylinderGeometry(0.042, 0.042, length, 12);
+    ropeGeo.translate(0, -length / 2, 0);
+    this.ropeMesh = new THREE.Mesh(ropeGeo, materials.gymRope);
+    this.ropeMesh.castShadow = true;
+    this.group.add(this.ropeMesh);
+
+    // Dikke knoop & leren handvat onderaan
+    this.knotGroup = new THREE.Group();
+    this.knotGroup.position.set(0, -length, 0);
+
+    const knotGeo = new THREE.SphereGeometry(0.19, 14, 12);
+    knotGeo.scale(1.0, 1.3, 1.0);
+    const knotMesh = new THREE.Mesh(knotGeo, materials.gymRope);
+    knotMesh.castShadow = true;
+    this.knotGroup.add(knotMesh);
+
+    const wrapGeo = new THREE.CylinderGeometry(0.062, 0.062, 0.45, 12);
+    wrapGeo.translate(0, 0.3, 0);
+    const wrapMesh = new THREE.Mesh(wrapGeo, materials.gymRopeWrap);
+    this.knotGroup.add(wrapMesh);
+
+    this.group.add(this.knotGroup);
+    scene.add(this.group);
+
+    this.update(0);
+  }
+
+  update(elapsed) {
+    this.angle = this.amplitude * Math.sin(this.frequency * elapsed + this.phase);
+    this.angularVelocity = this.amplitude * this.frequency * Math.cos(this.frequency * elapsed + this.phase);
+
+    // Zwaait in de lengteas Z (rotatie om X)
+    this.group.rotation.x = -this.angle;
+
+    this.knotPos.set(
+      this.pivot.x,
+      this.pivot.y - this.length * Math.cos(this.angle),
+      this.pivot.z + this.length * Math.sin(this.angle)
+    );
+  }
+
+  getLinearVelocity() {
+    return new THREE.Vector3(
+      0,
+      this.length * this.angularVelocity * Math.sin(this.angle),
+      this.length * this.angularVelocity * Math.cos(this.angle)
+    );
+  }
+}
+
+// --- KLASSE VOOR TOEKIKKEND KIND (NPC) ---
+export class KidNPC {
+  constructor(scene, x, y, z, gender, shirtColor, hairColor, hairType, lookTarget) {
+    this.basePos = new THREE.Vector3(x, y, z);
+    this.isCheering = false;
+    this.jumpPhase = Math.random() * Math.PI * 2;
+
+    this.group = new THREE.Group();
+    this.group.position.copy(this.basePos);
+
+    this.skinMat = new THREE.MeshStandardMaterial({ color: 0xffd1b3, roughness: 0.8 });
+    this.shirtMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.7 });
+    this.pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.8 });
+    this.hairMat = new THREE.MeshStandardMaterial({ color: hairColor, roughness: 0.7 });
+
+    // Torso
+    const torsoGeo = new THREE.BoxGeometry(0.38, 0.45, 0.22);
+    this.torso = new THREE.Mesh(torsoGeo, this.shirtMat);
+    this.torso.position.set(0, 0.58, 0);
+    this.group.add(this.torso);
+
+    // Hoofd
+    const headGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    this.head = new THREE.Mesh(headGeo, this.skinMat);
+    this.head.position.set(0, 0.95, 0);
+    this.group.add(this.head);
+
+    // Haar
+    const hairGeo = new THREE.BoxGeometry(0.34, 0.16, 0.34);
+    const hair = new THREE.Mesh(hairGeo, this.hairMat);
+    hair.position.set(0, 1.06, 0);
+    this.group.add(hair);
+
+    if (hairType === 'PONY') {
+      const ponyGeo = new THREE.BoxGeometry(0.12, 0.22, 0.12);
+      const pony = new THREE.Mesh(ponyGeo, this.hairMat);
+      pony.position.set(0, 1.05, -0.2);
+      this.group.add(pony);
+    } else if (hairType === 'SPIKY') {
+      const spikeGeo = new THREE.ConeGeometry(0.14, 0.18, 5);
+      const spike = new THREE.Mesh(spikeGeo, this.hairMat);
+      spike.position.set(0, 1.18, 0.05);
+      this.group.add(spike);
+    }
+
+    // Armen
+    this.leftArmPivot = new THREE.Group();
+    this.leftArmPivot.position.set(-0.24, 0.75, 0);
+    const armGeo = new THREE.BoxGeometry(0.12, 0.4, 0.12);
+    armGeo.translate(0, -0.18, 0);
+    const leftArm = new THREE.Mesh(armGeo, this.shirtMat);
+    this.leftArmPivot.add(leftArm);
+    this.group.add(this.leftArmPivot);
+
+    this.rightArmPivot = new THREE.Group();
+    this.rightArmPivot.position.set(0.24, 0.75, 0);
+    const rightArm = new THREE.Mesh(armGeo, this.shirtMat);
+    this.rightArmPivot.add(rightArm);
+    this.group.add(this.rightArmPivot);
+
+    // Benen
+    const legGeo = new THREE.BoxGeometry(0.14, 0.44, 0.14);
+    legGeo.translate(0, -0.22, 0);
+    this.leftLeg = new THREE.Mesh(legGeo, this.pantsMat);
+    this.leftLeg.position.set(-0.1, 0.42, 0);
+    this.group.add(this.leftLeg);
+
+    this.rightLeg = new THREE.Mesh(legGeo, this.pantsMat);
+    this.rightLeg.position.set(0.1, 0.42, 0);
+    this.group.add(this.rightLeg);
+
+    if (lookTarget) {
+      this.group.lookAt(lookTarget.x, y, lookTarget.z);
+    }
+
+    scene.add(this.group);
+  }
+
+  update(dt, elapsed, isCheeringGlobal) {
+    this.isCheering = isCheeringGlobal;
+
+    if (this.isCheering) {
+      const bounce = Math.abs(Math.sin(elapsed * 7.5 + this.jumpPhase));
+      this.group.position.y = this.basePos.y + bounce * 0.42;
+
+      const wave = Math.sin(elapsed * 9.0 + this.jumpPhase) * 0.45;
+      this.leftArmPivot.rotation.x = -2.6 + wave;
+      this.rightArmPivot.rotation.x = -2.6 - wave;
+      this.leftArmPivot.rotation.z = -0.3;
+      this.rightArmPivot.rotation.z = 0.3;
+
+      this.head.rotation.y = Math.sin(elapsed * 6 + this.jumpPhase) * 0.25;
+    } else {
+      this.group.position.y = this.basePos.y;
+      this.head.rotation.y = Math.sin(elapsed * 1.5 + this.jumpPhase) * 0.12;
+      this.leftArmPivot.rotation.x = 0.15;
+      this.rightArmPivot.rotation.x = 0.15;
+      this.leftArmPivot.rotation.z = 0.05;
+      this.rightArmPivot.rotation.z = -0.05;
+    }
+  }
+}
+

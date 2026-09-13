@@ -31,6 +31,11 @@ class Game {
     this.carSpeed = 0;
     this.carMaxSpeed = 16.0;
     this.lockerCompleted = false;
+    this.officialArrivalClock = null;
+    this.officialTimeLeft = null;
+    this.hasVisitedGroep3 = false;
+    this.hasVisitedGroep4 = false;
+    this.lastMatToastTime = 0;
 
     this.initThree();
     this.initGameObjects();
@@ -816,7 +821,10 @@ class Game {
     this.timeLeft = this.totalTime;
     this.elapsedTime = 0;
     this.startTime = 0;
-    if (this.timerPill) this.timerPill.classList.remove('warning', 'critical');
+    if (this.timerPill) {
+      this.timerPill.style.display = '';
+      this.timerPill.classList.remove('warning', 'critical');
+    }
     this.updateTimerUI();
 
     // Doelbalk resetten
@@ -838,8 +846,30 @@ class Game {
     this.carBoarded = false;
     this.carSpeed = 0;
     this.lockerCompleted = false;
+    this.officialArrivalClock = null;
+    this.officialTimeLeft = null;
+    this.hasVisitedGroep3 = false;
+    this.hasVisitedGroep4 = false;
+    this.lastMatToastTime = 0;
     sounds.stopCarEngine();
     this.player.group.visible = true;
+
+    // Speler school- en gymtoestand resetten
+    this.player.isRopeSwinging = false;
+    this.player.grabbedRope = null;
+    this.player.isSittingAtDesk = false;
+    this.player.group.rotation.x = 0;
+
+    // Gym en school interactie resetten
+    if (this.world) {
+      this.world.gymCompleted = false;
+      if (this.world.gymFinishMarker) this.world.gymFinishMarker.visible = true;
+      if (this.world.gymFinishArrow) this.world.gymFinishArrow.visible = true;
+      if (this.world.deskMarker) this.world.deskMarker.visible = false;
+      if (this.world.deskArrow) this.world.deskArrow.visible = false;
+      if (this.world.lockerDoorGroup) this.world.lockerDoorGroup.rotation.y = 0;
+      if (this.world.lockerItemsGroup) this.world.lockerItemsGroup.visible = false;
+    }
 
     this.world.resetSpeurtocht();
 
@@ -1113,10 +1143,16 @@ class Game {
     const locker = this.world.interactiveObjects.locker;
     const distToCar = (this.frontDoorOpen && !this.carBoarded && car) ? playerPos.distanceTo(car.position) : 999;
     const distToLocker = (this.carBoarded && !this.lockerCompleted && locker) ? playerPos.distanceTo(locker.position) : 999;
+    const desk = this.world.interactiveObjects.playerDesk;
+    const distToDesk = (this.lockerCompleted && desk && !this.player.isSittingAtDesk) ? playerPos.distanceTo(desk.position) : 999;
 
     let activeInteraction = null;
 
-    if (distToAlarm <= alarmClock.radius) {
+    if (this.player.isRopeSwinging) {
+      activeInteraction = 'ROPE_RELEASE';
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🪢';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Spring';
+    } else if (distToAlarm <= alarmClock.radius) {
       activeInteraction = 'ALARM';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '⏰';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Stop';
@@ -1155,6 +1191,10 @@ class Game {
       activeInteraction = 'LOCKER';
       if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🔐';
       if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Kluisje';
+    } else if (distToDesk <= (desk ? desk.radius : 0) && this.lockerCompleted && !this.player.isSittingAtDesk) {
+      activeInteraction = 'DESK';
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '🪑';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = 'Zitten';
     }
 
     // Speurtocht items controleren als speler de tas heeft
@@ -1270,8 +1310,53 @@ class Game {
         this.boardCar();
       } else if (activeInteraction === 'LOCKER') {
         this.handleLockerReached();
+      } else if (activeInteraction === 'ROPE_RELEASE') {
+        const res = this.player.releaseRope();
+        if (res) {
+          sounds.playRopeSwing();
+          sounds.playJump();
+        }
+      } else if (activeInteraction === 'DESK') {
+        this.handleDeskReached();
       }
     }
+  }
+
+  handleGymCompleted() {
+    if (this.world.gymCompleted) return;
+    this.world.completeGym();
+    sounds.playKidsCheer();
+    sounds.playItemComplete();
+    if (this.world.interactiveObjects.gymFinish) {
+      this.triggerConfetti(this.world.interactiveObjects.gymFinish.position);
+    }
+    this.setObjective('🎉 GEWELDIG! De kinderen juichen! Loop nu door naar jouw eigen schoolbankje in Groep 4!');
+    this.showPickupToast('🌟', 'Parcours gehaald! De hele klas juicht!');
+  }
+
+  handleDeskReached() {
+    if (this.gameState === 'WON' || this.player.isSittingAtDesk) return;
+    const deskObj = this.world.interactiveObjects.playerDesk;
+    if (!deskObj) return;
+
+    // Neem plaats op het bankje
+    this.player.sitAtDesk(deskObj.position);
+    sounds.playItemComplete();
+    sounds.playSchoolBell();
+    this.triggerConfetti(this.player.position);
+    this.setObjective('🎉 Je zit op je eigen plekje in Groep 4! Precies op tijd voor de les!');
+    this.showPickupToast('🪑', 'Plaatsgenomen op je stoel!');
+
+    if (this.actionBtn) {
+      this.actionBtn.disabled = true;
+      this.actionBtn.classList.remove('active-glow');
+      if (this.actionBtnIcon) this.actionBtnIcon.textContent = '';
+      if (this.actionBtnLabel) this.actionBtnLabel.textContent = '';
+    }
+
+    setTimeout(() => {
+      this.finishGame();
+    }, 1500);
   }
 
   handleWardrobeReached() {
@@ -1506,13 +1591,21 @@ class Game {
     this.triggerConfetti(this.world.interactiveObjects.locker.position);
     sounds.playItemComplete();
 
-    this.setObjective('🔐 Alles veilig opgeborgen in kluisje #7!');
+    // Officiële aankomsttijd bevriezen: je bent ruim op tijd op school!
+    this.officialArrivalClock = this.getInGameClock(this.elapsedTime);
+    this.officialTimeLeft = this.timeLeft;
+
+    // Verberg de HUD timer nu de speler binnen is
+    if (this.timerPill) {
+      this.timerPill.style.display = 'none';
+    }
+
+    this.setObjective('🎒 Alles veilig in kluisje #7! Zoek nu naar jouw lokaal of ga apenkooien in de Gymzaal!');
+    this.showPickupToast('🎒', 'Tas opgeborgen! Verken de school!');
 
     setTimeout(() => {
       sounds.playLockerClose();
-      sounds.playSchoolBell();
-      this.finishGame();
-    }, 1400);
+    }, 1200);
   }
 
   finishGame() {
@@ -1521,11 +1614,13 @@ class Game {
     if (this.controls) this.controls.releasePointerLock();
     this.elapsedTime = (performance.now() - this.startTime) / 1000;
     this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
-    this.setObjective('🎉 Je bent helemaal klaar en net op tijd voor de les!');
+    this.setObjective('🎉 Je zit op je eigen plekje in Groep 4! Precies op tijd voor de les!');
 
-    this.finalTimeEl.textContent = this.getInGameClock(this.elapsedTime);
+    const arrivalClock = this.officialArrivalClock || this.getInGameClock(this.elapsedTime);
+    this.finalTimeEl.textContent = arrivalClock;
     if (this.finalTimeLeftEl) {
-      this.finalTimeLeftEl.textContent = this.formatTime(this.timeLeft);
+      const rem = this.officialTimeLeft !== null ? this.officialTimeLeft : this.timeLeft;
+      this.finalTimeLeftEl.textContent = this.formatTime(rem);
     }
 
     // Speurtocht score
@@ -1535,6 +1630,17 @@ class Game {
       speurtochtBox.innerHTML = `
         <div class="result-box-title">🌟 Speurtocht & Kluisje: 10/10</div>
         <div class="result-box-desc">Alle 5 schoolspullen gevonden, veilig in de auto meegenomen en opgeborgen in kluisje #7!</div>
+      `;
+    }
+
+    // Gymzaal Touwenparcours score
+    const gymBox = document.getElementById('gym-result-box');
+    if (gymBox) {
+      const hasCompletedGym = this.world && this.world.gymCompleted;
+      gymBox.className = 'result-box gym-feedback-box ' + (hasCompletedGym ? 'match' : '');
+      gymBox.innerHTML = `
+        <div class="result-box-title">🤸 Gymzaal Apenkooi: ${hasCompletedGym ? '10/10' : 'Voltooid'}</div>
+        <div class="result-box-desc">${hasCompletedGym ? '3 van de 3 slingertouwen bedwongen over de dikke mat onder luid gejuich van de hele klas!' : 'School bereikt en plaatsgenomen in de klas!'}</div>
       `;
     }
 
@@ -1574,7 +1680,7 @@ class Game {
       const bottomName = this.player.customization.bottomType === 'PANTS' ? 'lange broek' : 'korte broek';
       const genderName = this.player.customization.gender === 'BOY' ? 'stoere jongen' : 'hippe meid';
       const bagName = this.player.customization.backpackType === 'CLASSIC' ? 'rugzak' : (this.player.customization.backpackType === 'SPORT' ? 'schoudertas' : 'tas');
-      outfitDesc.textContent = `Je zit klaar in de klas als een ${genderName} in een ${topName} en ${bottomName}. Je ${bagName} staat netjes in kluisje #7!`;
+      outfitDesc.textContent = `Je zit klaar op jouw stoel in Groep 4 als een ${genderName} in een ${topName} en ${bottomName}. Je ${bagName} staat netjes in kluisje #7!`;
     }
 
     setTimeout(() => {
@@ -1589,7 +1695,8 @@ class Game {
     this.lastTime = time;
 
     // Klok voor schoolbel (loopt op van 07:00 naar 08:15)
-    if (this.gameState === 'PLAYING' || this.gameState === 'CUSTOMIZING' || this.gameState === 'DRIVING') {
+    // Zodra het kluisje voltooid is, is de speler ruim op tijd binnen en stopt de tijdsdruk!
+    if (!this.lockerCompleted && (this.gameState === 'PLAYING' || this.gameState === 'CUSTOMIZING' || this.gameState === 'DRIVING')) {
       this.elapsedTime = (time - this.startTime) / 1000;
       this.timeLeft = Math.max(0, this.totalTime - this.elapsedTime);
       this.updateTimerUI();
@@ -1606,7 +1713,10 @@ class Game {
       if (this.gameState === 'PLAYING') {
         if (this.controls.consumeJump()) {
           const jumpResult = this.player.jump();
-          if (jumpResult === 'BED_BOUNCE') {
+          if (jumpResult === 'ROPE_RELEASE') {
+            sounds.playRopeSwing();
+            sounds.playJump();
+          } else if (jumpResult === 'BED_BOUNCE') {
             sounds.playBedBounce();
           } else if (jumpResult) {
             sounds.playJump();
@@ -1619,6 +1729,67 @@ class Game {
       this.player.update(dt, moveVector, this.cameraYaw, sounds, this.camera);
       this.updateCamera(dt);
       this.player.updateThoughtBubble(this.camera);
+
+      // --- GYMZAAL & SCHOOL LOKALEN LOGICA ---
+      if (this.gameState === 'PLAYING') {
+        const pPos = this.player.position;
+
+        // In de gymzaal (z >= 105.0)
+        if (pPos.z >= 105.0) {
+          // 1. Touw grijpen als de speler springt of dichtbij een knoop is
+          if (!this.player.isRopeSwinging && this.player.ropeCooldown <= 0 && this.world && this.world.gymRopes) {
+            const handsPos = new THREE.Vector3(pPos.x, pPos.y + 0.9, pPos.z);
+            for (let i = 0; i < this.world.gymRopes.length; i++) {
+              const rope = this.world.gymRopes[i];
+              if (handsPos.distanceTo(rope.knotPos) < 1.35) {
+                this.player.grabRope(rope);
+                sounds.playRopeGrab();
+                sounds.playRopeSwing();
+                this.showPickupToast('🪢', `Touw ${i + 1}/3 gepakt! Spring op het hoogste punt!`);
+                break;
+              }
+            }
+          }
+
+          // 2. Landing op de finish turnkast (z: 127.8 tot 130.8)
+          if (pPos.z >= 127.8 && pPos.z <= 130.8 && Math.abs(pPos.x) <= 1.25 && pPos.y >= this.world.LOWER_Y + 1.15) {
+            if (!this.world.gymCompleted) {
+              this.handleGymCompleted();
+            }
+          }
+
+          // 3. Zachte landing op de dikke valmat
+          if (!this.player.isRopeSwinging && pPos.z >= 110.8 && pPos.z <= 127.6 && Math.abs(pPos.x) <= 3.0) {
+            if (pPos.y <= this.world.LOWER_Y + 0.42 && Math.abs(this.player.velocity.y) > 2.0) {
+              sounds.playMatBounce();
+              if (!this.lastMatToastTime || (time - this.lastMatToastTime) > 3500) {
+                this.lastMatToastTime = time;
+                this.showPickupToast('🤸', 'Zacht geland op de mat! Probeer het nog eens!');
+              }
+            }
+          }
+        }
+
+        // 4. Ontdekking Groep 3 (Knutselen)
+        if (pPos.x >= 6.5 && pPos.x <= 15.5 && pPos.z >= 86.5 && pPos.z <= 93.5) {
+          if (!this.hasVisitedGroep3) {
+            this.hasVisitedGroep3 = true;
+            this.showPickupToast('🎨', 'Dit is Groep 3 (Knutselen)! Zoek verder naar Groep 4 of de Gymzaal!');
+          }
+        }
+
+        // 5. Ontdekking Groep 4 (Jouw Klas)
+        if (pPos.x >= 6.5 && pPos.x <= 15.5 && pPos.z >= 94.5 && pPos.z <= 104.0) {
+          if (!this.hasVisitedGroep4) {
+            this.hasVisitedGroep4 = true;
+            if (!this.world.gymCompleted) {
+              this.showPickupToast('🏫', 'Dit is jouw klas (Groep 4)! Maar ga eerst apenkooien in de Gymzaal!');
+            } else {
+              this.showPickupToast('✨', 'Ga snel bij jouw schoolbankje zitten!');
+            }
+          }
+        }
+      }
     }
 
     if (this.skybox) {
