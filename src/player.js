@@ -42,6 +42,7 @@ export class Player {
     // Gymzaal & Klimtouw toestand
     this.isRopeSwinging = false;
     this.grabbedRope = null;
+    this.lastGrabbedRope = null;
     this.ropeCooldown = 0;
     this.isSittingAtDesk = false;
 
@@ -725,6 +726,7 @@ export class Player {
     this.isBedBouncing = false;
     this.isRopeSwinging = false;
     this.grabbedRope = null;
+    this.lastGrabbedRope = null;
     this.toiletNeed = 0;
     if (this.thoughtBubbleGroup) {
       this.thoughtBubbleGroup.visible = false;
@@ -780,6 +782,7 @@ export class Player {
     if (this.isRopeSwinging || this.ropeCooldown > 0) return false;
     this.isRopeSwinging = true;
     this.grabbedRope = rope;
+    this.lastGrabbedRope = null;
     this.velocity.set(0, 0, 0);
     this.isGrounded = false;
     this.isBedBouncing = false;
@@ -788,17 +791,63 @@ export class Player {
 
   releaseRope() {
     if (!this.isRopeSwinging || !this.grabbedRope) return false;
-    const vel = this.grabbedRope.getLinearVelocity();
+    const releasedRope = this.grabbedRope;
+    const vel = releasedRope.getLinearVelocity();
     this.isRopeSwinging = false;
     this.grabbedRope = null;
-    this.ropeCooldown = 0.35;
+    this.lastGrabbedRope = releasedRope; // Voorkom dat je op hetzelfde touw blijft zitten
     this.isGrounded = false;
+    this.group.rotation.x = 0;
 
-    // Afzetimpuls: behoud van slingersnelheid + krachtige voorwaartse boost richting volgend touw / finish
+    const ropes = this.world?.gymRopes || [];
+    const currentIdx = ropes.indexOf(releasedRope);
+
+    // 1. Check of er een volgend touw dichtbij genoeg is om naartoe te springen
+    if (currentIdx >= 0 && currentIdx < ropes.length - 1) {
+      const nextRope = ropes[currentIdx + 1];
+      const distToNext = this.position.distanceTo(nextRope.knotPos);
+      const dz = nextRope.knotPos.z - this.position.z;
+
+      // Als het volgende touw binnen springbereik is (~5.6m en voorwaarts gericht)
+      if (distToNext <= 5.6 && dz > 0.2) {
+        const dist = Math.max(1.0, distToNext);
+        const T = Math.max(0.28, Math.min(0.48, dist / 9.5));
+        const currentTime = nextRope.lastElapsed || 0;
+        const targetKnot = nextRope.getKnotPositionAt(currentTime + T);
+
+        const vx = (targetKnot.x - this.position.x) / T;
+        const vz = (targetKnot.z - this.position.z) / T;
+        const vy = (targetKnot.y - 0.92 - this.position.y - 0.5 * this.gravity * T * T) / T;
+
+        this.velocity.set(vx, vy, vz);
+        this.ropeCooldown = 0; // Meteen klaar om het nieuwe touw vast te grijpen
+        return { type: 'ROPE_JUMP_TARGET', rope: nextRope, index: currentIdx + 1 };
+      }
+    }
+
+    // 2. Als de speler op het laatste touw (touw 3) zit: spring naar de finish turnkast!
+    if (currentIdx === ropes.length - 1 && ropes.length > 0) {
+      const finishPos = new THREE.Vector3(0, (this.world?.LOWER_Y || 0) + 1.28, 129.0);
+      const distToFinish = this.position.distanceTo(finishPos);
+      const dz = finishPos.z - this.position.z;
+
+      if (distToFinish <= 6.2 && dz > 0.3) {
+        const T = Math.max(0.35, Math.min(0.50, distToFinish / 9.0));
+        const vx = (finishPos.x - this.position.x) / T;
+        const vz = (finishPos.z - this.position.z) / T;
+        const vy = (finishPos.y - this.position.y - 0.5 * this.gravity * T * T) / T;
+
+        this.velocity.set(vx, vy, vz);
+        this.ropeCooldown = 0.4;
+        return { type: 'ROPE_JUMP_FINISH' };
+      }
+    }
+
+    // 3. Reguliere afzet als het volgende touw te ver weg is (bijv. achterwaarts slingeren)
     this.velocity.x = 0;
     this.velocity.y = Math.max(4.2, vel.y + 3.8);
     this.velocity.z = Math.max(4.6, vel.z + 5.2);
-    this.group.rotation.x = 0;
+    this.ropeCooldown = 0.35;
     return 'ROPE_RELEASE';
   }
 
@@ -998,6 +1047,7 @@ export class Player {
         this.velocity.y = 0;
         this.isGrounded = true;
         this.isBedBouncing = false;
+        this.lastGrabbedRope = null;
       }
     } else {
       if (this.position.y - groundY > 0.1) {

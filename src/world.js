@@ -5403,10 +5403,12 @@ export class GymRope {
     this.group.add(this.knotGroup);
     scene.add(this.group);
 
+    this.lastElapsed = 0;
     this.update(0);
   }
 
   update(elapsed) {
+    this.lastElapsed = elapsed;
     this.angle = this.amplitude * Math.sin(this.frequency * elapsed + this.phase);
     this.angularVelocity = this.amplitude * this.frequency * Math.cos(this.frequency * elapsed + this.phase);
 
@@ -5417,6 +5419,15 @@ export class GymRope {
       this.pivot.x,
       this.pivot.y - this.length * Math.cos(this.angle),
       this.pivot.z + this.length * Math.sin(this.angle)
+    );
+  }
+
+  getKnotPositionAt(time) {
+    const angle = this.amplitude * Math.sin(this.frequency * time + this.phase);
+    return new THREE.Vector3(
+      this.pivot.x,
+      this.pivot.y - this.length * Math.cos(angle),
+      this.pivot.z + this.length * Math.sin(angle)
     );
   }
 

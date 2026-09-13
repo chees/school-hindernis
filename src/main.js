@@ -1772,7 +1772,17 @@ class Game {
       if (this.gameState === 'PLAYING') {
         if (this.controls.consumeJump()) {
           const jumpResult = this.player.jump();
-          if (jumpResult === 'ROPE_RELEASE') {
+          if (jumpResult && typeof jumpResult === 'object') {
+            if (jumpResult.type === 'ROPE_JUMP_TARGET') {
+              sounds.playRopeSwing();
+              sounds.playJump();
+              this.showPickupToast('✨', `Sprong naar touw ${jumpResult.index + 1}!`);
+            } else if (jumpResult.type === 'ROPE_JUMP_FINISH') {
+              sounds.playRopeSwing();
+              sounds.playJump();
+              this.showPickupToast('🎯', 'Sprong naar de finish turnkast!');
+            }
+          } else if (jumpResult === 'ROPE_RELEASE') {
             sounds.playRopeSwing();
             sounds.playJump();
           } else if (jumpResult === 'BED_BOUNCE') {
@@ -1800,11 +1810,14 @@ class Game {
             const handsPos = new THREE.Vector3(pPos.x, pPos.y + 0.9, pPos.z);
             for (let i = 0; i < this.world.gymRopes.length; i++) {
               const rope = this.world.gymRopes[i];
-              if (handsPos.distanceTo(rope.knotPos) < 1.65) {
+              // BELANGRIJK: Pak NOOIT hetzelfde touw waarvan je zojuist bent afgesprongen!
+              if (rope === this.player.lastGrabbedRope) continue;
+
+              if (handsPos.distanceTo(rope.knotPos) < 2.1) {
                 this.player.grabRope(rope);
                 sounds.playRopeGrab();
                 sounds.playRopeSwing();
-                this.showPickupToast('🪢', `Touw ${i + 1}/3 gepakt! Spring op het hoogste punt!`);
+                this.showPickupToast('🪢', `Touw ${i + 1}/3 gepakt! Spring op het juiste moment naar het volgende touw!`);
                 break;
               }
             }
@@ -1819,11 +1832,14 @@ class Game {
 
           // 3. Zachte landing op de dikke valmat
           if (!this.player.isRopeSwinging && pPos.z >= 110.8 && pPos.z <= 127.6 && Math.abs(pPos.x) <= 3.0) {
-            if (pPos.y <= this.world.LOWER_Y + 0.42 && Math.abs(this.player.velocity.y) > 2.0) {
-              sounds.playMatBounce();
-              if (!this.lastMatToastTime || (time - this.lastMatToastTime) > 3500) {
-                this.lastMatToastTime = time;
-                this.showPickupToast('🤸', 'Zacht geland op de mat! Probeer het nog eens!');
+            if (pPos.y <= this.world.LOWER_Y + 0.42) {
+              this.player.lastGrabbedRope = null; // Reset touw-geheugen bij landing op de mat
+              if (Math.abs(this.player.velocity.y) > 2.0) {
+                sounds.playMatBounce();
+                if (!this.lastMatToastTime || (time - this.lastMatToastTime) > 3500) {
+                  this.lastMatToastTime = time;
+                  this.showPickupToast('🤸', 'Zacht geland op de mat! Probeer het nog eens!');
+                }
               }
             }
           }
