@@ -3015,31 +3015,31 @@ export class GameWorld {
 
     // Gymzaal platforms, valmat en oploopbankjes
     if (z >= 105.0 && z <= 136.0) {
-      // 1. Start turnkast platform (z: 108.6 tot 110.5, x: -1.2 tot 1.2)
-      if (x >= -1.2 && x <= 1.2 && z >= 108.6 && z <= 110.5) {
+      // 1. Start turnkast platform (z: 108.65 tot 110.35, x: -1.15 tot 1.15)
+      if (x >= -1.15 && x <= 1.15 && z >= 108.65 && z <= 110.35) {
         if (currentY === null || currentY >= this.LOWER_Y + 0.5) {
           return this.LOWER_Y + 1.25;
         }
       }
-      // Oploop-bankje naar start turnkast (z: 106.8 tot 108.6, x: -0.65 tot 0.65)
-      if (x >= -0.65 && x <= 0.65 && z >= 106.8 && z < 108.6) {
-        const rampProgress = (z - 106.8) / 1.8;
-        const rampY = this.LOWER_Y + 0.2 + rampProgress * 1.05;
-        if (currentY === null || currentY >= rampY - 0.4) {
+      // Oploop-bankje naar start turnkast (z: 106.3 tot 108.7, x: -0.45 tot 0.45)
+      if (x >= -0.45 && x <= 0.45 && z >= 106.3 && z < 108.7) {
+        const rampProgress = (z - 106.3) / 2.4;
+        const rampY = this.LOWER_Y + rampProgress * 1.25;
+        if (currentY === null || currentY >= rampY - 0.45) {
           return rampY;
         }
       }
-      // 2. Finish platform turnkast (z: 128.0 tot 129.8, x: -1.2 tot 1.2)
-      if (x >= -1.2 && x <= 1.2 && z >= 128.0 && z <= 129.8) {
+      // 2. Finish platform turnkast (z: 128.15 tot 129.85, x: -1.15 tot 1.15)
+      if (x >= -1.15 && x <= 1.15 && z >= 128.15 && z <= 129.85) {
         if (currentY === null || currentY >= this.LOWER_Y + 0.5) {
           return this.LOWER_Y + 1.25;
         }
       }
-      // Afloop-bankje vanaf finish turnkast (z: 129.8 tot 131.6, x: -0.65 tot 0.65)
-      if (x >= -0.65 && x <= 0.65 && z > 129.8 && z <= 131.6) {
-        const rampProgress = (131.6 - z) / 1.8;
-        const rampY = this.LOWER_Y + 0.2 + rampProgress * 1.05;
-        if (currentY === null || currentY >= rampY - 0.4) {
+      // Afloop-bankje vanaf finish turnkast (z: 129.8 tot 132.2, x: -0.45 tot 0.45)
+      if (x >= -0.45 && x <= 0.45 && z > 129.8 && z <= 132.2) {
+        const rampProgress = (132.2 - z) / 2.4;
+        const rampY = this.LOWER_Y + rampProgress * 1.25;
+        if (currentY === null || currentY >= rampY - 0.45) {
           return rampY;
         }
       }
@@ -4210,32 +4210,78 @@ export class GameWorld {
     easelGroup.position.set(x, y, z);
     easelGroup.rotation.y = rotY;
 
-    // Driepoot van hout
-    const legGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.8, 6);
-    const leg1 = new THREE.Mesh(legGeo, this.materials.chairWood);
-    leg1.position.set(-0.35, 0.9, 0.1);
-    leg1.rotation.z = -0.15;
-    easelGroup.add(leg1);
+    // Houten A-frame schildersezel
+    const legMat = this.materials.chairWood;
+    const legGeo = new THREE.CylinderGeometry(0.026, 0.026, 1.77, 8);
 
-    const leg2 = new THREE.Mesh(legGeo, this.materials.chairWood);
-    leg2.position.set(0.35, 0.9, 0.1);
-    leg2.rotation.z = 0.15;
-    easelGroup.add(leg2);
+    // Linker voorpoot (loopt schuin omhoog naar het scharnierpunt op y = 1.70)
+    const legLeft = new THREE.Mesh(legGeo, legMat);
+    legLeft.position.set(-0.21, 0.85, 0.065);
+    legLeft.rotation.z = -0.242;
+    legLeft.rotation.x = -0.134;
+    legLeft.castShadow = true;
+    easelGroup.add(legLeft);
 
-    const leg3 = new THREE.Mesh(legGeo, this.materials.chairWood);
-    leg3.position.set(0, 0.9, -0.45);
-    leg3.rotation.x = -0.22;
-    easelGroup.add(leg3);
+    // Rechter voorpoot
+    const legRight = new THREE.Mesh(legGeo, legMat);
+    legRight.position.set(0.21, 0.85, 0.065);
+    legRight.rotation.z = 0.242;
+    legRight.rotation.x = -0.134;
+    legRight.castShadow = true;
+    easelGroup.add(legRight);
 
-    // Doek / Canvas met schilderij
-    const canvasGeo = new THREE.BoxGeometry(0.85, 0.7, 0.04);
+    // Achterste steunpoot (verbonden met scharnier op y = 1.68 en leunt achterover naar z = -0.65)
+    const legBackGeo = new THREE.CylinderGeometry(0.024, 0.024, 1.78, 8);
+    const legBack = new THREE.Mesh(legBackGeo, legMat);
+    legBack.position.set(0, 0.84, -0.35);
+    legBack.rotation.x = -0.343;
+    legBack.castShadow = true;
+    easelGroup.add(legBack);
+
+    // Scharnierblokje bovenaan
+    const hingeGeo = new THREE.BoxGeometry(0.14, 0.08, 0.16);
+    const hinge = new THREE.Mesh(hingeGeo, this.materials.deskFrame);
+    hinge.position.set(0, 1.70, -0.05);
+    easelGroup.add(hinge);
+
+    // Onderste verbindingsbalk tussen de voorpoten
+    const lowerBarGeo = new THREE.BoxGeometry(0.72, 0.04, 0.04);
+    const lowerBar = new THREE.Mesh(lowerBarGeo, legMat);
+    lowerBar.position.set(0, 0.35, 0.13);
+    lowerBar.rotation.x = -0.134;
+    easelGroup.add(lowerBar);
+
+    // Brede houten plank / richel (shelf) waarop het schildersdoek rust
+    const shelfGeo = new THREE.BoxGeometry(0.96, 0.05, 0.14);
+    const shelf = new THREE.Mesh(shelfGeo, legMat);
+    shelf.position.set(0, 0.85, 0.08);
+    shelf.rotation.x = -0.134;
+    shelf.castShadow = true;
+    easelGroup.add(shelf);
+
+    // Opstaande rand op de plank zodat kwasten en het doek er niet af glijden
+    const rimGeo = new THREE.BoxGeometry(0.96, 0.03, 0.02);
+    const rim = new THREE.Mesh(rimGeo, legMat);
+    rim.position.set(0, 0.88, 0.145);
+    rim.rotation.x = -0.134;
+    easelGroup.add(rim);
+
+    // Schildersdoek (canvas) met kunstwerk, schuin rustend op de plank
+    const canvasGeo = new THREE.BoxGeometry(0.85, 0.72, 0.04);
     const canvasMat = new THREE.MeshStandardMaterial({ color: canvasColor, roughness: 0.6 });
     const canvas = new THREE.Mesh(canvasGeo, canvasMat);
-    canvas.position.set(0, 1.15, 0.05);
-    canvas.rotation.x = 0.12;
+    canvas.position.set(0, 1.25, 0.04);
+    canvas.rotation.x = -0.134;
+    canvas.castShadow = true;
     easelGroup.add(canvas);
 
     this.scene.add(easelGroup);
+
+    this.colliders.push({
+      minX: x - 0.55, maxX: x + 0.55,
+      minY: y, maxY: y + 1.8,
+      minZ: z - 0.55, maxZ: z + 0.55
+    });
   }
 
   createChair(x, y, z, rotY, color) {
@@ -4319,32 +4365,32 @@ export class GameWorld {
     chalkLedge.position.set(15.65, y + 1.15, 99.2);
     this.scene.add(chalkLedge);
 
-    // Lessenaar / Bureau van de Meester/Juf (x = 13.5, z = 96.0)
-    const teacherDeskGeo = new THREE.BoxGeometry(2.0, 0.76, 1.0);
+    // Lessenaar / Bureau van de Meester/Juf (x = 13.8, z = 96.0, kijkt naar het westen)
+    const teacherDeskGeo = new THREE.BoxGeometry(0.9, 0.76, 1.8);
     const teacherDesk = new THREE.Mesh(teacherDeskGeo, this.materials.deskWood);
-    teacherDesk.position.set(13.5, y + 0.38, 96.0);
+    teacherDesk.position.set(13.8, y + 0.38, 96.0);
     this.scene.add(teacherDesk);
-    this.colliders.push({ minX: 12.4, maxX: 14.6, minY: y, maxY: y + 0.8, minZ: 95.4, maxZ: 96.6 });
+    this.colliders.push({ minX: 13.3, maxX: 14.3, minY: y, maxY: y + 0.8, minZ: 95.0, maxZ: 97.0 });
 
     // Laptop & Wereldbol op meesterbureau
     const globeGeo = new THREE.SphereGeometry(0.16, 12, 12);
     const globeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
     const globe = new THREE.Mesh(globeGeo, globeMat);
-    globe.position.set(14.0, y + 0.95, 96.0);
+    globe.position.set(13.8, y + 0.95, 96.5);
     this.scene.add(globe);
 
-    // Stoel meester
-    this.createChair(13.5, y, 95.2, 0, 0x1e293b);
+    // Stoel meester (achter het bureau, kijkt naar de klas in het westen)
+    this.createChair(14.6, y, 96.0, -Math.PI / 2, 0x1e293b);
 
     // Rijen dubbele schoolbanken voor de leerlingen
-    // Rij 1: Jouw bankje (x = 9.5, z = 97.4) en buurbankje (x = 9.5, z = 101.5)
-    this.createStudentDesk(9.5, y, 101.5, false);
-    // Rij 2: achterste bankjes
-    this.createStudentDesk(7.5, y, 97.4, false);
-    this.createStudentDesk(7.5, y, 101.5, false);
+    // Rij 1 (vooraan): Jouw bankje (x = 11.2, z = 97.2) en buurbankje (x = 11.2, z = 101.8)
+    this.createStudentDesk(11.2, y, 101.8, false);
+    // Rij 2 (achteraan):
+    this.createStudentDesk(8.8, y, 97.2, false);
+    this.createStudentDesk(8.8, y, 101.8, false);
 
-    // === HET BANKJE VAN DE SPELER (JOUW BANKJE!) ===
-    this.createStudentDesk(9.5, y, 97.4, true);
+    // === HET BANKJE VAN DE SPELER (JOUW EIGEN PLEKJE!) ===
+    this.createStudentDesk(11.2, y, 97.2, true);
 
     // Boekenkast aan de zuidmuur (z = 104.2)
     const bookCaseGeo = new THREE.BoxGeometry(3.0, 2.2, 0.6);
@@ -4358,49 +4404,52 @@ export class GameWorld {
     const deskGroup = new THREE.Group();
     deskGroup.position.set(x, y, z);
 
-    // Houten dubbel bureaublad
-    const topGeo = new THREE.BoxGeometry(1.4, 0.08, 0.75);
+    // Houten dubbel bureaublad (breedte in Z = 1.50m voor 2 leerlingen, diepte in X = 0.70m)
+    const topGeo = new THREE.BoxGeometry(0.70, 0.08, 1.50);
     const top = new THREE.Mesh(topGeo, this.materials.deskWood);
     top.position.set(0, 0.72, 0);
     top.castShadow = true;
     deskGroup.add(top);
 
-    // Metalen onderstel / poten
-    for (const dx of [-0.62, 0.62]) {
-      for (const dz of [-0.3, 0.3]) {
-        const legGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.72, 8);
+    // Metalen onderstel / 4 poten
+    for (const dx of [-0.28, 0.28]) {
+      for (const dz of [-0.66, 0.66]) {
+        const legGeo = new THREE.CylinderGeometry(0.024, 0.024, 0.72, 8);
         const leg = new THREE.Mesh(legGeo, this.materials.deskFrame);
         leg.position.set(dx, 0.36, dz);
         deskGroup.add(leg);
       }
     }
 
-    // Twee stoeltjes achter het bankje (naar oosten gericht richting krijtbord)
-    this.createChair(x - 0.65, y, z - 0.22, Math.PI / 2, 0x0284c7);
-    this.createChair(x - 0.65, y, z + 0.22, Math.PI / 2, 0x0284c7);
+    // Twee stoeltjes netjes aangeschoven achter het bankje (kijkend naar het bord in het oosten: +X)
+    this.createChair(x - 0.62, y, z - 0.38, Math.PI / 2, 0x0284c7);
+    this.createChair(x - 0.62, y, z + 0.38, Math.PI / 2, 0x0284c7);
 
-    // Schrijfschrift en etui op tafel
-    const bookGeo = new THREE.BoxGeometry(0.24, 0.03, 0.32);
-    const bookMat = new THREE.MeshStandardMaterial({ color: isPlayerDesk ? 0xf59e0b : 0xef4444, roughness: 0.5 });
-    const book = new THREE.Mesh(bookGeo, bookMat);
-    book.position.set(-0.15, 0.78, 0.15);
-    deskGroup.add(book);
+    // Schrijfschriften en etuis op tafel voor beide zitplekken
+    const bookGeo = new THREE.BoxGeometry(0.30, 0.025, 0.22);
+    const book1 = new THREE.Mesh(bookGeo, new THREE.MeshStandardMaterial({ color: isPlayerDesk ? 0xf59e0b : 0xef4444, roughness: 0.5 }));
+    book1.position.set(0, 0.77, -0.38);
+    deskGroup.add(book1);
+
+    const book2 = new THREE.Mesh(bookGeo, new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 }));
+    book2.position.set(0, 0.77, 0.38);
+    deskGroup.add(book2);
 
     if (isPlayerDesk) {
       // Gouden naambordje "JOUW PLEKJE"
-      const nameplateGeo = new THREE.BoxGeometry(0.32, 0.08, 0.08);
+      const nameplateGeo = new THREE.BoxGeometry(0.12, 0.08, 0.30);
       const nameplate = new THREE.Mesh(nameplateGeo, this.materials.itemGold);
-      nameplate.position.set(0.15, 0.8, -0.15);
+      nameplate.position.set(0.18, 0.80, -0.38);
       deskGroup.add(nameplate);
 
-      // Vloermarker (gouden ring)
-      const ringGeo = new THREE.RingGeometry(0.45, 0.7, 32);
+      // Vloermarker (blauwe ring) precies bij de linker stoel waar de speler gaat zitten
+      const ringGeo = new THREE.RingGeometry(0.40, 0.65, 32);
       ringGeo.rotateX(-Math.PI / 2);
       this.deskMarker = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
         side: THREE.DoubleSide
       }));
-      this.deskMarker.position.set(x - 0.65, y + 0.01, z);
+      this.deskMarker.position.set(x - 0.62, y + 0.01, z - 0.38);
       this.deskMarker.visible = false;
       this.scene.add(this.deskMarker);
 
@@ -4412,13 +4461,13 @@ export class GameWorld {
         emissive: 0x0284c7,
         emissiveIntensity: 0.8
       }));
-      this.deskArrow.position.set(x - 0.65, y + 1.8, z);
+      this.deskArrow.position.set(x - 0.62, y + 1.8, z - 0.38);
       this.deskArrow.visible = false;
       this.scene.add(this.deskArrow);
 
-      // Interactief doel: plaatsnemen aan je schoolbankje
+      // Interactief doel: plaatsnemen op jouw stoel
       this.interactiveObjects.playerDesk = {
-        position: new THREE.Vector3(x - 0.65, y, z),
+        position: new THREE.Vector3(x - 0.62, y, z - 0.38),
         radius: 2.0,
         completed: false,
         onInteract: () => {}
@@ -4428,9 +4477,9 @@ export class GameWorld {
     this.scene.add(deskGroup);
 
     this.colliders.push({
-      minX: x - 0.75, maxX: x + 0.75,
+      minX: x - 0.38, maxX: x + 0.38,
       minY: y, maxY: y + 0.8,
-      minZ: z - 0.45, maxZ: z + 0.45
+      minZ: z - 0.78, maxZ: z + 0.78
     });
   }
 
@@ -4539,8 +4588,8 @@ export class GameWorld {
     // A. Start Turnkast (hoogte 1.25m)
     this.createVaultingBox(0, y, 109.5);
 
-    // Oploop-bankje (helling) naar de start turnkast
-    this.createRampBench(0, y, 107.7, true);
+    // Oploop-bankje (helling) naar de start turnkast (z: 106.3 tot 108.7, midden op 107.5)
+    this.createRampBench(0, y, 107.5, true);
 
     // Groene startmarker bovenop de start turnkast
     const startRingGeo = new THREE.RingGeometry(0.4, 0.65, 32);
@@ -4569,8 +4618,8 @@ export class GameWorld {
     // C. Finish Turnkast (hoogte 1.25m)
     this.createVaultingBox(0, y, 129.0);
 
-    // Afloop-bankje (helling) aan de finish turnkast
-    this.createRampBench(0, y, 130.7, false);
+    // Afloop-bankje (helling) aan de finish turnkast (z: 129.8 tot 132.2, midden op 131.0)
+    this.createRampBench(0, y, 131.0, false);
 
     // Gouden finishmarker ring bovenop de finish turnkast
     const finishRingGeo = new THREE.RingGeometry(0.5, 0.75, 32);
@@ -4630,20 +4679,47 @@ export class GameWorld {
   }
 
   createRampBench(x, y, z, isAscending) {
-    // Schuin oplopende turnbank
+    // Schuin geplaatste Zweedse turnbank als oploop-/afstapplank
     const rampGroup = new THREE.Group();
-    rampGroup.position.set(x, y, z);
+    rampGroup.position.set(x, y + 0.60, z);
 
-    const length = 1.8;
-    const benchGeo = new THREE.BoxGeometry(0.65, 0.12, length);
+    const length = 2.683; // Exacte schuine lengte voor 2.40m horizontaal en 1.20m verticaal
+    const slope = 0.4636; // atan(0.5)
+
+    // Rotatie van de helling
+    rampGroup.rotation.x = isAscending ? slope : -slope;
+
+    // 1. Dikke houten turnbankplank
+    const benchGeo = new THREE.BoxGeometry(0.72, 0.09, length);
     const bench = new THREE.Mesh(benchGeo, this.materials.gymWood);
-
-    // Kantelhoek voor een soepele oploop (~30 graden)
-    const slope = Math.atan2(1.05, length);
-    bench.rotation.x = isAscending ? slope : -slope;
-    bench.position.set(0, 0.65, 0);
     bench.castShadow = true;
+    bench.receiveShadow = true;
     rampGroup.add(bench);
+
+    // 2. Twee houten geleidelatten / opstaande randen langs de zijkanten
+    for (const dx of [-0.34, 0.34]) {
+      const railGeo = new THREE.BoxGeometry(0.04, 0.06, length);
+      const rail = new THREE.Mesh(railGeo, this.materials.chairWood);
+      rail.position.set(dx, 0.065, 0);
+      rail.castShadow = true;
+      rampGroup.add(rail);
+    }
+
+    // 3. Stalen haken die stevig over de rand van de turnkast grijpen (aan het hoge uiteinde)
+    const highZ = isAscending ? length / 2 : -length / 2;
+    for (const dx of [-0.24, 0.24]) {
+      const hookGeo = new THREE.BoxGeometry(0.06, 0.18, 0.16);
+      const hook = new THREE.Mesh(hookGeo, this.materials.metal);
+      hook.position.set(dx, 0.04, highZ);
+      rampGroup.add(hook);
+    }
+
+    // 4. Stevige vloervoet met antislip rubberen pads (aan het lage uiteinde op de sportvloer)
+    const lowZ = isAscending ? -length / 2 : length / 2;
+    const footGeo = new THREE.BoxGeometry(0.82, 0.08, 0.18);
+    const foot = new THREE.Mesh(footGeo, this.materials.deskFrame);
+    foot.position.set(0, -0.04, lowZ);
+    rampGroup.add(foot);
 
     this.scene.add(rampGroup);
   }
@@ -4708,14 +4784,16 @@ export class GameWorld {
   // --- 3 SLINGERENDE KLIMTOUWEN ---
   createGymRopes(y) {
     const ceilingY = y + 6.2;
-    const ropeLength = 4.0;
+    const ropeLength = 4.3;
+    const amp = 0.58; // Ruimere slingerhoek (~33 graden)
+    const freq = 1.6;
 
-    // Touw 1 (z = 114.5)
-    const rope1 = new GymRope(this.scene, 0, ceilingY, 114.5, ropeLength, 0.40, 1.7, 0.0, this.materials);
-    // Touw 2 (z = 119.5)
-    const rope2 = new GymRope(this.scene, 0, ceilingY, 119.5, ropeLength, 0.40, 1.7, 1.1, this.materials);
-    // Touw 3 (z = 124.5)
-    const rope3 = new GymRope(this.scene, 0, ceilingY, 124.5, ropeLength, 0.40, 1.7, 2.2, this.materials);
+    // Touw 1 (z = 114.2)
+    const rope1 = new GymRope(this.scene, 0, ceilingY, 114.2, ropeLength, amp, freq, 0.0, this.materials);
+    // Touw 2 (z = 119.2)
+    const rope2 = new GymRope(this.scene, 0, ceilingY, 119.2, ropeLength, amp, freq, 2.4, this.materials);
+    // Touw 3 (z = 124.2)
+    const rope3 = new GymRope(this.scene, 0, ceilingY, 124.2, ropeLength, amp, freq, 4.8, this.materials);
 
     this.gymRopes = [rope1, rope2, rope3];
   }

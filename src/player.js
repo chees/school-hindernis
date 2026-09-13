@@ -794,10 +794,10 @@ export class Player {
     this.ropeCooldown = 0.35;
     this.isGrounded = false;
 
-    // Afzetimpuls: behoud van slingersnelheid + sterke voorwaartse boost richting volgend touw
+    // Afzetimpuls: behoud van slingersnelheid + krachtige voorwaartse boost richting volgend touw / finish
     this.velocity.x = 0;
-    this.velocity.y = Math.max(3.8, vel.y + 3.4);
-    this.velocity.z = Math.max(3.6, vel.z + 4.4);
+    this.velocity.y = Math.max(4.2, vel.y + 3.8);
+    this.velocity.z = Math.max(4.6, vel.z + 5.2);
     this.group.rotation.x = 0;
     return 'ROPE_RELEASE';
   }

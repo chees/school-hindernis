@@ -1535,8 +1535,26 @@ class Game {
     this.world.carGroup.position.x += Math.sin(rotY) * this.carSpeed * dt;
     this.world.carGroup.position.z += Math.cos(rotY) * this.carSpeed * dt;
 
-    // Wegbegrenzing (blijf op straat tussen de stoepen)
-    if (this.world.carGroup.position.z > 23.0) {
+    // Begrenzing op oprit en weg (voorkom rijden door het huis of van de weg af)
+    if (this.world.carGroup.position.z <= 23.0) {
+      // Op de oprit naar de weg: klem tussen de voortuinen / opritranden
+      if (this.world.carGroup.position.x < -1.6) {
+        this.world.carGroup.position.x = -1.6;
+        if (rotY < 0) this.world.carGroup.rotation.y = 0;
+      } else if (this.world.carGroup.position.x > 1.6) {
+        this.world.carGroup.position.x = 1.6;
+        if (rotY > 0) this.world.carGroup.rotation.y = 0;
+      }
+      // Houd de auto op de oprit gericht naar de straat
+      this.world.carGroup.rotation.y = Math.max(-0.25, Math.min(0.25, this.world.carGroup.rotation.y));
+
+      // Achterwaartse begrenzing: kan NOOIT achteruit door de voorgevel van het huis rijden!
+      if (this.world.carGroup.position.z < 16.5) {
+        this.world.carGroup.position.z = 16.5;
+        if (this.carSpeed < 0) this.carSpeed = 0;
+      }
+    } else {
+      // Op de openbare weg tussen de stoepen
       if (this.world.carGroup.position.x < -3.6) {
         this.world.carGroup.position.x = -3.6;
         if (rotY < 0) this.world.carGroup.rotation.y *= 0.8;
@@ -1781,7 +1799,7 @@ class Game {
             const handsPos = new THREE.Vector3(pPos.x, pPos.y + 0.9, pPos.z);
             for (let i = 0; i < this.world.gymRopes.length; i++) {
               const rope = this.world.gymRopes[i];
-              if (handsPos.distanceTo(rope.knotPos) < 1.35) {
+              if (handsPos.distanceTo(rope.knotPos) < 1.65) {
                 this.player.grabRope(rope);
                 sounds.playRopeGrab();
                 sounds.playRopeSwing();
