@@ -343,7 +343,11 @@ class Game {
       this.player.equipBackpack();
       this.handleLockerReached();
     }
-    const sceneParam = new URLSearchParams(window.location.search).get('scene');
+    const urlParams = new URLSearchParams(window.location.search);
+    const sceneParam = urlParams.get('scene');
+    const isSchool = sceneParam === 'school' || urlParams.get('school') === '1' || urlParams.has('school');
+    const isGym = sceneParam === 'gym' || urlParams.get('gym') === '1' || urlParams.has('gym');
+
     if (sceneParam === 'car') {
       this.wakeupModal.style.display = 'none';
       this.player.isDressed = true;
@@ -367,7 +371,24 @@ class Game {
       this.handleFrontDoorReached();
       this.boardCar();
       this.world.carGroup.position.set(0, this.world.LOWER_Y, 26.0);
-    } else if (sceneParam === 'school') {
+    } else if (isGym) {
+      this.wakeupModal.style.display = 'none';
+      this.player.isDressed = true;
+      this.player.wearSchoolClothes();
+      this.speurtochtCountFound = 5;
+      this.handleFrontDoorReached();
+      this.carBoarded = true;
+      this.arriveAtSchool();
+      this.handleLockerReached();
+      this.player.position.set(0, this.world.LOWER_Y + 1.25, 109.5);
+      this.player.group.position.copy(this.player.position);
+      this.player.rotation = 0;
+      this.player.group.rotation.y = 0;
+      this.cameraYaw = Math.PI;
+      this.cameraPitch = 0.25;
+      this.setObjective('🤸 Slinger met de 3 touwen over de grote valmat naar de overkant!');
+      this.gameState = 'PLAYING';
+    } else if (isSchool) {
       this.wakeupModal.style.display = 'none';
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
@@ -380,6 +401,11 @@ class Game {
       this.arriveAtSchool();
       this.player.position.set(0, this.world.LOWER_Y, 88.0);
       this.player.group.position.copy(this.player.position);
+      this.player.rotation = 0;
+      this.player.group.rotation.y = 0;
+      this.cameraYaw = Math.PI;
+      this.cameraPitch = 0.25;
+      this.gameState = 'PLAYING';
     }
 
     if ((this.gameState === 'PLAYING' || this.gameState === 'DRIVING') && this.startTime === 0) {
