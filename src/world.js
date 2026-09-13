@@ -4686,8 +4686,8 @@ export class GameWorld {
     const length = 2.683; // Exacte schuine lengte voor 2.40m horizontaal en 1.20m verticaal
     const slope = 0.4636; // atan(0.5)
 
-    // Rotatie van de helling
-    rampGroup.rotation.x = isAscending ? slope : -slope;
+    // Rotatie van de helling (negatieve rotatie om X kantelt +Z omhoog)
+    rampGroup.rotation.x = isAscending ? -slope : slope;
 
     // 1. Dikke houten turnbankplank
     const benchGeo = new THREE.BoxGeometry(0.72, 0.09, length);
