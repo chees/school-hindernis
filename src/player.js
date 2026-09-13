@@ -817,7 +817,7 @@ export class Player {
 
         const vx = (targetKnot.x - this.position.x) / T;
         const vz = (targetKnot.z - this.position.z) / T;
-        const vy = (targetKnot.y - 0.92 - this.position.y - 0.5 * this.gravity * T * T) / T;
+        const vy = (targetKnot.y - 0.30 - this.position.y - 0.5 * this.gravity * T * T) / T;
 
         this.velocity.set(vx, vy, vz);
         this.ropeCooldown = 0; // Meteen klaar om het nieuwe touw vast te grijpen
@@ -908,28 +908,39 @@ export class Player {
       return;
     }
 
-    // --- KLIMTOUW SLINGER-FYSIKA ---
+    // --- KLIMTOUW SLINGER-FYSIKA (Natuurlijke zitpositie en synchrone rotatie) ---
     if (this.isRopeSwinging && this.grabbedRope) {
-      const knot = this.grabbedRope.knotPos;
-      // Handen grijpen de knoop: speler hangt net onder de knoop
-      this.position.set(knot.x, knot.y - 0.92, knot.z);
-      this.rotation = 0; // Kijkt vooruit richting finish (+Z)
+      const rope = this.grabbedRope;
+      const rotX = -rope.angle;
+      const cos = Math.cos(rotX);
+      const sin = Math.sin(rotX);
+
+      // Speler zit op de knoop: heupen (y=0.45) rusten op de knoop, touw loopt vlak vóór borstkas
+      const localY = -rope.length - 0.30;
+      const localZ = -0.18;
+
+      // Transformeer lokale zitpositie met de exacte zwaaihoek van het touw
+      const worldX = rope.pivot.x;
+      const worldY = rope.pivot.y + (localY * cos - localZ * sin);
+      const worldZ = rope.pivot.z + (localY * sin + localZ * cos);
+
+      this.position.set(worldX, worldY, worldZ);
+      this.rotation = 0;
 
       this.group.position.copy(this.position);
-      this.group.rotation.y = 0;
-      this.group.rotation.x = -this.grabbedRope.angle * 0.75;
+      this.group.rotation.set(rotX, 0, 0);
 
-      // Armen omhoog geheven om het touw vast te grijpen
-      this.leftArmPivot.rotation.x = -2.85;
-      this.rightArmPivot.rotation.x = -2.85;
-      this.leftArmPivot.rotation.z = -0.16;
-      this.rightArmPivot.rotation.z = 0.16;
+      // Armen grijpen het touw stevig vast vóór de borstkas
+      this.leftArmPivot.rotation.set(-1.12, 0.25, -0.55);
+      this.rightArmPivot.rotation.set(-1.12, -0.25, 0.55);
 
-      // Benen opgetrokken
-      this.leftLegPivot.rotation.x = 0.55;
-      this.rightLegPivot.rotation.x = 0.55;
-      this.leftLegPivot.rotation.z = 0;
-      this.rightLegPivot.rotation.z = 0;
+      // Benen zitten ontspannen/geklemd om de knoop, met lichte dynamische zwaai
+      const legSway = (rope.angularVelocity || 0) * 0.08;
+      this.leftLegPivot.rotation.set(-1.25 + legSway, 0.10, -0.16);
+      this.rightLegPivot.rotation.set(-1.25 + legSway, -0.10, 0.16);
+
+      // Hoofd kijkt opgewekt vooruit in de zwaairichting
+      this.headMesh.rotation.set(-0.12, 0, 0);
 
       if (camera) {
         this.updateThoughtBubble(camera);
@@ -938,8 +949,16 @@ export class Player {
       return;
     }
 
-    // Reset kanteling als speler niet meer aan een touw hangt
+    // Reset kanteling en arm/been-orientatie als speler niet meer aan een touw hangt
     this.group.rotation.x = 0;
+    this.group.rotation.z = 0;
+    this.headMesh.rotation.set(0, 0, 0);
+    this.leftArmPivot.rotation.y = 0;
+    this.leftArmPivot.rotation.z = 0;
+    this.rightArmPivot.rotation.y = 0;
+    this.rightArmPivot.rotation.z = 0;
+    this.leftLegPivot.rotation.y = 0;
+    this.rightLegPivot.rotation.y = 0;
 
     const isMoving = inputVector.lengthSq() > 0.01;
 
