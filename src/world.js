@@ -4214,64 +4214,64 @@ export class GameWorld {
     const legMat = this.materials.chairWood;
     const legGeo = new THREE.CylinderGeometry(0.026, 0.026, 1.77, 8);
 
-    // Linker voorpoot (loopt schuin omhoog naar het scharnierpunt op y = 1.70)
+    // Linker voorpoot (voet staat voorop z = +0.30m, loopt schuin omhoog naar het scharnierpunt op z = 0, y = 1.70m)
     const legLeft = new THREE.Mesh(legGeo, legMat);
-    legLeft.position.set(-0.21, 0.85, 0.065);
-    legLeft.rotation.z = -0.242;
-    legLeft.rotation.x = -0.134;
+    legLeft.position.set(-0.20, 0.85, 0.15);
+    legLeft.rotation.z = -0.231;
+    legLeft.rotation.x = -0.174;
     legLeft.castShadow = true;
     easelGroup.add(legLeft);
 
     // Rechter voorpoot
     const legRight = new THREE.Mesh(legGeo, legMat);
-    legRight.position.set(0.21, 0.85, 0.065);
-    legRight.rotation.z = 0.242;
-    legRight.rotation.x = -0.134;
+    legRight.position.set(0.20, 0.85, 0.15);
+    legRight.rotation.z = 0.231;
+    legRight.rotation.x = -0.174;
     legRight.castShadow = true;
     easelGroup.add(legRight);
 
-    // Achterste steunpoot (verbonden met scharnier op y = 1.68 en leunt achterover naar z = -0.65)
-    const legBackGeo = new THREE.CylinderGeometry(0.024, 0.024, 1.78, 8);
+    // Achterste steunpoot (begint bij scharnierpunt z = 0, y = 1.70m en loopt schuin naar ACHTEREN naar de vloer op z = -0.65m)
+    const legBackGeo = new THREE.CylinderGeometry(0.024, 0.024, 1.82, 8);
     const legBack = new THREE.Mesh(legBackGeo, legMat);
-    legBack.position.set(0, 0.84, -0.35);
-    legBack.rotation.x = -0.343;
+    legBack.position.set(0, 0.85, -0.325);
+    legBack.rotation.x = 0.365;
     legBack.castShadow = true;
     easelGroup.add(legBack);
 
-    // Scharnierblokje bovenaan
-    const hingeGeo = new THREE.BoxGeometry(0.14, 0.08, 0.16);
+    // Scharnierblokje bovenaan waar alle 3 de poten stevig samenkomen
+    const hingeGeo = new THREE.BoxGeometry(0.14, 0.08, 0.14);
     const hinge = new THREE.Mesh(hingeGeo, this.materials.deskFrame);
-    hinge.position.set(0, 1.70, -0.05);
+    hinge.position.set(0, 1.70, 0.0);
     easelGroup.add(hinge);
 
     // Onderste verbindingsbalk tussen de voorpoten
-    const lowerBarGeo = new THREE.BoxGeometry(0.72, 0.04, 0.04);
+    const lowerBarGeo = new THREE.BoxGeometry(0.68, 0.04, 0.04);
     const lowerBar = new THREE.Mesh(lowerBarGeo, legMat);
-    lowerBar.position.set(0, 0.35, 0.13);
-    lowerBar.rotation.x = -0.134;
+    lowerBar.position.set(0, 0.35, 0.24);
+    lowerBar.rotation.x = -0.174;
     easelGroup.add(lowerBar);
 
     // Brede houten plank / richel (shelf) waarop het schildersdoek rust
     const shelfGeo = new THREE.BoxGeometry(0.96, 0.05, 0.14);
     const shelf = new THREE.Mesh(shelfGeo, legMat);
-    shelf.position.set(0, 0.85, 0.08);
-    shelf.rotation.x = -0.134;
+    shelf.position.set(0, 0.80, 0.18);
+    shelf.rotation.x = -0.174;
     shelf.castShadow = true;
     easelGroup.add(shelf);
 
     // Opstaande rand op de plank zodat kwasten en het doek er niet af glijden
     const rimGeo = new THREE.BoxGeometry(0.96, 0.03, 0.02);
     const rim = new THREE.Mesh(rimGeo, legMat);
-    rim.position.set(0, 0.88, 0.145);
-    rim.rotation.x = -0.134;
+    rim.position.set(0, 0.83, 0.24);
+    rim.rotation.x = -0.174;
     easelGroup.add(rim);
 
-    // Schildersdoek (canvas) met kunstwerk, schuin rustend op de plank
+    // Schildersdoek (canvas) met kinder-kunstwerk, schuin rustend op de plank tegen de voorpoten
     const canvasGeo = new THREE.BoxGeometry(0.85, 0.72, 0.04);
     const canvasMat = new THREE.MeshStandardMaterial({ color: canvasColor, roughness: 0.6 });
     const canvas = new THREE.Mesh(canvasGeo, canvasMat);
-    canvas.position.set(0, 1.25, 0.04);
-    canvas.rotation.x = -0.134;
+    canvas.position.set(0, 1.20, 0.10);
+    canvas.rotation.x = -0.174;
     canvas.castShadow = true;
     easelGroup.add(canvas);
 
