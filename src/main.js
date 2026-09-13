@@ -270,12 +270,19 @@ class Game {
     // Setup Customizer Studio controls
     this.setupCustomizerEvents();
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const sceneParam = urlParams.get('scene');
+    const isCar = sceneParam === 'car' || urlParams.get('car') === '1' || urlParams.has('car');
+    const isDrive = sceneParam === 'drive' || urlParams.get('drive') === '1' || urlParams.has('drive');
+    const isSchool = sceneParam === 'school' || urlParams.get('school') === '1' || urlParams.has('school');
+    const isGym = sceneParam === 'gym' || urlParams.get('gym') === '1' || urlParams.has('gym');
+
     // Autostart ondersteuning voor testen/screenshots
-    if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+    if (urlParams.get('autostart') === '1' || urlParams.has('autostart')) {
       this.wakeupModal.style.display = 'none';
       this.handleWakeup();
     }
-    if (new URLSearchParams(window.location.search).get('bag') === '1') {
+    if (urlParams.get('bag') === '1' || urlParams.has('bag')) {
       this.wakeupModal.style.display = 'none';
       this.player.position.set(-6.6 + 0.6, this.world.UPPER_Y, -1.0 + 0.6);
       this.player.group.position.copy(this.player.position);
@@ -286,7 +293,7 @@ class Game {
       sounds.stopAlarm();
       this.world.interactiveObjects.alarmRinging = false;
     }
-    if (new URLSearchParams(window.location.search).get('speurtocht') === '1') {
+    if (urlParams.get('speurtocht') === '1' || urlParams.has('speurtocht')) {
       this.wakeupModal.style.display = 'none';
       this.player.position.set(-6.6 + 0.6, this.world.UPPER_Y, -1.0 + 0.6);
       this.player.group.position.copy(this.player.position);
@@ -301,7 +308,7 @@ class Game {
       this.player.equipBackpack();
       if (this.speurtochtHud) this.speurtochtHud.classList.add('visible');
     }
-    if (new URLSearchParams(window.location.search).get('door') === '1') {
+    if (urlParams.get('door') === '1' || urlParams.has('door')) {
       this.wakeupModal.style.display = 'none';
       this.player.position.set(1.5, this.world.LOWER_Y, 11.5);
       this.player.group.position.copy(this.player.position);
@@ -326,14 +333,14 @@ class Game {
       if (this.world.frontDoorMarker) this.world.frontDoorMarker.visible = true;
       if (this.world.frontDoorArrow) this.world.frontDoorArrow.visible = true;
     }
-    if (new URLSearchParams(window.location.search).get('wardrobe') === '1') {
+    if (urlParams.get('wardrobe') === '1' || urlParams.has('wardrobe')) {
       this.wakeupModal.style.display = 'none';
       this.player.position.set(-7.35 + 1.6, this.world.LOWER_Y, 7.5);
       this.player.group.position.copy(this.player.position);
       this.gameState = 'PLAYING';
       this.handleWardrobeReached();
     }
-    if (new URLSearchParams(window.location.search).get('victory') === '1') {
+    if (urlParams.get('victory') === '1' || urlParams.has('victory')) {
       this.wakeupModal.style.display = 'none';
       this.player.position.set(1.5, this.world.LOWER_Y, 12.0);
       this.player.group.position.copy(this.player.position);
@@ -343,12 +350,8 @@ class Game {
       this.player.equipBackpack();
       this.handleLockerReached();
     }
-    const urlParams = new URLSearchParams(window.location.search);
-    const sceneParam = urlParams.get('scene');
-    const isSchool = sceneParam === 'school' || urlParams.get('school') === '1' || urlParams.has('school');
-    const isGym = sceneParam === 'gym' || urlParams.get('gym') === '1' || urlParams.has('gym');
 
-    if (sceneParam === 'car') {
+    if (isCar) {
       this.wakeupModal.style.display = 'none';
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
@@ -360,7 +363,7 @@ class Game {
       this.player.position.set(1.5, this.world.LOWER_Y, 17.5);
       this.player.group.position.copy(this.player.position);
       this.gameState = 'PLAYING';
-    } else if (sceneParam === 'drive') {
+    } else if (isDrive) {
       this.wakeupModal.style.display = 'none';
       this.player.isDressed = true;
       this.player.wearSchoolClothes();
